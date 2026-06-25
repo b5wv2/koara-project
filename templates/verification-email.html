@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تأكيد الحساب - Koara</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+            color: #2d3748;
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+        .email-wrapper {
+            width: 100%;
+            background-color: #f4f6f8;
+            padding: 40px 20px;
+        }
+        .email-container {
+            max-width: 580px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e2e8f0;
+        }
+        .email-header {
+            background-color: #0f172a; /* فخم داكن */
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 1px;
+            margin: 0;
+            font-family: 'Trebuchet MS', sans-serif;
+        }
+        .logo span {
+            color: #38bdf8; /* لمسة سماوية ذكية */
+        }
+        .email-body {
+            padding: 40px 40px 35px 40px;
+        }
+        .greeting {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 20px;
+        }
+        .intro-text {
+            font-size: 15px;
+            color: #4a5568;
+            margin-bottom: 35px;
+        }
+        .code-container {
+            text-align: center;
+            margin: 35px 0;
+            padding: 10px 0;
+        }
+        .code-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #718096;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .code-box {
+            display: inline-block;
+            direction: ltr; /* لعرض الأرقام بشكل صحيح من اليسار لليمين */
+        }
+        .code-digit {
+            display: inline-block;
+            width: 50px;
+            height: 55px;
+            line-height: 55px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            margin: 0 5px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+        .notice {
+            font-size: 13px;
+            color: #94a3b8;
+            text-align: center;
+            margin-top: 15px;
+            font-style: italic;
+        }
+        .security-text {
+            font-size: 13px;
+            color: #718096;
+            border-top: 1px solid #edf2f7;
+            padding-top: 25px;
+            margin-top: 35px;
+        }
+        .email-footer {
+            background-color: #f8fafc;
+            padding: 25px 40px;
+            text-align: center;
+            border-top: 1px solid #edf2f7;
+        }
+        .footer-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+        .footer-sub {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .footer-sub a {
+            color: #38bdf8;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- الهيدر الفخم -->
+            <div class="email-header">
+                <h1 class="logo">K<span>.</span></h1>
+            </div>
+            
+            <!-- محتوى الإيميل -->
+            <div class="email-body">
+                <div class="greeting">مرحباً ،</div>
+                
+                <div class="intro-text">
+                    شكرًا لانضمامك إلى <strong>Koara</strong>! خطوة واحدة تفصلك عن إطلاق وإدارة أعمالك الرقمية. لتأكيد هويتك وتفعيل حسابك بشكل آمن، يرجى استخدام رمز التحقق أدناه:
+                </div>
+                
+                <!-- منطقة الكود المصممة بفخامة -->
+                <div class="code-container">
+                    <div class="code-title">رمز التحقق الآمن</div>
+                    <div class="code-box">
+                        <div class="code-digit">{{digit1}}</div>
+                        <div class="code-digit">{{digit2}}</div>
+                        <div class="code-digit">{{digit3}}</div>
+                        <div class="code-digit">{{digit4}}</div>
+                        <div class="code-digit">{{digit5}}</div>
+                        <div class="code-digit">{{digit6}}</div>
+                    </div>
+                    <div class="notice">هذا الرمز سري وصالح للاستخدام لمرة واحدة فقط خلال 15 دقيقة</div>
+                </div>
+                
+                <div class="security-text">
+                    إذا لم تكن أنت من قام بإنشاء هذا الحساب، يرجى تجاهل هذه الرسالة أو التواصل مع الدعم الفني مباشرة لحماية بياناتك.
+                </div>
+            </div>
+            
+            <!-- الفوتر -->
+            <div class="email-footer">
+                <div class="footer-title">مع كامل تحياتنا، فريق Koara</div>
+                <div class="footer-sub">لديك أي استفسار؟ تواصل معنا عبر <a href="mailto:support@getkoara.com">support@getkoara.com</a></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

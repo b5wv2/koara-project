@@ -1,0 +1,736 @@
+@import "tailwindcss";
+
+@theme {
+  --color-koara-blue: #2563EB;
+  --color-koara-blue-light: #3B82F6;
+  --color-koara-accent: #60A5FA;
+  --color-koara-cyan: #38BDF8;
+  --color-koara-glow: #00BFFF;
+  --color-koara-indigo: #4F46E5;
+  --font-sans: "Inter", "Inter Tight", system-ui, sans-serif;
+}
+
+/* ─── Dark Premium Design System ─── */
+
+:root {
+  --bg-primary: #020617;
+  --bg-secondary: #0B1220;
+  --bg-surface: #111827;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-card-hover: rgba(255, 255, 255, 0.06);
+  --text-primary: #FFFFFF;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-glow: rgba(37, 99, 235, 0.15);
+  --glow-blue: rgba(37, 99, 235, 0.15);
+  --glow-cyan: rgba(0, 191, 255, 0.1);
+
+  /* ─── Dashboard-specific ─── */
+  --dash-sidebar: transparent;
+  --dash-sidebar-border: rgba(255, 255, 255, 0.04);
+  --dash-header: rgba(8, 13, 24, 0.8);
+  --dash-nav-active-bg: rgba(37, 99, 235, 0.15);
+  --dash-nav-active-text: #3B82F6;
+  --dash-nav-inactive: #475569;
+  --dash-row-hover: rgba(255, 255, 255, 0.02);
+  --dash-row-border: rgba(255, 255, 255, 0.03);
+  --dash-table-header: rgba(255, 255, 255, 0.02);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: center top;
+}
+
+/* ─── Float Wave — ambient background blobs ─── */
+
+@keyframes float-wave {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05) rotate(2deg);
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+.animate-float-wave {
+  animation: float-wave 20s ease-in-out infinite;
+}
+
+.animate-float-wave-delayed {
+  animation: float-wave 25s ease-in-out infinite;
+  animation-delay: -10s;
+}
+
+/* ─── LightPillar Hero Effect ─── */
+
+.hero-light-effect {
+  position: absolute;
+  inset: -40% -20%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 72%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 72%);
+}
+
+.hero-light-backdrop {
+  position: absolute;
+  inset: -50% -25%;
+  background: radial-gradient(ellipse 90% 80% at 50% 45%,
+    rgba(2, 6, 23, 0.7) 0%,
+    rgba(2, 6, 23, 0.4) 40%,
+    rgba(2, 6, 23, 0.1) 60%,
+    transparent 75%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Glass Card System ─── */
+
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.15);
+}
+
+/* ─── Dashboard Card (no hover lift for data-heavy surfaces) ─── */
+
+.dash-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.dash-card:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Buttons (Landing / Pill) ─── */
+
+.btn-primary {
+  background: linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #2563EB 100%);
+  background-size: 200% 200%;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px -4px rgba(37, 99, 235, 0.4), 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:hover {
+  background-position: 100% 100%;
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 8px 30px -4px rgba(37, 99, 235, 0.5), 0 0 0 1px rgba(37, 99, 235, 0.3);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ─── Dashboard Buttons (rounded, not pill) ─── */
+
+.dash-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.dash-btn-primary {
+  background: linear-gradient(135deg, #2563EB, #3B82F6);
+  color: #fff;
+  box-shadow: 0 4px 14px -4px rgba(37, 99, 235, 0.45);
+}
+.dash-btn-primary:hover {
+  box-shadow: 0 6px 20px -4px rgba(37, 99, 235, 0.6);
+  transform: translateY(-1px);
+}
+
+.dash-btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.dash-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.dash-btn-danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.dash-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.dash-btn-success {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+.dash-btn-success:hover {
+  background: rgba(74, 222, 128, 0.2);
+  color: #86efac;
+}
+
+.dash-btn-warning {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+.dash-btn-warning:hover {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fcd34d;
+}
+
+.dash-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ─── Status Badge System ─── */
+
+.koara-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.koara-badge-active,
+.koara-badge-approved,
+.koara-badge-delivered,
+.koara-badge-completed {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.koara-badge-pending {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.koara-badge-rejected,
+.koara-badge-failed,
+.koara-badge-suspended {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.koara-badge-processing {
+  background: rgba(96, 165, 250, 0.12);
+  color: #60A5FA;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.koara-badge-inactive {
+  background: rgba(148, 163, 184, 0.1);
+  color: #94A3B8;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+/* ─── Table System ─── */
+
+.koara-table {
+  width: 100%;
+  text-align: left;
+  font-size: 0.8125rem;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+.koara-table thead tr {
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.koara-table thead th {
+  padding: 12px 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+}
+
+.koara-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+}
+
+.koara-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.koara-table tbody td {
+  padding: 14px 20px;
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.koara-table tbody td.cell-primary {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.koara-table tbody td.cell-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: #64748B;
+}
+
+/* ─── Input System (Dark) ─── */
+
+.koara-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.koara-input::placeholder {
+  color: #475569;
+}
+
+.koara-input:focus {
+  border-color: #2563EB;
+  background: rgba(37, 99, 235, 0.04);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.koara-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.koara-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.koara-textarea::placeholder {
+  color: #475569;
+}
+
+.koara-textarea:focus {
+  border-color: #2563EB;
+  background: rgba(37, 99, 235, 0.04);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.koara-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.koara-select:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.koara-select option {
+  background: #0B1220;
+  color: #fff;
+}
+
+.koara-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94A3B8;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Dashboard Toggle Switch ─── */
+
+.koara-toggle {
+  position: relative;
+  display: inline-flex;
+  height: 20px;
+  width: 36px;
+  align-items: center;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  border: none;
+  flex-shrink: 0;
+}
+
+.koara-toggle-thumb {
+  display: inline-block;
+  height: 14px;
+  width: 14px;
+  transform: translateX(3px);
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.koara-toggle[data-on="true"] .koara-toggle-thumb {
+  transform: translateX(19px);
+}
+
+/* ─── Sidebar ─── */
+
+.koara-sidebar {
+  background: var(--dash-sidebar);
+  border-right: 1px solid var(--dash-sidebar-border);
+}
+
+.koara-sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  color: var(--dash-nav-inactive);
+  background: transparent;
+  text-decoration: none;
+}
+
+.koara-sidebar-nav-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+}
+
+.koara-sidebar-nav-item.active {
+  background: var(--dash-nav-active-bg);
+  color: var(--dash-nav-active-text);
+}
+
+/* ─── Dashboard Header ─── */
+
+.koara-dash-header {
+  background: rgba(8, 13, 24, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ─── Modal (Dark) ─── */
+
+.koara-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.koara-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.koara-modal-content {
+  position: relative;
+  background: #0B1220;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 32px 80px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.koara-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+}
+
+.koara-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+/* ─── Feedback Messages ─── */
+
+.koara-error-msg {
+  padding: 12px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #f87171;
+}
+
+.koara-success-msg {
+  padding: 12px 14px;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─── Section Dividers ─── */
+
+.section-glow {
+  position: relative;
+}
+
+.section-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.02), transparent);
+}
+
+/* ─── Feature Icon Container ─── */
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(79, 70, 229, 0.1) 100%);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  color: #60A5FA;
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover .feature-icon {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.25) 0%, rgba(79, 70, 229, 0.15) 100%);
+  transform: scale(1.1);
+  box-shadow: 0 0 20px -4px rgba(37, 99, 235, 0.3);
+}
+
+/* ─── Live Pulse Dot ─── */
+
+@keyframes live-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(74, 222, 128, 0);
+    opacity: 0.8;
+  }
+}
+
+.live-pulse-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: live-pulse 2s ease-in-out infinite;
+  will-change: box-shadow;
+}
+
+/* ─── Glow Animations ─── */
+
+@keyframes subtle-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(37, 99, 235, 0.15); }
+  50% { border-color: rgba(37, 99, 235, 0.3); }
+}
+
+/* ─── Header Glass ─── */
+
+.header-glass {
+  background: rgba(2, 6, 23, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ─── Stat Counter ─── */
+
+.stat-card {
+  text-align: center;
+  padding: 2rem;
+}
+
+.stat-value {
+  font-size: 3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #FFFFFF 0%, #60A5FA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+
+/* ─── Upload Zone ─── */
+
+.koara-upload-zone {
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.koara-upload-zone:hover {
+  background: rgba(37, 99, 235, 0.05);
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+/* ─── Empty State ─── */
+
+.koara-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: #475569;
+  gap: 12px;
+}
+
+.koara-empty-state svg {
+  opacity: 0.4;
+  margin-bottom: 4px;
+}
+
+/* ─── Utility: glass override for tailwind ─── */
+
+@layer utilities {
+  .glass {
+    background: rgba(2, 6, 23, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,0 +1,165 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../config/db');
+
+// --- Categories ---
+
+// POST /api/merchant/categories
+router.post('/categories', async (req, res) => {
+  const { store_id, name, icon_text, logo_url, color, active } = req.body;
+  if (!store_id || !name) return res.status(400).json({ error: 'store_id and name are required' });
+
+  try {
+    const result = await db.query(
+      `INSERT INTO categories (store_id, name, icon_text, logo_url, color, active) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [store_id, name, icon_text, logo_url, color, active !== undefined ? active : true]
+    );
+    res.status(201).json({ success: true, category: result.rows[0] });
+  } catch (err) {
+    console.error('Error creating category:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/merchant/categories/:id
+router.put('/categories/:id', async (req, res) => {
+  const { id } = req.params;
+  const { store_id, name, icon_text, logo_url, color, active } = req.body;
+  
+  try {
+    const result = await db.query(
+      `UPDATE categories 
+       SET name = COALESCE($1, name), 
+           icon_text = COALESCE($2, icon_text), 
+           logo_url = COALESCE($3, logo_url), 
+           color = COALESCE($4, color), 
+           active = COALESCE($5, active)
+       WHERE id = $6 AND store_id = $7 RETURNING *`,
+      [name, icon_text, logo_url, color, active, id, store_id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Category not found or access denied' });
+    res.json({ success: true, category: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/merchant/categories/:id
+router.delete('/categories/:id', async (req, res) => {
+  const { id } = req.params;
+  const { store_id } = req.body; // should ideally be authenticated session storeId
+  try {
+    const result = await db.query('DELETE FROM categories WHERE id = $1 AND store_id = $2 RETURNING id', [id, store_id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Category not found or access denied' });
+    res.json({ success: true, message: 'Category deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Products ---
+
+router.post('/products', async (req, res) => {
+  const { store_id, category_id, name, price, sale_price, image_url, active } = req.body;
+  if (!store_id || !name || price === undefined) return res.status(400).json({ error: 'Missing required fields' });
+
+  try {
+    const result = await db.query(
+      `INSERT INTO products (store_id, category_id, name, price, sale_price, image_url, active) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [store_id, category_id, name, price, sale_price, image_url, active !== undefined ? active : true]
+    );
+    res.status(201).json({ success: true, product: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/products/:id', async (req, res) => {
+  const { id } = req.params;
+  const { store_id, category_id, name, price, sale_price, image_url, active } = req.body;
+  
+  try {
+    const result = await db.query(
+      `UPDATE products 
+       SET category_id = COALESCE($1, category_id), 
+           name = COALESCE($2, name), 
+           price = COALESCE($3, price), 
+           sale_price = $4, 
+           image_url = COALESCE($5, image_url), 
+           active = COALESCE($6, active)
+       WHERE id = $7 AND store_id = $8 RETURNING *`,
+      [category_id, name, price, sale_price, image_url, active, id, store_id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Product not found or access denied' });
+    res.json({ success: true, product: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.delete('/products/:id', async (req, res) => {
+  const { id } = req.params;
+  const { store_id } = req.body; 
+  try {
+    const result = await db.query('DELETE FROM products WHERE id = $1 AND store_id = $2 RETURNING id', [id, store_id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Product not found or access denied' });
+    res.json({ success: true, message: 'Product deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Promos ---
+
+router.post('/promos', async (req, res) => {
+  const { store_id, code, type, value, active } = req.body;
+  if (!store_id || !code || !type || value === undefined) return res.status(400).json({ error: 'Missing required fields' });
+
+  try {
+    const result = await db.query(
+      `INSERT INTO promos (store_id, code, type, value, active) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [store_id, code, type, value, active !== undefined ? active : true]
+    );
+    res.status(201).json({ success: true, promo: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/promos/:id', async (req, res) => {
+  const { id } = req.params;
+  const { store_id, code, type, value, active } = req.body;
+  
+  try {
+    const result = await db.query(
+      `UPDATE promos 
+       SET code = COALESCE($1, code), 
+           type = COALESCE($2, type), 
+           value = COALESCE($3, value), 
+           active = COALESCE($4, active)
+       WHERE id = $5 AND store_id = $6 RETURNING *`,
+      [code, type, value, active, id, store_id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Promo not found or access denied' });
+    res.json({ success: true, promo: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.delete('/promos/:id', async (req, res) => {
+  const { id } = req.params;
+  const { store_id } = req.body; 
+  try {
+    const result = await db.query('DELETE FROM promos WHERE id = $1 AND store_id = $2 RETURNING id', [id, store_id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Promo not found or access denied' });
+    res.json({ success: true, message: 'Promo deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+module.exports = router;
