@@ -800,12 +800,12 @@ const AdminDashboard = () => {
                             <td>
                               <Toggle
                                 on={isEnabled}
-                                onChange={() => {
-                                  updateMerchantProduct(product.id, storeId, {
-                                    selling_price: parseFloat(currentPrice) || null,
+                                onChange={async () => {
+                                  await updateMerchantProduct(product.id, storeId, {
+                                    selling_price: parseFloat(currentPrice) || 0,
                                     is_enabled: !isEnabled
                                   });
-                                  fetchMerchantPlatformProducts(storeId);
+                                  await fetchMerchantPlatformProducts(storeId);
                                 }}
                               />
                             </td>
@@ -826,11 +826,11 @@ const AdminDashboard = () => {
                             <td className="text-right">
                               <button
                                 onClick={async () => {
-                                  const price = parseFloat(editingMerchantPrice[product.id] || product.selling_price);
+                                  const price = parseFloat(editingMerchantPrice[product.id] ?? product.selling_price);
                                   if (!price || price <= 0) return alert('Please enter a valid price');
-                                  await updateMerchantProduct(product.id, storeId, { selling_price: price, is_enabled: isEnabled || true });
+                                  await updateMerchantProduct(product.id, storeId, { selling_price: price, is_enabled: isEnabled });
                                   setEditingMerchantPrice(prev => { const n = { ...prev }; delete n[product.id]; return n; });
-                                  fetchMerchantPlatformProducts(storeId);
+                                  await fetchMerchantPlatformProducts(storeId);
                                 }}
                                 className="dash-btn dash-btn-primary"
                               >

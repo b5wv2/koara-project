@@ -86,20 +86,42 @@ router.get('/:storeId/catalog', async (req, res) => {
   const { storeId } = req.params;
 
   try {
-    const categoriesResult = await db.query(
-      `SELECT * FROM categories WHERE store_id = $1 AND active = true ORDER BY id ASC`, 
-      [storeId]
-    );
-    const productsResult = await db.query(
-      `SELECT * FROM products WHERE store_id = $1 AND active = true ORDER BY id ASC`, 
-      [storeId]
-    );
-    const promosResult = await db.query(
-      `SELECT * FROM promos WHERE store_id = $1 AND active = true ORDER BY id ASC`, 
-      [storeId]
-    );
+    let categoriesRows = [];
+    let productsRows = [];
+    let promosRows = [];
 
-    // Platform products enabled by this merchant
+    // Legacy store-level data (may fail if schema has drifted)
+    try {
+      const categoriesResult = await db.query(
+        `SELECT * FROM categories WHERE store_id = $1 AND active = true ORDER BY id ASC`, 
+        [storeId]
+      );
+      categoriesRows = categoriesResult.rows;
+    } catch (e) {
+      console.warn('Could not fetch categories:', e.message);
+    }
+
+    try {
+      const productsResult = await db.query(
+        `SELECT * FROM products WHERE store_id = $1 AND active = true ORDER BY id ASC`, 
+        [storeId]
+      );
+      productsRows = productsResult.rows;
+    } catch (e) {
+      console.warn('Could not fetch legacy products (schema drift):', e.message);
+    }
+
+    try {
+      const promosResult = await db.query(
+        `SELECT * FROM promos WHERE store_id = $1 AND active = true ORDER BY id ASC`, 
+        [storeId]
+      );
+      promosRows = promosResult.rows;
+    } catch (e) {
+      console.warn('Could not fetch promos:', e.message);
+    }
+
+    // Platform products enabled by this merchant (new architecture)
     const platformProductsResult = await db.query(`
       SELECT 
         pp.id,
@@ -118,14 +140,15 @@ router.get('/:storeId/catalog', async (req, res) => {
 
     res.json({
       success: true,
-      categories: categoriesResult.rows,
-      products: productsResult.rows,
-      promos: promosResult.rows,
+      categories: categoriesRows,
+      products: productsRows,
+      promos: promosRows,
       platform_products: platformProductsResult.rows
     });
   } catch (error) {
-    console.error('Error fetching store catalog:', error);
-    res.status(500).json({ success: false, error: 'Internal server error.' });
+    console.error('Error fetching store catalog:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ success: false, error: 'Internal server error.', detail: error.message });
   }
 });
 

@@ -40,21 +40,25 @@ router.put('/:productId', async (req, res) => {
   if (!store_id) return res.status(400).json({ error: 'store_id is required' });
 
   try {
+    // Default selling_price to 0 for new rows if not provided (NOT NULL constraint)
+    const priceValue = selling_price !== null && selling_price !== undefined ? selling_price : 0;
+    const enabledValue = is_enabled !== null && is_enabled !== undefined ? is_enabled : true;
+
     // Upsert: insert or update merchant_products row
     const result = await db.query(`
       INSERT INTO merchant_products (
-  store_id,
-  catalog_product_id,
-  selling_price,
-  is_enabled
-)
+        store_id,
+        catalog_product_id,
+        selling_price,
+        is_enabled
+      )
       VALUES ($1, $2, $3, $4)
       ON CONFLICT (store_id, catalog_product_id)
       DO UPDATE SET 
         selling_price = COALESCE($3, merchant_products.selling_price),
         is_enabled = COALESCE($4, merchant_products.is_enabled)
       RETURNING *
-    `, [store_id, productId, selling_price, is_enabled]);
+    `, [store_id, productId, priceValue, enabledValue]);
 
     res.json({ success: true, merchant_product: result.rows[0] });
   } catch (err) {

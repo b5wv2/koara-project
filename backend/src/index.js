@@ -25,9 +25,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/store', storeRoutes);
+app.use('/api/merchant/products', merchantProductRoutes);
 app.use('/api/merchant', merchantRoutes);
 app.use('/api/admin/catalog', catalogRoutes);
-app.use('/api/merchant/products', merchantProductRoutes);
 
 // API Health check endpoint
 app.get('/api/health', (req, res) => {
