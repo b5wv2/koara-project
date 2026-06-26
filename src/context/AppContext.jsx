@@ -9,7 +9,6 @@ export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null); // { role: 'admin' | 'merchant', email, storeName }
   const [store, setStore] = useState(null);
   const [language, setLanguage] = useState('en');
-  const [orderSequence, setOrderSequence] = useState(1026);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -37,10 +36,7 @@ export const AppProvider = ({ children }) => {
   const [merchantPlatformProducts, setMerchantPlatformProducts] = useState([]);
   const [providers, setProviders] = useState([]);
 
-  const [orders, setOrders] = useState([
-    { id: '#1024', storeId: 1, customer: 'Alex Johnson', email: 'alex@example.com', whatsapp: '+1234567890', product: 'Free Fire Diamonds', amount: 5.00, status: 'pending' },
-    { id: '#1025', storeId: 1, customer: 'Sarah Smith', email: 'sarah@example.com', whatsapp: '+1987654321', product: 'PUBG UC', amount: 10.00, status: 'approved' },
-  ]);
+  const [orders, setOrders] = useState([]);
 
   const [ledger, setLedger] = useState([]);
 
@@ -242,18 +238,38 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const createOrder = (orderData) => {
-    const newOrderId = `#00${orderSequence}`;
-    setOrderSequence(prev => prev + 1);
+  const fetchMerchantOrders = async (storeId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/merchant/orders?store_id=${storeId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data.orders || []);
+        return data.orders || [];
+      }
+      return [];
+    } catch (err) {
+      console.error('Error fetching merchant orders:', err);
+      return [];
+    }
+  };
 
-    const newOrder = {
-      ...orderData,
-      id: newOrderId,
-      status: 'pending'
-    };
-
-    setOrders([newOrder, ...orders]);
-    return newOrderId;
+  const updateOrderStatus = async (orderId, storeId, status) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/merchant/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ store_id: storeId, status })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+        return { success: true };
+      }
+      return { success: false, message: data.error };
+    } catch (err) {
+      console.error('Error updating order status:', err);
+      return { success: false, message: 'Connection error' };
+    }
   };
 
   const updateStoreLogo = (storeId, logoUrl) => {
@@ -528,9 +544,8 @@ export const AppProvider = ({ children }) => {
       categories, setCategories, updateCategoryLogo, updateStoreLogo,
       products, setProducts,
       promos, setPromos,
-      orders, setOrders,
+      orders, setOrders, fetchMerchantOrders, updateOrderStatus,
       ledger, setLedger,
-      createOrder,
       platformProducts, setPlatformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct,
       providers, setProviders, fetchProviders, fetchProviderMappings, addProviderMapping,
       merchantPlatformProducts, setMerchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct

@@ -1,0 +1,260 @@
+# PROJECT MEMORY
+
+## 1. Project Overview
+
+**Purpose of the platform:**
+Koara is a Multi-Tenant SaaS platform that enables merchants to create digital stores and sell digital products (e.g., gift cards, gaming top-ups, subscriptions).
+
+**Current architecture:**
+A monolithic frontend and backend communicating via a REST API, connected to a PostgreSQL database. The platform supports a Super Admin dashboard, merchant dashboards, and dynamic public storefronts via subdomains.
+
+**Technology stack:**
+*   **Frontend:** React, Vite, Tailwind CSS v4, React Router
+*   **Backend:** Node.js, Express.js
+*   **Database:** PostgreSQL (using `pg` driver)
+*   **Deployment/Environment:** Windows-based local development
+
+**Folder structure:**
+*   `src/`: Frontend React source code
+    *   `src/pages/`: Main views (`Admin.jsx`, `Storefront.jsx`, `Landing.jsx`)
+    *   `src/components/`: Reusable UI components
+    *   `src/context/`: Global state (`AppContext.jsx`)
+*   `backend/`: Node.js server source code
+    *   `backend/src/routes/`: Express route handlers (`admin.js`, `auth.js`, `merchant.js`, etc.)
+    *   `backend/src/services/`: Business logic services (`providerService.js`, `emailService.js`, `auditService.js`)
+    *   `backend/src/config/`: Database config and schema initialization (`initDb.js`)
+
+---
+
+## 2. Database Documentation
+
+| Table | Purpose | Relationships | Important Columns | Known Issues | Future Plans |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `users` | Stores user accounts (admins/merchants) | None | `email`, `password_hash`, `role` | None | N/A |
+| `stores` | Stores merchant storefront data | `owner_id` -> `users(id)` | `subdomain`, `balance`, `bank_name` | Balance stored directly (no locking mechanism); lacks `updated_at`. | Add `customization` JSONB column for branding; add `display_currency`. |
+| `store_requests` | Stores KYC applications for new merchants | None | `status`, `kyc_document_url` | No FK for `reviewed_by`; missing indexes on `email` and `subdomain`. | Add missing indexes. |
+| `email_verifications` | OTP/Email verifications | None | `code`, `expires_at`, `type` | No index on `email+type`; no cleanup job for expired records. | Add cleanup cron job. |
+| `email_locks` | Brute force prevention for email codes | None | `email`, `blocked_until` | None | N/A |
+| `audit_logs` | Activity logging (e.g., logins) | None | `email`, `action`, `ip_address` | Missing index on `email+action+created_at` (used in rate limiting). | Add composite index. |
+| `wallet_transactions` | Ledger for merchant wallet balances | `store_id` -> `stores(id)` | `amount`, `transaction_type` | No `performed_by` column. | Add `performed_by` context. |
+| `categories` | Store-level product categories | `store_id` -> `stores(id)` | `name`, `icon_text`, `logo_url` | Missing `description`, `image_url`, and ordering column. | Support category images. |
+| `products` | Legacy store-level products | `store_id`, `category_id` | `price`, `sale_price`, `image_url` | Partially superseded by `platform_products`. | Establish clear relationship with platform products or deprecate. |
+| `promos` | Discount codes for stores | `store_id` -> `stores(id)` | `code`, `type`, `value` | No usage limit, usage count, or expiry date. | Add usage constraints. |
+| `orders` | Customer order history | `store_id`, `product_id` | `amount`, `status`, `customer_name` | Missing `platform_product_id`, `receipt_url`, and `updated_at`. | Fully implement backend order persistence and workflow. |
+| `platform_products` | Global product catalog managed by admin | None | `name`, `category`, `is_active` | `category` is a plain string, not a FK to categories. | Normalize categories. |
+| `providers` | External product providers (e.g., Reloadly) | None | `name`, `status` | Missing `api_base_url`, `auth_config`, `provider_type`. | Add configuration fields for API integration. |
+| `provider_products` | Maps provider products to platform products | `provider_id`, `product_id` | `provider_product_id`, `cost_price` | No unique constraint on `(provider_id, product_id)`. | Add unique constraint. |
+| `merchant_products` | Store-specific pricing for platform products | `store_id`, `catalog_product_id` | `selling_price`, `is_enabled` | Missing `currency_code` for multi-currency pricing. | Add `currency_code` for pricing localization. |
+
+---
+
+## 3. Backend Architecture
+
+*   **Routes:** Defined in `backend/src/routes/`. Separated by domain (`admin.js`, `merchant.js`, `store.js`, `auth.js`, `catalog.js`, `merchantProducts.js`).
+*   **Services:** Contains business logic logic (`emailService.js`, `providerService.js`).
+*   **Middleware:** **CRITICAL FLAW:** There is currently NO authentication middleware. All endpoints are public. No rate limiting or strict CORS.
+*   **Authentication:** Not properly implemented. Hardcoded credentials exist in seed data. `AppContext.jsx` falls back to mock authentication if the backend fails.
+*   **Business logic:** Mixed tightly within route handlers.
+*   **Request flow:** Client -> Express Route Handler -> Direct PostgreSQL query -> JSON Response.
+
+---
+
+## 4. Frontend Architecture
+
+*   **Pages:** Main pages include `Landing.jsx`, `Storefront.jsx`, and `Admin.jsx`.
+*   **Components:** `Admin.jsx` is a "God Component" (>1300 lines) handling both Super Admin and Merchant dashboards, containing all tabs, modals, and local state.
+*   **Contexts:** `AppContext.jsx` is the global state manager.
+*   **State management:** Uses a single React Context (`AppContext`) holding 30+ state variables and 20+ functions, causing unnecessary re-renders.
+*   **Data flow:** `AppContext.jsx` fetches data on load/role change, sets local state. UI reads from Context.
+
+---
+
+## 5. Provider Architecture
+
+*   **Current provider system:** `providerService.js` filters the `provider_products` table to find active mappings and orders them by `cost_price` to find the cheapest provider.
+*   **Product mapping:** Managed via the `provider_products` table.
+*   **Provider abstraction:** Non-existent. There are no actual API integrations yet (e.g., Reloadly/DT One adapters).
+*   **Future providers:** We need an abstract `BaseProvider` class and a `ProviderRegistry` to cleanly integrate external APIs.
+
+---
+
+## 6. Pricing Architecture
+
+*   **Platform pricing:** Based on `cost_price` from the provider mapping.
+*   **Merchant pricing:** Merchants define their markup via `selling_price` in the `merchant_products` table.
+*   **Currency handling:** Everything is currently assumed to be USD.
+*   **Future exchange-rate strategy:** Each merchant will define their prices in their chosen currency explicitly (no automated background conversion, to prevent price shocks). Add `currency_code` to `merchant_products`.
+
+---
+
+## 7. Order System
+
+*   **Current workflow:** Customer places order -> order is stored *only in memory* in the React frontend (`AppContext.createOrder`) -> merchant "approves" the order -> wallet balance deducted in memory.
+*   **Database tables:** The `orders` table exists but is not integrated with the frontend flow.
+*   **API flow:** Order API is incomplete/missing.
+*   **Merchant flow:** Review receipt and approve/reject.
+*   **Known issues:** Orders disappear on page refresh. No backend persistence.
+*   **Future improvements:** Implement full backend order persistence: pending -> paid -> fulfilling -> completed.
+
+---
+
+## 8. Known Issues
+
+*   [Open] **Critical Security: No Authentication Middleware:** API routes (including admin/merchant endpoints) lack JWT or session validation.
+*   [Open] **Critical Security: Hardcoded Credentials:** `admin@gmil.com` seeded in DB, mock auth in `AppContext.jsx`.
+*   [Open] **Architecture: 1300-line God Component:** `Admin.jsx` must be refactored into smaller components.
+*   [Open] **Architecture: Context Bloat:** `AppContext.jsx` has too much state; needs to be split.
+*   [Open] **Technical Debt: Dual Product Systems:** Both `products` and `platform_products` exist and render simultaneously.
+*   [Open] **Technical Debt: Fake Bank Updates:** Bank settings update `setTimeout` fakes a save without calling the API.
+*   [Open] **Database: Missing Indexes:** Frequent queries lack indexes (e.g., `audit_logs`, `email_verifications`, `store_requests`).
+*   [Fixed] **Technical Debt: Non-functional Orders:** Fully migrated order flow to backend. Orders are persisted in Postgres using an atomic transaction, sequential order numbers (`KOA-00000001`), and historical pricing snapshots. Order updates use `multer` for receipt uploads.
+
+---
+
+## 9. Change Log
+
+*   **2026-06-27:**
+    *   Task completed: Initialized `PROJECT_MEMORY.md`.
+    *   Files modified: `PROJECT_MEMORY.md`
+    *   Database changes: None yet.
+    *   API changes: None yet.
+    *   Reason for change: Establish a permanent knowledge base to guide all future AI and architectural changes.
+*   **2026-06-27:**
+    *   Task completed: Implement Real Order System.
+    *   Files modified: `backend/src/config/initDb.js`, `backend/src/services/orderService.js`, `backend/src/routes/store.js`, `backend/src/routes/merchant.js`, `src/context/AppContext.jsx`, `src/pages/Storefront.jsx`, `src/pages/Admin.jsx`.
+    *   Database changes: `ALTER TABLE orders` added `order_number` (unique), `platform_product_id`, `merchant_product_id`, `receipt_url`, `product_name`, `selling_price`, `currency_code`, `quantity`, `total_amount`, and provider integration fields. Created sequence `order_number_seq`.
+    *   API changes: Added `POST /api/store/:storeId/orders` with `multer` receipt upload. Added `GET /api/merchant/orders` and `PUT /api/merchant/orders/:id/status`.
+    *   Reason for change: Transition from frontend mock state to PostgreSQL-backed orders with receipt uploads, atomic transactions, and sequential numbering.
+
+---
+
+## 10. Architecture Decisions
+
+*   **Decision:** Direct `pg` queries over ORM (Prisma/Sequelize).
+    *   **Reason:** The existing codebase relies entirely on raw parameterized SQL strings in `initDb.js` and routes.
+    *   **Alternatives considered:** Prisma, Sequelize.
+    *   **Why selected:** Adhering to the existing pattern to avoid massive rewrites and preserve the current data flow. All database migrations should be handled via `ALTER TABLE` in `initDb.js` rather than destructive recreates, to protect production data.
+*   **Decision:** Atomic transaction & historical snapshot for orders.
+    *   **Reason:** Ensure data consistency across validations, sequential ID generation, and order insertion. Historical fields protect orders from future product pricing changes.
+    *   **Alternatives considered:** Relying on relation joins for order history.
+    *   **Why selected:** Storing duplicate columns (e.g. `selling_price`, `product_name`) directly on `orders` ensures the historical snapshot remains intact even if merchant products are modified or deleted.
+
+    ## 11. Engineering Rules
+
+These rules are mandatory for every future AI agent.
+
+### General Rules
+
+* Never rewrite working code.
+* Never redesign the architecture unless explicitly requested.
+* Always preserve backward compatibility.
+* Prefer extending existing modules over creating duplicate ones.
+* Fix the root cause instead of masking symptoms.
+* Keep changes minimal and focused.
+
+---
+
+### Database Rules
+
+* Never drop production tables.
+* Never recreate existing tables.
+* Always use ALTER TABLE for schema evolution.
+* Inspect the existing schema before creating new columns.
+* Reuse existing tables whenever possible.
+* Avoid duplicate columns representing the same concept.
+* Always use transactions for multi-step database operations.
+
+---
+
+### Backend Rules
+
+* Keep business logic out of route handlers whenever practical.
+* Reuse existing services before creating new ones.
+* Do not duplicate endpoints.
+* Maintain consistent API response formats.
+* Validate all incoming requests.
+* Never trust frontend data.
+
+---
+
+### Frontend Rules
+
+* The backend is always the source of truth.
+* Do not simulate backend behavior in React.
+* Avoid mock data in production code.
+* Preserve the existing design language.
+* Improve the UI without changing the overall brand identity.
+
+---
+
+### Provider Rules
+
+Platform products must remain provider-independent.
+
+A provider should only supply:
+
+* Provider Product ID
+* Cost
+* Availability
+* API integration
+
+Never couple platform products directly to a specific provider.
+
+Changing providers should require updating provider mappings only, not business logic.
+
+---
+
+### Pricing Rules
+
+Platform cost is managed only by Super Admin.
+
+Merchant selling prices are completely independent.
+
+Each merchant may choose a display currency.
+
+Merchant prices must never change automatically because exchange rates change.
+
+---
+
+### Order Rules
+
+Orders must always be persisted in PostgreSQL.
+
+React state is never the source of truth.
+
+Every order must belong to exactly one store.
+
+Every merchant must only access their own orders.
+
+Order status must be enforced by the backend.
+
+---
+
+### AI Workflow
+
+Before making any changes:
+
+1. Read PROJECT_MEMORY.md.
+2. Review the relevant files only.
+3. Identify the root cause.
+4. Explain the implementation plan.
+5. Wait if architectural clarification is required.
+6. Implement only the approved scope.
+7. Update PROJECT_MEMORY.md after the task is completed.
+
+Never perform unrelated refactoring while fixing a bug.
+
+---
+
+### Documentation Rules
+
+Every completed task must update:
+
+* Change Log
+* Known Issues
+* Architecture Decisions
+
+Every resolved bug must be moved from "Open" to "Fixed" with a brief explanation.
+
+PROJECT_MEMORY.md must always remain synchronized with the actual codebase.
+

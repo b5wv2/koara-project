@@ -53,6 +53,13 @@ const Storefront = ({ store }) => {
   const [currentOrderId, setCurrentOrderId] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
   // Map the passed store to the merchant structure expected by the UI
   const merchant = store ? {
     id: store.id,
@@ -120,6 +127,11 @@ const Storefront = ({ store }) => {
     setPromoCode('');
     setAppliedPromo(null);
     setPromoError('');
+    setCustomerName('');
+    setCustomerEmail('');
+    setWhatsapp('');
+    setReceiptFile(null);
+    setSubmitError('');
   };
 
   const calculateTotal = () => {
@@ -150,16 +162,41 @@ const Storefront = ({ store }) => {
     }
   };
 
-  const handleSubmitOrder = (e) => {
+  const handleSubmitOrder = async (e) => {
     e.preventDefault();
-    const newOrderId = createOrder({
-      storeId,
-      customer: 'Alex Johnson',
-      product: selectedProduct.name,
-      amount: parseFloat(calculateTotal())
-    });
-    setCurrentOrderId(newOrderId);
-    setCheckoutStep(2);
+    setSubmitError('');
+    if (!receiptFile) {
+      setSubmitError('Please upload a payment receipt.');
+      return;
+    }
+
+    setSubmittingOrder(true);
+    try {
+      const formData = new FormData();
+      formData.append('customerName', customerName);
+      formData.append('customerEmail', customerEmail);
+      formData.append('whatsapp', whatsapp);
+      formData.append('platformProductId', selectedProduct.id);
+      formData.append('receipt', receiptFile);
+      // quantity could be added here if implemented in UI
+
+      const response = await fetch(`${API_BASE_URL}/api/store/${storeId}/orders`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setCurrentOrderId(data.order.order_number);
+        setCheckoutStep(2);
+      } else {
+        setSubmitError(data.error || 'Failed to submit order.');
+      }
+    } catch (err) {
+      setSubmitError('Connection error. Please try again.');
+    } finally {
+      setSubmittingOrder(false);
+    }
   };
 
   const closeCheckout = () => {
@@ -507,16 +544,16 @@ const Storefront = ({ store }) => {
               <div className="space-y-3">
                 <div>
                   <label className="koara-label">{t('name')}</label>
-                  <input required type="text" placeholder="Alex Johnson" className="koara-input" />
+                  <input required type="text" placeholder="Alex Johnson" className="koara-input" value={customerName} onChange={e => setCustomerName(e.target.value)} />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1">
                     <label className="koara-label">{t('email')}</label>
-                    <input required type="email" placeholder="alex@email.com" className="koara-input" dir="ltr" />
+                    <input required type="email" placeholder="alex@email.com" className="koara-input" dir="ltr" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} />
                   </div>
                   <div className="flex-1">
                     <label className="koara-label">{t('whatsapp_number')}</label>
-                    <input required type="text" placeholder="+1 234 567 8900" className="koara-input" dir="ltr" />
+                    <input required type="text" placeholder="+1 234 567 8900" className="koara-input" dir="ltr" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -540,18 +577,33 @@ const Storefront = ({ store }) => {
                 </div>
 
                 {/* Upload Zone */}
-                <label className="koara-upload-zone block">
+                <label className="koara-upload-zone block relative cursor-pointer">
+                  <input 
+                    type="file" 
+                    accept="image/*,application/pdf"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={e => setReceiptFile(e.target.files[0])}
+                  />
                   <UploadCloud size={20} className="mb-2 mx-auto" style={{ color: '#3B82F6' }} />
-                  <p className="text-sm font-medium text-white">Upload Transfer Receipt</p>
-                  <p className="text-xs mt-1" style={{ color: '#475569' }}>Image or PDF</p>
+                  <p className="text-sm font-medium text-white">
+                    {receiptFile ? receiptFile.name : 'Upload Transfer Receipt'}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: '#475569' }}>Image or PDF (Max 10MB)</p>
                 </label>
               </div>
 
+              {submitError && (
+                <div className="p-3 rounded-lg text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+                  {submitError}
+                </div>
+              )}
+
               <button
                 type="submit"
+                disabled={submittingOrder}
                 className="dash-btn dash-btn-primary w-full justify-center py-3 text-sm font-bold rounded-xl"
               >
-                {t('complete_purchase')}
+                {submittingOrder ? <Loader2 size={18} className="animate-spin" /> : t('complete_purchase')}
               </button>
             </form>
           );

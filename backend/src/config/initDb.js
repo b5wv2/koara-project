@@ -265,6 +265,26 @@ const initializeDatabase = async () => {
 
     await client.query(createMerchantProductsTableQuery);
 
+    // --- Order System Enhancements ---
+    await client.query(`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`);
+    
+    await client.query(`
+      ALTER TABLE orders 
+      ADD COLUMN IF NOT EXISTS order_number VARCHAR(50) UNIQUE,
+      ADD COLUMN IF NOT EXISTS platform_product_id INTEGER REFERENCES platform_products(id),
+      ADD COLUMN IF NOT EXISTS merchant_product_id INTEGER REFERENCES merchant_products(id),
+      ADD COLUMN IF NOT EXISTS receipt_url TEXT,
+      ADD COLUMN IF NOT EXISTS product_name VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS selling_price NUMERIC(10,2),
+      ADD COLUMN IF NOT EXISTS currency_code VARCHAR(10) DEFAULT 'USD',
+      ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1,
+      ADD COLUMN IF NOT EXISTS total_amount NUMERIC(10,2),
+      ADD COLUMN IF NOT EXISTS provider_id INTEGER REFERENCES providers(id),
+      ADD COLUMN IF NOT EXISTS provider_order_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS provider_status VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+    `);
+
     // Seed super admin user if not exists
     const adminEmail = 'admin@gmil.com';
     const checkAdmin = await client.query('SELECT id FROM users WHERE email = $1', [adminEmail]);

@@ -66,7 +66,7 @@ const Toggle = ({ on, onChange }) => (
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct } = useAppContext();
+  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -144,8 +144,13 @@ const AdminDashboard = () => {
   }, [activeTab, role]);
 
   React.useEffect(() => {
-    if (role === 'merchant' && activeTab === 'products' && storeId) {
-      fetchMerchantPlatformProducts(storeId).catch(console.error);
+    if (role === 'merchant' && storeId) {
+      if (activeTab === 'products') {
+        fetchMerchantPlatformProducts(storeId).catch(console.error);
+      }
+      if (activeTab === 'dashboard') {
+        fetchMerchantOrders(storeId).catch(console.error);
+      }
     }
   }, [activeTab, role, storeId]);
 
@@ -177,9 +182,13 @@ const AdminDashboard = () => {
     setPromos(promos.map(p => p.id === id ? { ...p, active: !p.active } : p));
   };
 
-  const handleProcessOrder = (id, action) => {
-    setOrders(orders.map(o => o.id === id ? { ...o, status: action } : o));
-    setSelectedReceipt(null);
+  const handleProcessOrder = async (id, action) => {
+    const res = await updateOrderStatus(id, storeId, action);
+    if (res.success) {
+      setSelectedReceipt(null);
+    } else {
+      alert(res.message);
+    }
   };
 
   const handleLogout = () => {
@@ -742,11 +751,11 @@ const AdminDashboard = () => {
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <div className="font-bold text-sm text-white">{order.id} — {order.product}</div>
-                            <div className="text-xs mt-1" style={{ color: '#475569' }}>{order.customer} · {order.whatsapp}</div>
+                            <div className="font-bold text-sm text-white">{order.order_number} — {order.product_name}</div>
+                            <div className="text-xs mt-1" style={{ color: '#475569' }}>{order.customer_name} · {order.whatsapp}</div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="font-semibold text-sm text-white" dir="ltr">${order.amount.toFixed(2)}</span>
+                            <span className="font-semibold text-sm text-white" dir="ltr">${parseFloat(order.total_amount || 0).toFixed(2)}</span>
                             <StatusBadge status={
                               order.status === 'pending' ? 'pending'
                               : order.status === 'approved' ? 'approved'
@@ -1074,17 +1083,21 @@ const AdminDashboard = () => {
       <Modal isOpen={!!selectedReceipt} onClose={() => setSelectedReceipt(null)} title="Review Payment Receipt">
         {selectedReceipt && (
           <div className="space-y-5 text-center">
-            <div className="w-full h-48 rounded-xl flex items-center justify-center text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#475569' }}>
-              [Bank Transfer Receipt]
+            <div className="w-full h-48 rounded-xl flex items-center justify-center overflow-hidden text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {selectedReceipt.receipt_url ? (
+                <img src={`${API_BASE_URL}${selectedReceipt.receipt_url}`} alt="Receipt" className="max-h-full object-contain" />
+              ) : (
+                <span style={{ color: '#475569' }}>No receipt uploaded</span>
+              )}
             </div>
             <div className="flex justify-between text-left text-sm p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
               <div>
                 <div className="text-xs mb-1" style={{ color: '#475569' }}>Customer</div>
-                <div className="font-semibold text-white">{selectedReceipt.customer}</div>
+                <div className="font-semibold text-white">{selectedReceipt.customer_name}</div>
               </div>
               <div className="text-right" dir="ltr">
                 <div className="text-xs mb-1" style={{ color: '#475569' }}>Amount</div>
-                <div className="font-semibold" style={{ color: '#4ade80' }}>${selectedReceipt.amount.toFixed(2)}</div>
+                <div className="font-semibold" style={{ color: '#4ade80' }}>${parseFloat(selectedReceipt.total_amount || 0).toFixed(2)}</div>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">

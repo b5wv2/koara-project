@@ -2,6 +2,33 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { validateSubdomainFormat } = require('../utils/subdomainValidation');
+const multer = require('multer');
+const path = require('path');
+const orderService = require('../services/orderService');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../../uploads'));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'receipt-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB as requested
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only images and PDF files are allowed!'));
+    }
+  }
+});
 
 // GET /api/store/check-subdomain/:subdomain
 router.get('/check-subdomain/:subdomain', async (req, res) => {
@@ -149,6 +176,39 @@ router.get('/:storeId/catalog', async (req, res) => {
     console.error('Error fetching store catalog:', error.message);
     console.error('Stack:', error.stack);
     res.status(500).json({ success: false, error: 'Internal server error.', detail: error.message });
+  }
+});
+
+// POST /api/store/:storeId/orders
+router.post('/:storeId/orders', upload.single('receipt'), async (req, res) => {
+  const { storeId } = req.params;
+  const { customerName, customerEmail, whatsapp, platformProductId, quantity } = req.body;
+
+  if (!customerName || !customerEmail || !whatsapp || !platformProductId) {
+    return res.status(400).json({ error: 'Missing required fields for order' });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'Payment receipt is required' });
+  }
+
+  const receiptUrl = `/uploads/${req.file.filename}`;
+
+  try {
+    const order = await orderService.createOrder({
+      storeId,
+      customerName,
+      customerEmail,
+      whatsapp,
+      platformProductId,
+      quantity: quantity || 1,
+      receiptUrl
+    });
+
+    res.status(201).json({ success: true, order });
+  } catch (error) {
+    console.error('Order creation failed:', error.message);
+    res.status(400).json({ success: false, error: error.message });
   }
 });
 

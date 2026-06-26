@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const orderService = require('../services/orderService');
 
 // --- Categories ---
 
@@ -159,6 +160,45 @@ router.delete('/promos/:id', async (req, res) => {
     res.json({ success: true, message: 'Promo deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Orders ---
+
+// GET /api/merchant/orders
+router.get('/orders', async (req, res) => {
+  // We assume the store_id is either in req.query or fetched from an authenticated session
+  // Since authentication middleware is missing right now, we require it in query
+  const { store_id } = req.query;
+  
+  if (!store_id) {
+    return res.status(400).json({ error: 'store_id query parameter is required' });
+  }
+
+  try {
+    const orders = await orderService.getStoreOrders(store_id);
+    res.status(200).json({ success: true, orders });
+  } catch (err) {
+    console.error('Error fetching orders:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/merchant/orders/:id/status
+router.put('/orders/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { store_id, status } = req.body;
+
+  if (!store_id || !status) {
+    return res.status(400).json({ error: 'store_id and status are required' });
+  }
+
+  try {
+    const order = await orderService.updateOrderStatus(id, store_id, status);
+    res.status(200).json({ success: true, order });
+  } catch (err) {
+    console.error('Error updating order status:', err.message);
+    res.status(400).json({ error: err.message });
   }
 });
 
