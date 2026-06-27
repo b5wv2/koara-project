@@ -268,6 +268,14 @@ const initializeDatabase = async () => {
 
     await client.query(createMerchantProductsTableQuery);
 
+    // Ensure merchant product customization columns exist if the table was created previously
+    await client.query(`
+      ALTER TABLE merchant_products 
+      ADD COLUMN IF NOT EXISTS custom_title VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS custom_description TEXT,
+      ADD COLUMN IF NOT EXISTS custom_image_url TEXT;
+    `);
+
     // --- Order System Enhancements ---
     await client.query(`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`);
     
