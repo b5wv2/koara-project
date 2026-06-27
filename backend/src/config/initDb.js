@@ -209,6 +209,14 @@ const initializeDatabase = async () => {
 
     // Create users table first
     await client.query(createUsersTableQuery);
+    
+    // Add Google Auth columns to users table
+    await client.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE,
+      ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) DEFAULT 'email',
+      ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+    `);
 
     // Create stores table with reference to users
     await client.query(createStoresTableQuery);

@@ -7,6 +7,9 @@ const path = require('path');
 const { generateOTP, sendEmail } = require('../services/emailService');
 const { logAudit } = require('../services/auditService');
 const { validateSubdomainFormat } = require('../utils/subdomainValidation');
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -221,6 +224,82 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
     res.status(500).json({ error: 'An internal database error occurred. Please try again.' });
   } finally {
     client.release();
+  }
+});
+
+// POST /google-login route
+router.post('/google-login', async (req, res) => {
+  const { idToken } = req.body;
+
+  if (!idToken) {
+    return res.status(400).json({ message: 'Google ID Token is required.' });
+  }
+
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture: avatarUrl } = payload;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email not provided by Google.' });
+    }
+
+    // Check if user exists
+    const userQuery = 'SELECT * FROM users WHERE email = $1';
+    const userResult = await db.query(userQuery, [email.trim()]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ message: 'This Google account is not linked to any merchant account.' });
+    }
+
+    let user = userResult.rows[0];
+
+    // If user exists, ensure account is linked
+    if (user.auth_provider !== 'google') {
+      const updateQuery = `
+        UPDATE users 
+        SET google_id = $1, auth_provider = 'google', avatar_url = COALESCE(avatar_url, $2)
+        WHERE id = $3
+        RETURNING *
+      `;
+      const updatedUserResult = await db.query(updateQuery, [googleId, avatarUrl, user.id]);
+      user = updatedUserResult.rows[0];
+    }
+
+    // Get store info
+    let store = null;
+    const storeQuery = 'SELECT * FROM stores WHERE owner_id = $1';
+    const storeResult = await db.query(storeQuery, [user.id]);
+    if (storeResult.rows.length > 0) {
+      store = storeResult.rows[0];
+    }
+
+    return res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      store: store ? {
+        id: store.id,
+        store_name: store.store_name,
+        subdomain: store.subdomain,
+        status: store.status,
+        bank_name: store.bank_name,
+        account_no: store.account_no,
+        account_name: store.account_name,
+        balance: store.balance
+      } : null
+    });
+
+  } catch (error) {
+    console.error('Google login verification failed:', error.message);
+    return res.status(401).json({ message: 'Invalid Google Token. Please try again.' });
   }
 });
 

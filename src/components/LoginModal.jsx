@@ -3,6 +3,7 @@ import Modal from './Modal';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot }) => {
   const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, t } = useAppContext();
+  const { login, googleLogin, t } = useAppContext();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -19,6 +20,27 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot }) => {
     setLoading(true);
 
     const result = await login(email, password);
+    setLoading(false);
+    if (result.success) {
+      if (result.isStoreRequest) {
+        onStoreStatus({ status: result.status, reason: result.rejection_reason, request: result.request });
+        onClose();
+        return;
+      }
+      onClose();
+      setEmail('');
+      setPassword('');
+      navigate('/admin');
+    } else {
+      setError(result.message);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+
+    const result = await googleLogin(credentialResponse.credential);
     setLoading(false);
     if (result.success) {
       if (result.isStoreRequest) {
@@ -105,6 +127,27 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot }) => {
             </>
           )}
         </button>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-[#0b0c10] px-2 text-slate-400">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="flex justify-center w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              setError('Google Login failed. Please try again.');
+            }}
+            theme="filled_black"
+            text="continue_with"
+            shape="rectangular"
+          />
+        </div>
 
         <div className="pt-4 border-t border-white/6">
           <p className="text-xs font-semibold text-slate-500 mb-2">Test Credentials</p>

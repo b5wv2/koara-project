@@ -291,3 +291,25 @@ Every resolved bug must be moved from "Open" to "Fixed" with a brief explanation
 
 PROJECT_MEMORY.md must always remain synchronized with the actual codebase.
 
+---
+
+## 12. Google Login Architecture (Phase 1)
+
+**Authentication Flow:**
+* **Trigger:** Merchant clicks "Continue with Google" in the Login Modal.
+* **Frontend:** Google's identity services (via `@react-oauth/google`) securely authenticate the user and return an `idToken`.
+* **Backend (`POST /api/auth/google-login`):** Validates the `idToken` using Google's official Node.js `google-auth-library`.
+* **Resolution:** If the extracted email matches an existing merchant/admin account, the login succeeds and returns identical session context as email/password logins. If not, the login is rejected (`401`).
+* **Account Linking:** If the account exists but has never used Google, it is seamlessly linked in the background (`auth_provider = 'google'`, `google_id` saved).
+
+**Database Changes:**
+* Added non-destructive `ALTER TABLE users` columns: `google_id` (UNIQUE), `auth_provider` (DEFAULT 'email'), and `avatar_url`.
+
+**Security Decisions:**
+* **Zero Trust:** Frontend Google payloads are strictly treated as untrusted. Only the `idToken` is sent, and all user claims (email, name) are decoded directly from Google's verified ticket on the backend.
+* **No Implicit Registration:** Google Login will *never* create a new account. Merchants must still go through the standard application and KYC approval pipeline before their email is recognized.
+
+**Future Compatibility:**
+* This implementation deliberately uses standard OpenID connect properties (`idToken`, `google_id`, `auth_provider`) so it can easily extend to:
+  * Customer Google Login (when a unified customer identity provider is built)
+  * Apple/Facebook login (by simply adding `apple_id`/`facebook_id` and expanding `auth_provider`)
