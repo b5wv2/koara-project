@@ -139,7 +139,7 @@ export const AppProvider = ({ children }) => {
       });
       if (response.ok) {
         setMerchants(prev => prev.filter(m => m.id !== id));
-        setOrders(prev => prev.filter(o => o.storeId !== id));
+        setOrders(prev => prev.filter(o => o.store_id !== id));
         setProducts(prev => prev.filter(p => p.storeId !== id));
         setPromos(prev => prev.filter(p => p.storeId !== id));
         return { success: true };

@@ -730,7 +730,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className="dash-card p-6">
                       <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#475569' }}>Pending Orders</div>
-                      <div className="text-4xl font-extrabold text-white">{orders.filter(o => o.storeId === storeId && o.status === 'pending').length}</div>
+                      <div className="text-4xl font-extrabold text-white">{orders.filter(o => o.store_id === storeId && o.status === 'pending').length}</div>
                     </div>
                   </div>
                 </div>
@@ -738,13 +738,13 @@ const AdminDashboard = () => {
                 {/* Orders Queue */}
                 <div className="dash-card overflow-hidden">
                   <SectionHeader title="Incoming Orders Queue" description="Review and process pending customer orders" />
-                  {orders.filter(o => o.storeId === storeId).length === 0 ? (
+                  {orders.filter(o => o.store_id === storeId).length === 0 ? (
                     <div className="koara-empty-state">
                       <Package size={32} />
                       <span>No recent orders yet.</span>
                     </div>
                   ) : (
-                    orders.filter(o => o.storeId === storeId).map(order => (
+                    orders.filter(o => o.store_id === storeId).map(order => (
                       <div key={order.id} className="px-6 py-4 transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
                         onMouseLeave={e => e.currentTarget.style.background = ''}
