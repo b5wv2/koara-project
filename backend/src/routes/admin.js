@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const notificationService = require('../services/notificationService');
 
 // GET /api/admin/kyc/pending
 router.get('/kyc/pending', async (req, res) => {
@@ -64,6 +65,10 @@ router.post('/kyc/approve', async (req, res) => {
     await client.query('UPDATE store_requests SET status = $1 WHERE id = $2', ['approved', store_id]);
 
     await client.query('COMMIT');
+    
+    // Trigger notification (doesn't throw on error)
+    await notificationService.sendStoreApproved(request.email, request.store_name, request.subdomain);
+
     res.json({ success: true, message: 'Merchant approved and created successfully.' });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -86,13 +91,17 @@ router.post('/kyc/reject', async (req, res) => {
       UPDATE store_requests 
       SET status = 'rejected', rejection_reason = $1, reviewed_at = CURRENT_TIMESTAMP
       WHERE id = $2 AND status = 'pending'
-      RETURNING id
+      RETURNING *
     `;
     const result = await db.query(updateQuery, [reason || null, store_id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Pending request not found' });
     }
+
+    const request = result.rows[0];
+    // Trigger notification (doesn't throw on error)
+    await notificationService.sendStoreRejected(request.email, request.store_name, reason);
 
     res.json({ success: true, message: 'Merchant request rejected.' });
   } catch (error) {

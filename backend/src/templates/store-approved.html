@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Application Approved - Koara</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; color: #2d3748; margin: 0; padding: 0; line-height: 1.8; -webkit-font-smoothing: antialiased; }
+        .email-wrapper { width: 100%; background-color: #f4f6f8; padding: 40px 20px; }
+        .email-container { max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0; }
+        .email-header { background-color: #0f172a; padding: 40px 30px; text-align: center; }
+        .logo { font-size: 28px; font-weight: 800; color: #ffffff; letter-spacing: 1px; margin: 0; font-family: 'Trebuchet MS', sans-serif; }
+        .logo span { color: #38bdf8; }
+        .email-body { padding: 40px 40px 35px 40px; }
+        .greeting { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
+        .intro-text { font-size: 15px; color: #4a5568; margin-bottom: 25px; }
+        .highlight-box { background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 20px; margin: 25px 0; }
+        .highlight-title { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #718096; margin-bottom: 10px; font-weight: 600; }
+        .store-details { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 5px; }
+        .store-link { color: #38bdf8; text-decoration: none; font-weight: 600; }
+        .action-button { display: inline-block; background-color: #38bdf8; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 8px; font-weight: 600; margin-top: 15px; font-size: 14px; }
+        .email-footer { background-color: #f8fafc; padding: 25px 40px; text-align: center; border-top: 1px solid #edf2f7; }
+        .footer-title { font-size: 14px; font-weight: 700; color: #4a5568; margin-bottom: 5px; }
+        .footer-sub { font-size: 12px; color: #94a3b8; }
+        .footer-sub a { color: #38bdf8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="email-header">
+                <h1 class="logo">Koara<span>.</span></h1>
+            </div>
+            <div class="email-body">
+                <div class="greeting">Congratulations!</div>
+                <div class="intro-text">
+                    We are thrilled to inform you that your application for a merchant store on Koara has been <strong>approved</strong>. 
+                    You can now access your dashboard, add products, and start selling.
+                </div>
+                <div class="highlight-box">
+                    <div class="highlight-title">Your Store Details</div>
+                    <div class="store-details">Store Name: {{store_name}}</div>
+                    <div class="store-details">Store URL: <a href="https://{{store_url}}.getkoara.com" class="store-link">{{store_url}}.getkoara.com</a></div>
+                </div>
+                <div class="intro-text">
+                    <strong>Next Steps:</strong> Log into your merchant dashboard to set up your payment details and activate your first digital products.
+                </div>
+                <div style="text-align: center;">
+                    <a href="https://dashboard.getkoara.com" class="action-button">Go to Dashboard</a>
+                </div>
+            </div>
+            <div class="email-footer">
+                <div class="footer-title">Best regards, The Koara Team</div>
+                <div class="footer-sub">Questions? Contact us at <a href="mailto:support@getkoara.com">support@getkoara.com</a></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

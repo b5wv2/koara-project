@@ -45,6 +45,7 @@ A monolithic frontend and backend communicating via a REST API, connected to a P
 | `providers` | External product providers (e.g., Reloadly) | None | `name`, `status` | Missing `api_base_url`, `auth_config`, `provider_type`. | Add configuration fields for API integration. |
 | `provider_products` | Maps provider products to platform products | `provider_id`, `product_id` | `provider_product_id`, `cost_price` | No unique constraint on `(provider_id, product_id)`. | Add unique constraint. |
 | `merchant_products` | Store-specific pricing for platform products | `store_id`, `catalog_product_id` | `selling_price`, `is_enabled` | Missing `currency_code` for multi-currency pricing. | Add `currency_code` for pricing localization. |
+| `notification_logs` | Logs all notification attempts | None | `recipient`, `type`, `channel`, `success` | None | Expand to support SMS/WhatsApp logs. |
 
 ---
 
@@ -126,6 +127,13 @@ A monolithic frontend and backend communicating via a REST API, connected to a P
     *   API changes: Added `POST /api/store/:storeId/orders` with `multer` receipt upload. Added `GET /api/merchant/orders` and `PUT /api/merchant/orders/:id/status`.
     *   Reason for change: Transition from frontend mock state to PostgreSQL-backed orders with receipt uploads, atomic transactions, and sequential numbering.
 
+*   **2026-06-27:**
+    *   Task completed: Implement Email Notification System.
+    *   Files modified: `backend/src/services/emailService.js`, `backend/src/services/notificationService.js`, `backend/src/routes/admin.js`, `backend/src/services/orderService.js`, and HTML templates.
+    *   Database changes: Created `notification_logs` table.
+    *   API changes: Notifications fire seamlessly on `/kyc/approve`, `/kyc/reject`, and order creations.
+    *   Reason for change: To deliver production-ready emails asynchronously without breaking backend workflows, allowing for future expansion to SMS/WhatsApp.
+
 ---
 
 ## 10. Architecture Decisions
@@ -138,6 +146,9 @@ A monolithic frontend and backend communicating via a REST API, connected to a P
     *   **Reason:** Ensure data consistency across validations, sequential ID generation, and order insertion. Historical fields protect orders from future product pricing changes.
     *   **Alternatives considered:** Relying on relation joins for order history.
     *   **Why selected:** Storing duplicate columns (e.g. `selling_price`, `product_name`) directly on `orders` ensures the historical snapshot remains intact even if merchant products are modified or deleted.
+*   **Decision:** Notification Service Wrapper (`notificationService.js`).
+    *   **Reason:** Encapsulates notification logic (`emailService.js` and future `smsService`) so business logic in routes/services (like `orderService.js`) remains clean.
+    *   **Resiliency:** Error catching inside the wrapper ensures email failures *never* roll back successful database transactions.
 
     ## 11. Engineering Rules
 
@@ -227,6 +238,18 @@ Every order must belong to exactly one store.
 Every merchant must only access their own orders.
 
 Order status must be enforced by the backend.
+
+---
+
+### Notification Rules
+
+Notifications must *never* break the main business workflow.
+
+Emails and other notifications must only be sent *after* successful database transactions (`COMMIT`).
+
+If a notification fails to send, the error must be caught and logged (e.g. to `notification_logs`), and the business transaction must proceed normally.
+
+Architecture must remain extensible for future channels (SMS, WhatsApp, Push) via the NotificationService wrapper.
 
 ---
 

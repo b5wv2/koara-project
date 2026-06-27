@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const notificationService = require('./notificationService');
 
 class OrderService {
   /**
@@ -19,7 +20,7 @@ class OrderService {
       await client.query('BEGIN');
 
       // 1. Validate merchant and store
-      const storeRes = await client.query('SELECT id, status FROM stores WHERE id = $1', [storeId]);
+      const storeRes = await client.query('SELECT id, status, store_name FROM stores WHERE id = $1', [storeId]);
       if (storeRes.rows.length === 0) {
         throw new Error('Store not found.');
       }
@@ -93,7 +94,16 @@ class OrderService {
       ]);
 
       await client.query('COMMIT');
-      return insertRes.rows[0];
+      
+      const newOrder = insertRes.rows[0];
+      
+      // Trigger notification
+      await notificationService.sendOrderConfirmation(customerEmail, {
+        ...newOrder,
+        store_name: storeRes.rows[0].store_name
+      });
+      
+      return newOrder;
 
     } catch (error) {
       await client.query('ROLLBACK');

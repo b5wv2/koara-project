@@ -21,21 +21,29 @@ const generateOTP = () => {
 
 /**
  * Load HTML template from filesystem and replace placeholders
- * @param {string} templateName - Name of the template file (e.g. 'verification-email.html')
- * @param {string} code - The 6-digit code
+ * @param {string} templateName - Name of the template file
+ * @param {string|object} data - The 6-digit code or a dictionary of placeholders
  * @returns {string} Rendered HTML
  */
-const getTemplate = (templateName, code) => {
+const getTemplate = (templateName, data = {}) => {
   const templatePath = path.join(__dirname, '../templates', templateName);
   let html = fs.readFileSync(templatePath, 'utf8');
 
-  html = html
-    .replace('{{digit1}}', code[0])
-    .replace('{{digit2}}', code[1])
-    .replace('{{digit3}}', code[2])
-    .replace('{{digit4}}', code[3])
-    .replace('{{digit5}}', code[4])
-    .replace('{{digit6}}', code[5]);
+  if (typeof data === 'string' && data.length === 6) {
+    // Legacy support for 6-digit OTP
+    html = html
+      .replace('{{digit1}}', data[0])
+      .replace('{{digit2}}', data[1])
+      .replace('{{digit3}}', data[2])
+      .replace('{{digit4}}', data[3])
+      .replace('{{digit5}}', data[4])
+      .replace('{{digit6}}', data[5]);
+  } else if (typeof data === 'object') {
+    Object.keys(data).forEach(key => {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      html = html.replace(regex, data[key]);
+    });
+  }
 
   return html;
 };
@@ -45,24 +53,24 @@ const getTemplate = (templateName, code) => {
  * @param {string} to - Recipient email
  * @param {string} subject - Email subject
  * @param {string} templateName - Template to use
- * @param {string} code - The code to render
+ * @param {string|object} data - The code or data to render
  */
-const sendEmail = async (to, subject, templateName, code) => {
+const sendEmail = async (to, subject, templateName, data) => {
   if (!resendApiKey) {
-    console.warn('RESEND_API_KEY is not set. Email not sent. Code generated was:', code);
+    console.warn('RESEND_API_KEY is not set. Email not sent. Data generated was:', data);
     return true; // Pretend it succeeded for dev mode without key
   }
 
-  const html = getTemplate(templateName, code);
+  const html = getTemplate(templateName, data);
 
   try {
-    const data = await resend.emails.send({
-      from: FROM_EMAIL,
+    const resData = await resend.emails.send({
+      from: FROM_EMAIL || 'onboarding@resend.dev',
       to,
       subject,
       html,
     });
-    console.log('Email sent successfully:', data.id);
+    console.log('Email sent successfully:', resData.id);
     return true;
   } catch (error) {
     console.error('Error sending email via Resend:', error);
