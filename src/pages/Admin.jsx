@@ -69,8 +69,8 @@ const AdminDashboard = () => {
   const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct } = useAppContext();
 
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(role === 'admin' ? 'dashboard' : 'overview');
-  const [editingMerchantPrice, setEditingMerchantPrice] = useState({});
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [kycPendingLoading, setKycPendingLoading] = useState(false);
   const [customizingProduct, setCustomizingProduct] = useState(null);
 
   // Modals
