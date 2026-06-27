@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2 } from 'lucide-react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
@@ -69,8 +69,9 @@ const AdminDashboard = () => {
   const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct } = useAppContext();
 
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [kycPendingLoading, setKycPendingLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState(role === 'admin' ? 'dashboard' : 'overview');
+  const [editingMerchantPrice, setEditingMerchantPrice] = useState({});
+  const [customizingProduct, setCustomizingProduct] = useState(null);
 
   // Modals
   const [selectedReceipt, setSelectedReceipt] = useState(null);
@@ -793,6 +794,7 @@ const AdminDashboard = () => {
                         <th>Product Name</th>
                         <th>Category</th>
                         <th>Selling Price ($)</th>
+                        <th className="text-right">Customize</th>
                         <th className="text-right">Save</th>
                       </tr>
                     </thead>
@@ -834,10 +836,32 @@ const AdminDashboard = () => {
                             </td>
                             <td className="text-right">
                               <button
+                                onClick={() => {
+                                  setCustomizingProduct({
+                                    ...product,
+                                    custom_title: product.custom_title || '',
+                                    custom_description: product.custom_description || '',
+                                    custom_image_url: product.custom_image_url || '',
+                                    previewImage: product.custom_image_url || product.image_url || ''
+                                  });
+                                }}
+                                className="dash-btn dash-btn-secondary"
+                              >
+                                <Edit2 size={14} className="mr-1 inline" /> Customize
+                              </button>
+                            </td>
+                            <td className="text-right">
+                              <button
                                 onClick={async () => {
                                   const price = parseFloat(editingMerchantPrice[product.id] ?? product.selling_price);
                                   if (!price || price <= 0) return alert('Please enter a valid price');
-                                  await updateMerchantProduct(product.id, storeId, { selling_price: price, is_enabled: isEnabled });
+                                  await updateMerchantProduct(product.id, storeId, { 
+                                    selling_price: price, 
+                                    is_enabled: isEnabled,
+                                    custom_title: product.custom_title,
+                                    custom_description: product.custom_description,
+                                    custom_image_url: product.custom_image_url
+                                  });
                                   setEditingMerchantPrice(prev => { const n = { ...prev }; delete n[product.id]; return n; });
                                   await fetchMerchantPlatformProducts(storeId);
                                 }}
@@ -1077,6 +1101,129 @@ const AdminDashboard = () => {
             Submit Request
           </button>
         </form>
+      </Modal>
+
+      {/* Customize Product Modal */}
+      <Modal isOpen={!!customizingProduct} onClose={() => setCustomizingProduct(null)} title="Customize Product Display">
+        {customizingProduct && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-400">Override how this product looks on your storefront. Leave blank to use defaults.</p>
+            
+            <div>
+              <label className="koara-label">Custom Title</label>
+              <input 
+                type="text" 
+                className="koara-input" 
+                placeholder={customizingProduct.name}
+                value={customizingProduct.custom_title}
+                onChange={e => setCustomizingProduct(p => ({ ...p, custom_title: e.target.value }))}
+              />
+            </div>
+            
+            <div>
+              <label className="koara-label">Custom Description</label>
+              <textarea 
+                className="koara-input min-h-[80px]" 
+                placeholder={customizingProduct.description || 'Default description...'}
+                value={customizingProduct.custom_description}
+                onChange={e => setCustomizingProduct(p => ({ ...p, custom_description: e.target.value }))}
+              />
+            </div>
+            
+            <div>
+              <label className="koara-label">Custom Image</label>
+              <div className="flex items-center gap-4 mt-2">
+                <div className="w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {customizingProduct.previewImage ? (
+                    <img src={customizingProduct.previewImage.startsWith('http') || customizingProduct.previewImage.startsWith('data:') || customizingProduct.previewImage.startsWith('/') ? customizingProduct.previewImage : `${API_BASE_URL}${customizingProduct.previewImage}`} alt="Preview" className="max-h-full max-w-full object-contain" />
+                  ) : (
+                    <ImageIcon size={24} className="text-slate-500" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <label className="koara-upload-zone block relative cursor-pointer py-3 text-center transition-colors" style={{ background: 'rgba(59,130,246,0.05)', border: '1px dashed rgba(59,130,246,0.3)', borderRadius: '12px' }}>
+                    <input 
+                      type="file" 
+                      accept="image/jpeg,image/png,image/webp"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        
+                        setCustomizingProduct(p => ({ ...p, uploading: true }));
+                        const formData = new FormData();
+                        formData.append('image', file);
+                        
+                        try {
+                          const res = await fetch(`${API_BASE_URL}/api/merchant/products/upload-image`, {
+                            method: 'POST',
+                            body: formData
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setCustomizingProduct(p => ({ 
+                              ...p, 
+                              custom_image_url: data.url, 
+                              previewImage: data.url,
+                              uploading: false 
+                            }));
+                          } else {
+                            alert(data.error || 'Upload failed');
+                            setCustomizingProduct(p => ({ ...p, uploading: false }));
+                          }
+                        } catch (err) {
+                          alert('Error uploading image');
+                          setCustomizingProduct(p => ({ ...p, uploading: false }));
+                        }
+                      }}
+                    />
+                    {customizingProduct.uploading ? (
+                      <span className="text-sm font-medium" style={{ color: '#60A5FA' }}>Uploading...</span>
+                    ) : (
+                      <span className="text-sm font-medium flex items-center justify-center gap-2" style={{ color: '#60A5FA' }}>
+                        <UploadCloud size={16} /> Upload Custom Image
+                      </span>
+                    )}
+                  </label>
+                  {customizingProduct.custom_image_url && (
+                    <button 
+                      onClick={() => setCustomizingProduct(p => ({ ...p, custom_image_url: '', previewImage: p.image_url || '' }))}
+                      className="text-xs font-medium w-full text-left transition-colors"
+                      style={{ color: '#F87171' }}
+                    >
+                      Remove Custom Image
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="pt-4 flex justify-end gap-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <button onClick={() => setCustomizingProduct(null)} className="dash-btn dash-btn-secondary">Cancel</button>
+              <button 
+                onClick={async () => {
+                  try {
+                    await updateMerchantProduct(customizingProduct.id, storeId, {
+                      selling_price: customizingProduct.selling_price || 0,
+                      is_enabled: customizingProduct.is_enabled ?? true,
+                      custom_title: customizingProduct.custom_title,
+                      custom_description: customizingProduct.custom_description,
+                      custom_image_url: customizingProduct.custom_image_url
+                    });
+                    await fetchMerchantPlatformProducts(storeId);
+                    setCustomizingProduct(null);
+                  } catch (err) {
+                    alert('Failed to save custom changes');
+                  }
+                }} 
+                className="dash-btn dash-btn-primary"
+                disabled={customizingProduct.uploading}
+              >
+                Save Customizations
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Receipt Review Modal */}

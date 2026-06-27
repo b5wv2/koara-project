@@ -190,6 +190,9 @@ const createMerchantProductsTableQuery = `
     catalog_product_id INTEGER NOT NULL REFERENCES platform_products(id),
     selling_price NUMERIC(10,2) NOT NULL,
     is_enabled BOOLEAN DEFAULT TRUE,
+    custom_title VARCHAR(255),
+    custom_description TEXT,
+    custom_image_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(store_id, catalog_product_id)
   );

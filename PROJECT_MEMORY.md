@@ -134,6 +134,13 @@ A monolithic frontend and backend communicating via a REST API, connected to a P
     *   API changes: Notifications fire seamlessly on `/kyc/approve`, `/kyc/reject`, and order creations.
     *   Reason for change: To deliver production-ready emails asynchronously without breaking backend workflows, allowing for future expansion to SMS/WhatsApp.
 
+*   **2026-06-27:**
+    *   Task completed: Merchant Product Customization.
+    *   Files modified: `backend/src/config/initDb.js`, `backend/src/routes/merchantProducts.js`, `backend/src/routes/store.js`, `src/pages/Admin.jsx`.
+    *   Database changes: Added `custom_title`, `custom_description`, `custom_image_url` to `merchant_products`.
+    *   API changes: Updated `PUT /api/merchant/products/:productId` to save customizations. Added `POST /api/merchant/products/upload-image` for custom image uploads.
+    *   Reason for change: Allow merchants to white-label individual product presentations directly on their storefronts without duplicating the platform catalog data.
+
 ---
 
 ## 10. Architecture Decisions
@@ -149,6 +156,9 @@ A monolithic frontend and backend communicating via a REST API, connected to a P
 *   **Decision:** Notification Service Wrapper (`notificationService.js`).
     *   **Reason:** Encapsulates notification logic (`emailService.js` and future `smsService`) so business logic in routes/services (like `orderService.js`) remains clean.
     *   **Resiliency:** Error catching inside the wrapper ensures email failures *never* roll back successful database transactions.
+*   **Decision:** Smart Product Data Fallback via COALESCE.
+    *   **Reason:** Storefronts need to display a merchant's custom product title/image/description if it exists, otherwise fall back to the global platform values.
+    *   **Implementation:** Used PostgreSQL `COALESCE` directly in the database join (`backend/src/routes/store.js`), rather than doing fallback logic on the frontend. This prevents Storefront React code from requiring any architectural redesign and ensures a single source of truth from the API response.
 
     ## 11. Engineering Rules
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تأكيد الطلب - {{store_name}}</title>
+    <title>اكتمل طلبك - {{store_name}}</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; color: #2d3748; margin: 0; padding: 0; line-height: 1.8; -webkit-font-smoothing: antialiased; direction: rtl; }
@@ -20,7 +20,7 @@
         .order-label { color: #64748b; font-weight: 500; }
         .order-value { color: #0f172a; font-weight: 600; text-align: left; }
         .order-total { display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 16px; font-weight: 700; color: #0f172a; }
-        .status-box { font-weight: 500; color: #0f172a; background: #e0f2fe; border-right: 4px solid #0284c7; padding: 15px; margin-top: 25px; border-radius: 4px; }
+        .status-box { font-weight: 500; color: #1e3a8a; background: #dbeafe; border-right: 4px solid #3b82f6; padding: 15px; margin-top: 25px; border-radius: 4px; }
         .email-footer { background-color: #f8fafc; padding: 30px 40px; text-align: center; border-top: 1px solid #edf2f7; }
         .footer-title { font-size: 14px; font-weight: 700; color: #4a5568; margin-bottom: 10px; }
         .footer-sub { font-size: 13px; color: #64748b; margin-bottom: 15px; }
@@ -40,7 +40,7 @@
             <div class="email-body">
                 <div class="greeting">مرحباً {{customer_name}}،</div>
                 <div class="intro-text">
-                    لقد استلمنا طلبك بنجاح. يتم الآن مراجعة الطلب من قبل فريق العمل وسيتم إعلامك بالخطوة القادمة قريباً.
+                    شكراً لك! لقد اكتمل طلبك بنجاح، وتم تسليم منتجك الرقمي. نأمل أن تستمتع بتجربتك.
                 </div>
                 
                 <div class="highlight-box">
@@ -64,8 +64,8 @@
                 </div>
                 
                 <div class="status-box">
-                    <strong>حالة الطلب: قيد المراجعة</strong><br>
-                    سيتم مراجعة عملية الدفع الخاصة بك. بمجرد الموافقة، سيتم تسليم منتجك الرقمي مباشرة.
+                    <strong>حالة الطلب: مكتمل</strong><br>
+                    تم إتمام عملية الشراء بنجاح. يرجى مراجعة بريدك الإلكتروني الآخر أو تفاصيل حسابك للحصول على تفاصيل التفعيل الخاصة بمنتجك.
                 </div>
             </div>
             

@@ -152,10 +152,10 @@ router.get('/:storeId/catalog', async (req, res) => {
     const platformProductsResult = await db.query(`
       SELECT 
         pp.id,
-        pp.name,
+        COALESCE(NULLIF(mp.custom_title, ''), pp.name) AS name,
         pp.category,
-        pp.image_url,
-        pp.description,
+        COALESCE(NULLIF(mp.custom_image_url, ''), pp.image_url) AS image_url,
+        COALESCE(NULLIF(mp.custom_description, ''), pp.description) AS description,
         mp.selling_price
       FROM platform_products pp
       JOIN merchant_products mp ON mp.catalog_product_id = pp.id
