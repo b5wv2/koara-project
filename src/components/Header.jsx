@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
+import KoaraLogo from '../assets/koara-logo.svg';
 
 const Header = ({ onStartSelling, onSignIn }) => {
   const { language, setLanguage, t } = useAppContext();
@@ -14,10 +15,7 @@ const Header = ({ onStartSelling, onSignIn }) => {
     <header className="header-glass sticky top-0 z-50">
       <div className="flex flex-wrap items-center justify-between px-4 sm:px-8 py-4 sm:py-5 max-w-7xl mx-auto w-full">
         <div className="flex-1 flex items-center justify-start gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)' }}>
-            K
-          </div>
-          <span className="font-bold text-xl tracking-tight text-white">Koara</span>
+          <img src={KoaraLogo} alt="Koara" className="h-7 sm:h-8 w-auto" />
         </div>
 
         {/* Mobile Menu Toggle Button */}

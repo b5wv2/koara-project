@@ -18,7 +18,7 @@ const StepIndicator = ({ current, total }) => (
           width: i + 1 === current ? 24 : 8,
           height: 8,
           borderRadius: 9999,
-          background: i + 1 <= current ? '#2563EB' : 'rgba(255,255,255,0.1)',
+          background: i + 1 <= current ? 'linear-gradient(135deg, #2563EB 11%, #7C3AED 79%)' : 'rgba(255,255,255,0.1)',
         }}
       />
     ))}

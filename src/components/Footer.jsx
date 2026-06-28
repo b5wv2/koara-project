@@ -49,7 +49,7 @@ const Footer = () => {
           <div className="text-slate-500">&copy; 2026 Koara · Multi-tenant commerce</div>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
             <span className="text-slate-600">v0.1</span>
-            <div className="px-3 py-1.5 rounded-full flex items-center gap-2 font-medium text-xs text-white" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', boxShadow: '0 0 15px -3px rgba(37,99,235,0.3)' }}>
+            <div className="px-3 py-1.5 rounded-full flex items-center gap-2 font-medium text-xs text-white" style={{ background: 'linear-gradient(135deg, #2563EB 11%, #7C3AED 79%)', boxShadow: '0 0 15px -3px rgba(124, 58, 237, 0.3)' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>

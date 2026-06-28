@@ -136,7 +136,7 @@ body {
 /* ─── Buttons (Landing / Pill) ─── */
 
 .btn-primary {
-  background: linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #2563EB 100%);
+  background: linear-gradient(135deg, #2563EB 11%, #7C3AED 79%);
   background-size: 200% 200%;
   color: #fff;
   font-weight: 700;
@@ -187,12 +187,12 @@ body {
 }
 
 .dash-btn-primary {
-  background: linear-gradient(135deg, #2563EB, #3B82F6);
+  background: linear-gradient(135deg, #2563EB 11%, #7C3AED 79%);
   color: #fff;
-  box-shadow: 0 4px 14px -4px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 4px 14px -4px rgba(124, 58, 237, 0.45);
 }
 .dash-btn-primary:hover {
-  box-shadow: 0 6px 20px -4px rgba(37, 99, 235, 0.6);
+  box-shadow: 0 6px 20px -4px rgba(124, 58, 237, 0.6);
   transform: translateY(-1px);
 }
 

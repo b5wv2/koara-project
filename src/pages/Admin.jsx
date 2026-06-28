@@ -3,6 +3,7 @@ import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as Imag
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
+import KoaraLogo from '../assets/koara-logo.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
 
@@ -313,9 +314,7 @@ const AdminDashboard = () => {
         {/* Logo */}
         <div className="h-14 flex items-center px-5 shrink-0 justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)' }}>
-              K
-            </div>
+            <img src={KoaraLogo} alt="Koara" className="h-6 w-auto" />
             <div>
               <div className="font-bold text-sm text-white leading-none">Koara</div>
               <div className="text-[10px] mt-0.5" style={{ color: '#475569' }}>
