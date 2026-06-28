@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
@@ -39,7 +39,7 @@ const upload = multer({
 const checkRateLimit = async (email) => {
   const recentCheck = await db.query(`SELECT COUNT(*) FROM audit_logs WHERE email = $1 AND action IN ('OTP_GENERATED', 'OTP_RESENT') AND created_at > NOW() - INTERVAL '15 minutes'`, [email]);
   if (parseInt(recentCheck.rows[0].count) >= 3) return false;
-  
+
   const dailyCheck = await db.query(`SELECT COUNT(*) FROM audit_logs WHERE email = $1 AND action IN ('OTP_GENERATED', 'OTP_RESENT') AND created_at > NOW() - INTERVAL '24 hours'`, [email]);
   if (parseInt(dailyCheck.rows[0].count) >= 10) return false;
 
@@ -83,32 +83,32 @@ const handleFailedAttempt = async (email, verificationId, currentOTPAttempts) =>
   const lockQuery = await db.query(`SELECT * FROM email_locks WHERE email = $1`, [email]);
   let newFailedAttempts = 1;
   let newLockCount = 0;
-  
+
   if (lockQuery.rows.length === 0) {
     await db.query(`INSERT INTO email_locks (email, failed_attempts) VALUES ($1, $2)`, [email, newFailedAttempts]);
   } else {
     const lock = lockQuery.rows[0];
     newFailedAttempts = lock.failed_attempts + 1;
     newLockCount = lock.lock_count;
-    
+
     if (newFailedAttempts >= 5) {
       newLockCount += 1;
       let penaltyMinutes = 15; // 1st lock
       if (newLockCount === 2) penaltyMinutes = 60; // 2nd lock
       else if (newLockCount >= 3) penaltyMinutes = 24 * 60; // 3rd+ lock
-      
+
       const blockedUntil = new Date(Date.now() + penaltyMinutes * 60000);
       await db.query(
         `UPDATE email_locks SET failed_attempts = 0, lock_count = $1, blocked_until = $2 WHERE email = $3`,
         [newLockCount, blockedUntil, email]
       );
-      
+
       return { isLocked: true, blocked_until: blockedUntil };
     } else {
       await db.query(`UPDATE email_locks SET failed_attempts = $1 WHERE email = $2`, [newFailedAttempts, email]);
     }
   }
-  
+
   return { isLocked: false, blocked_until: null };
 };
 
@@ -153,7 +153,7 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
   // Let's modify signup to NOT fail if we delete it, but how do we know they verified?
   // Actually, we can keep the `verified = TRUE` record, but delete it inside `/signup`!
   // That's much safer. So for registration, verify marks it true. Signup deletes it.
-  
+
   try {
     const verifCheck = await db.query(
       `SELECT id FROM email_verifications WHERE email = $1 AND type = 'registration' AND verified = TRUE`,
@@ -193,9 +193,9 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
       RETURNING id, applicant_name as name, email, store_name, status, created_at, subdomain;
     `;
     const requestResult = await client.query(insertRequestQuery, [
-      name.trim(), 
-      email.trim(), 
-      passwordHash, 
+      name.trim(),
+      email.trim(),
+      passwordHash,
       store_name.trim(),
       bank_name.trim(),
       account_holder_name.trim(),
@@ -240,10 +240,10 @@ router.post('/google-login', async (req, res) => {
       idToken,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-    
+
     const payload = ticket.getPayload();
     const { sub: googleId, email, name, picture: avatarUrl } = payload;
-    
+
     if (!email) {
       return res.status(400).json({ message: 'Email not provided by Google.' });
     }
@@ -256,15 +256,15 @@ router.post('/google-login', async (req, res) => {
       // User is not in users table. Check store_requests table.
       const requestQuery = 'SELECT * FROM store_requests WHERE email = $1';
       const requestResult = await db.query(requestQuery, [email.trim()]);
-      
+
       if (requestResult.rows.length > 0) {
         // User has a pending or rejected store request
         const reqStore = requestResult.rows[0];
         return res.status(200).json({
-           isStoreRequest: true,
-           status: reqStore.status,
-           rejection_reason: reqStore.rejection_reason,
-           store_request: reqStore
+          isStoreRequest: true,
+          status: reqStore.status,
+          rejection_reason: reqStore.rejection_reason,
+          store_request: reqStore
         });
       }
 
@@ -353,21 +353,21 @@ router.post('/login', async (req, res) => {
     if (userResult.rows.length === 0) {
       const requestQuery = 'SELECT * FROM store_requests WHERE email = $1';
       const requestResult = await db.query(requestQuery, [email.trim()]);
-      
+
       if (requestResult.rows.length === 0) {
         return res.status(401).json({ message: 'Invalid credentials. Please try again.' });
       }
-      
+
       const reqStore = requestResult.rows[0];
       const isMatchReq = await bcrypt.compare(password, reqStore.password_hash);
       if (!isMatchReq) {
-         return res.status(401).json({ message: 'Invalid credentials. Please try again.' });
+        return res.status(401).json({ message: 'Invalid credentials. Please try again.' });
       }
-      
+
       return res.status(200).json({
-         status: reqStore.status,
-         rejection_reason: reqStore.rejection_reason,
-         store_request: reqStore
+        status: reqStore.status,
+        rejection_reason: reqStore.rejection_reason,
+        store_request: reqStore
       });
     }
 
@@ -460,9 +460,9 @@ router.post('/send-registration-code', async (req, res) => {
   try {
     const lockStatus = await checkGlobalEmailLock(email);
     if (lockStatus.isLocked) {
-      return res.status(429).json({ 
+      return res.status(429).json({
         error: 'Too many failed verification attempts. Please try again later.',
-        blocked_until: lockStatus.blocked_until 
+        blocked_until: lockStatus.blocked_until
       });
     }
 
@@ -514,9 +514,9 @@ router.post('/verify-registration-code', async (req, res) => {
     // 2. Global Email Lock check
     const lockStatus = await checkGlobalEmailLock(email);
     if (lockStatus.isLocked) {
-      return res.status(429).json({ 
+      return res.status(429).json({
         error: 'Account verification temporarily locked.',
-        blocked_until: lockStatus.blocked_until 
+        blocked_until: lockStatus.blocked_until
       });
     }
 
@@ -542,9 +542,9 @@ router.post('/verify-registration-code', async (req, res) => {
     if (verification.code !== code) {
       await logAudit(email, 'OTP_FAILED', req.ip);
       const lockResult = await handleFailedAttempt(email, verification.id, verification.attempts);
-      
+
       if (lockResult.isLocked) {
-        return res.status(429).json({ 
+        return res.status(429).json({
           error: 'Too many failed attempts. Verification has been temporarily locked.',
           blocked_until: lockResult.blocked_until
         });
@@ -556,7 +556,7 @@ router.post('/verify-registration-code', async (req, res) => {
     // Success (keep record for signup to use, but mark verified. Clear global locks.)
     await db.query(`UPDATE email_verifications SET verified = TRUE WHERE id = $1`, [verification.id]);
     await db.query(`DELETE FROM email_locks WHERE email = $1`, [email]);
-    
+
     await logAudit(email, 'OTP_VERIFIED', req.ip);
     await logAudit(email, 'ACCOUNT_VERIFICATION_COMPLETED', req.ip);
 
@@ -575,9 +575,9 @@ router.post('/forgot-password', async (req, res) => {
   try {
     const lockStatus = await checkGlobalEmailLock(email);
     if (lockStatus.isLocked) {
-      return res.status(429).json({ 
+      return res.status(429).json({
         error: 'Too many failed verification attempts. Please try again later.',
-        blocked_until: lockStatus.blocked_until 
+        blocked_until: lockStatus.blocked_until
       });
     }
 
@@ -647,9 +647,9 @@ router.post('/verify-reset-code', async (req, res) => {
     if (verification.code !== code) {
       await logAudit(email, 'OTP_FAILED', req.ip);
       const lockResult = await handleFailedAttempt(email, verification.id, verification.attempts);
-      
+
       if (lockResult.isLocked) {
-        return res.status(429).json({ 
+        return res.status(429).json({
           error: 'Too many failed attempts. Verification has been temporarily locked.',
           blocked_until: lockResult.blocked_until
         });
@@ -661,7 +661,7 @@ router.post('/verify-reset-code', async (req, res) => {
     // DO NOT delete it here, it needs to be retained for POST /reset-password
     await db.query(`UPDATE email_verifications SET verified = TRUE WHERE id = $1`, [verification.id]);
     await db.query(`DELETE FROM email_locks WHERE email = $1`, [email]);
-    
+
     await logAudit(email, 'OTP_VERIFIED', req.ip);
     res.status(200).json({ success: true, message: 'Code verified successfully.' });
   } catch (error) {
@@ -684,17 +684,17 @@ router.post('/reset-password', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(400).json({ error: 'Invalid or expired reset code.' });
     }
-    
+
     const verification = result.rows[0];
-    
+
     if (verification.code !== code) {
-       return res.status(400).json({ error: 'Invalid reset code.' });
+      return res.status(400).json({ error: 'Invalid reset code.' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
     const updateUsers = await db.query(`UPDATE users SET password_hash = $1 WHERE email = $2 RETURNING id`, [passwordHash, email]);
-    
+
     if (updateUsers.rows.length === 0) {
       await db.query(`UPDATE store_requests SET password_hash = $1 WHERE email = $2`, [passwordHash, email]);
     }
