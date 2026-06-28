@@ -253,7 +253,26 @@ router.post('/google-login', async (req, res) => {
     const userResult = await db.query(userQuery, [email.trim()]);
 
     if (userResult.rows.length === 0) {
-      return res.status(401).json({ message: 'This Google account is not linked to any merchant account.' });
+      // Account does not exist. Trigger OTP verification automatically.
+      const code = generateOTP();
+      const expiresAt = new Date(Date.now() + 10 * 60000); // 10 minutes
+
+      // Delete existing unused registration codes
+      await db.query(`DELETE FROM email_verifications WHERE email = $1 AND type = 'registration'`, [email]);
+
+      await db.query(
+        `INSERT INTO email_verifications (email, code, type, expires_at) VALUES ($1, $2, 'registration', $3)`,
+        [email, code, expiresAt]
+      );
+
+      const sent = await sendEmail(email, 'Verify Your Email - Koara', 'verification-email.html', code);
+      if (!sent) {
+        return res.status(500).json({ message: 'Failed to send verification email. Please try again later.' });
+      }
+
+      await logAudit(email, 'OTP_GENERATED_GOOGLE_SIGNUP', req.ip);
+
+      return res.status(200).json({ status: 'requires_otp', message: 'Verification code sent to your Google email.' });
     }
 
     let user = userResult.rows[0];
@@ -299,6 +318,88 @@ router.post('/google-login', async (req, res) => {
 
   } catch (error) {
     console.error('Google login verification failed:', error.message);
+    return res.status(401).json({ message: 'Invalid Google Token. Please try again.' });
+  }
+});
+
+// POST /google-register route
+router.post('/google-register', async (req, res) => {
+  const { idToken, code } = req.body;
+
+  if (!idToken || !code) {
+    return res.status(400).json({ message: 'Google ID Token and verification code are required.' });
+  }
+
+  try {
+    // 1. Verify Google token again
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture: avatarUrl } = payload;
+    
+    if (!email) return res.status(400).json({ message: 'Email not provided by Google.' });
+
+    // 2. Verify OTP
+    const verifCheck = await db.query(
+      `SELECT * FROM email_verifications WHERE email = $1 AND code = $2 AND type = 'registration' AND expires_at > NOW()`,
+      [email.trim(), code]
+    );
+
+    if (verifCheck.rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired verification code.' });
+    }
+
+    const otpId = verifCheck.rows[0].id;
+
+    // 3. Create user account
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Random strong password hash for Google users since they don't have a password
+      const randomPassword = require('crypto').randomBytes(32).toString('hex');
+      const passwordHash = await bcrypt.hash(randomPassword, 10);
+
+      const insertUserQuery = `
+        INSERT INTO users (name, email, password_hash, role, status, google_id, auth_provider, avatar_url)
+        VALUES ($1, $2, $3, 'merchant', 'active', $4, 'google', $5)
+        RETURNING id, name, email, role, status;
+      `;
+      const userResult = await client.query(insertUserQuery, [name, email.trim(), passwordHash, googleId, avatarUrl]);
+      const user = userResult.rows[0];
+
+      // Clean up OTP
+      await client.query(`DELETE FROM email_verifications WHERE id = $1`, [otpId]);
+      await client.query(`DELETE FROM email_locks WHERE email = $1`, [email.trim()]);
+
+      await client.query('COMMIT');
+
+      // 4. Log in
+      return res.status(200).json({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        },
+        store: null
+      });
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Google register transaction failed:', err.message);
+      if (err.code === '23505') {
+        return res.status(409).json({ message: 'Email address already registered.' });
+      }
+      return res.status(500).json({ message: 'Database error occurred during registration.' });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Google register verification failed:', error.message);
     return res.status(401).json({ message: 'Invalid Google Token. Please try again.' });
   }
 });

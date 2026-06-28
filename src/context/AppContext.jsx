@@ -127,6 +127,114 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const googleLogin = async (idToken) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.status === 'requires_otp') {
+          return { success: true, requiresOtp: true, message: data.message };
+        }
+        
+        // Construct user state profile
+        const sessionUser = {
+          id: data.user.id,
+          role: data.user.role === 'super_admin' ? 'admin' : data.user.role,
+          email: data.user.email,
+          name: data.user.name,
+          storeId: data.store ? data.store.id : null,
+          storeName: data.store ? data.store.store_name : null
+        };
+
+        setUser(sessionUser);
+        setStore(data.store);
+
+        if (data.store) {
+          setMerchants(prev => {
+            const exists = prev.some(m => m.id === data.store.id);
+            if (!exists) {
+              return [
+                ...prev,
+                {
+                  id: data.store.id,
+                  name: data.store.store_name,
+                  email: data.user.email,
+                  balance: parseFloat(data.store.balance) || 0.00,
+                  active: data.store.status === 'active',
+                  subdomain: data.store.subdomain,
+                  logoUrl: null,
+                  bankName: data.store.bank_name || 'Chase Bank',
+                  bankAccountName: data.store.account_name || `${data.store.store_name} LLC`,
+                  bankAccountNumber: data.store.account_no || '1234567890'
+                }
+              ];
+            } else {
+              return prev.map(m => m.id === data.store.id ? {
+                ...m,
+                name: data.store.store_name,
+                active: data.store.status === 'active',
+                subdomain: data.store.subdomain,
+                bankName: data.store.bank_name || m.bankName,
+                bankAccountName: data.store.account_name || m.bankAccountName,
+                bankAccountNumber: data.store.account_no || m.bankAccountNumber
+              } : m);
+            }
+          });
+        }
+
+        return { success: true, requiresOtp: false };
+      } else {
+        return { success: false, message: data.message || data.error || 'Google Login failed' };
+      }
+    } catch (err) {
+      console.error('Google Login error:', err);
+      return { success: false, message: 'Server connection error' };
+    }
+  };
+
+  const googleRegister = async (idToken, code) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/google-register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken, code })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const sessionUser = {
+          id: data.user.id,
+          role: data.user.role === 'super_admin' ? 'admin' : data.user.role,
+          email: data.user.email,
+          name: data.user.name,
+          storeId: null,
+          storeName: null
+        };
+
+        setUser(sessionUser);
+        setStore(null);
+
+        return { success: true };
+      } else {
+        return { success: false, message: data.error || data.message || 'Google Registration failed' };
+      }
+    } catch (err) {
+      console.error('Google Register error:', err);
+      return { success: false, message: 'Server connection error' };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setStore(null);
@@ -535,7 +643,7 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      user, store, login, logout,
+      user, store, login, googleLogin, googleRegister, logout,
       language, setLanguage,
       t,
       merchants, setMerchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, toggleStoreActive, updateMerchantBanking,

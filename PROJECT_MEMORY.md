@@ -141,6 +141,13 @@ A monolithic frontend and backend communicating via a REST API, connected to a P
     *   API changes: Updated `PUT /api/merchant/products/:productId` to save customizations. Added `POST /api/merchant/products/upload-image` for custom image uploads.
     *   Reason for change: Allow merchants to white-label individual product presentations directly on their storefronts without duplicating the platform catalog data.
 
+*   **2026-06-27:**
+    *   Task completed: Google Authentication Flow (Phase 1) Redux.
+    *   Files modified: `backend/src/routes/auth.js`, `src/context/AppContext.jsx`, `src/components/LoginModal.jsx`.
+    *   Database changes: None beyond previous schema updates.
+    *   API changes: Updated `POST /api/auth/google-login` to handle new users by generating/sending OTPs (`status: requires_otp`). Added `POST /api/auth/google-register` to verify OTP and auto-create the user account.
+    *   Reason for change: Fixed an infinite loading bug caused by missing context exports, and completely redesigned the Google Auth flow to allow new users to bypass manual registration fields by using an integrated OTP verification step.
+
 ---
 
 ## 10. Architecture Decisions
@@ -307,7 +314,7 @@ PROJECT_MEMORY.md must always remain synchronized with the actual codebase.
 
 **Security Decisions:**
 * **Zero Trust:** Frontend Google payloads are strictly treated as untrusted. Only the `idToken` is sent, and all user claims (email, name) are decoded directly from Google's verified ticket on the backend.
-* **No Implicit Registration:** Google Login will *never* create a new account. Merchants must still go through the standard application and KYC approval pipeline before their email is recognized.
+* **Automatic Registration via OTP:** Google Login integrates natively with the email verification process. If a Google account is unknown, the backend automatically issues an OTP to that email. Upon verification, the merchant account is automatically provisioned, bypassing the manual registration and KYC waitlist queue.
 
 **Future Compatibility:**
 * This implementation deliberately uses standard OpenID connect properties (`idToken`, `google_id`, `auth_provider`) so it can easily extend to:
