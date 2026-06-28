@@ -20,10 +20,7 @@ export const AppProvider = ({ children }) => {
   };
 
 
-  const [merchants, setMerchants] = useState([
-    { id: 1, name: 'Alfa Store', email: 'alfastore@gmail.com', balance: 150.00, active: true, subdomain: 'alfastore', logoUrl: null, bankName: 'Chase Bank', bankAccountName: 'Alfa Store LLC', bankAccountNumber: '1234567890' },
-    { id: 2, name: 'Pro Gaming Cards', email: 'pro@example.com', balance: 0.00, active: true, subdomain: 'procards', logoUrl: null, bankName: 'Chase Bank', bankAccountName: 'Pro Gaming LLC', bankAccountNumber: '9876543210' },
-  ]);
+  const [merchants, setMerchants] = useState([]);
 
   const [kycApplications, setKycApplications] = useState([
     { id: 99, storeName: 'Test Store', applicant: 'Awad Alkrim', status: 'pending', docUrl: 'https://via.placeholder.com/400x250?text=Mock+ID+Passport' }
@@ -116,11 +113,6 @@ export const AppProvider = ({ children }) => {
       if (email === 'admin@gmil.com' && password === 'admin1234') {
         setUser({ role: 'admin', email });
         setStore(null);
-        return { success: true };
-      }
-      if (email === 'alfastore@gmail.com' && password === 'store1234') {
-        setUser({ role: 'merchant', email, storeId: 1, storeName: 'Alfa Store' });
-        setStore({ id: 1, store_name: 'Alfa Store', subdomain: 'alfastore', status: 'active', bank_name: 'Chase Bank', account_no: '1234567890', account_name: 'Alfa Store LLC' });
         return { success: true };
       }
       return { success: false, message: 'Connection failed. Please ensure the backend server is running.' };

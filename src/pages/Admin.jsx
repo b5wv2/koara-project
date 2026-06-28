@@ -726,7 +726,7 @@ const AdminDashboard = () => {
                     <div className="dash-card p-6">
                       <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#475569' }}>Store URL</div>
                       <div className="text-sm font-bold break-all" style={{ color: '#60A5FA' }}>
-                        {store?.subdomain ? `${store.subdomain}.getkoara.com` : 'alfastore.getkoara.com'}
+                        {store?.subdomain ? `${store.subdomain}.getkoara.com` : 'No store available'}
                       </div>
                     </div>
                     <div className="dash-card p-6">

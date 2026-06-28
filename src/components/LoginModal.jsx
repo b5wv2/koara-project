@@ -265,10 +265,6 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot }) => {
               <span className="text-koara-accent font-bold">Admin:</span>
               <span>admin@gmil.com / admin1234</span>
             </div>
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-white/3 border border-white/5">
-              <span className="text-koara-accent font-bold">Merchant:</span>
-              <span>alfastore@gmail.com / store1234</span>
-            </div>
           </div>
         </div>
       </form>
