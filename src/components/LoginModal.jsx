@@ -6,18 +6,15 @@ import { Eye, EyeOff, LogIn, ArrowLeft, Mail } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import OTPInput from './OTPInput';
 
-const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot }) => {
+const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboarding }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isOtpStep, setIsOtpStep] = useState(false);
-  const [cachedIdToken, setCachedIdToken] = useState(null);
-  const [otpValue, setOtpValue] = useState('');
   
   const navigate = useNavigate();
-  const { login, googleLogin, googleRegister, t } = useAppContext();
+  const { login, googleLogin, t } = useAppContext();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -50,9 +47,9 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot }) => {
       setLoading(false);
       
       if (result.success) {
-        if (result.requiresOtp) {
-          setCachedIdToken(credentialResponse.credential);
-          setIsOtpStep(true);
+        if (result.requires_onboarding) {
+          onClose();
+          if (onGoogleOnboarding) onGoogleOnboarding(result.email);
           return;
         }
 
@@ -76,95 +73,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot }) => {
     }
   };
 
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    if (otpValue.length < 6) {
-      setError('Please enter the complete verification code.');
-      return;
-    }
 
-    setError('');
-    setLoading(true);
-    
-    try {
-      const result = await googleRegister(cachedIdToken, otpValue);
-      setLoading(false);
-
-      if (result.success) {
-        setIsOtpStep(false);
-        setCachedIdToken(null);
-        setOtpValue('');
-        onClose();
-        navigate('/admin');
-      } else {
-        setError(result.message);
-      }
-    } catch (err) {
-      setLoading(false);
-      console.error(err);
-      setError('An unexpected error occurred during verification.');
-    }
-  };
-
-  if (isOtpStep) {
-    return (
-      <Modal isOpen={isOpen} onClose={() => { setIsOtpStep(false); onClose(); }} title="Verify Your Account">
-        <form onSubmit={handleVerifyOtp} className="space-y-6">
-          <button
-            type="button"
-            onClick={() => setIsOtpStep(false)}
-            className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Back to Sign In
-          </button>
-
-          {error && (
-            <div className="koara-error-msg">
-              {error}
-            </div>
-          )}
-
-          <div className="text-center">
-            <div className="w-14 h-14 bg-koara-accent/10 text-koara-accent rounded-full flex items-center justify-center mx-auto mb-4 border border-koara-accent/20">
-              <Mail size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Check Your Email</h3>
-            <p className="text-sm text-slate-400">
-              We've sent a 6-digit verification code to your Google email. Enter it below to complete registration.
-            </p>
-          </div>
-
-          <div className="flex justify-center pt-2">
-            <OTPInput
-              length={6}
-              value={otpValue}
-              onChange={(val) => setOtpValue(val)}
-              onComplete={(val) => {
-                setOtpValue(val);
-                // We could auto-submit here
-              }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || otpValue.length < 6}
-            className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Verifying...
-              </>
-            ) : (
-              'Verify & Create Account'
-            )}
-          </button>
-        </form>
-      </Modal>
-    );
-  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('sign_in_account')}>

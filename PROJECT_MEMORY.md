@@ -148,6 +148,13 @@ A monolithic frontend and backend communicating via a REST API, connected to a P
     *   API changes: Updated `POST /api/auth/google-login` to handle new users by generating/sending OTPs (`status: requires_otp`). Added `POST /api/auth/google-register` to verify OTP and auto-create the user account.
     *   Reason for change: Fixed an infinite loading bug caused by missing context exports, and completely redesigned the Google Auth flow to allow new users to bypass manual registration fields by using an integrated OTP verification step.
 
+*   **2026-06-28:**
+    *   Task completed: Redesign Google Authentication Flow & Unify Onboarding.
+    *   Files modified: `backend/src/routes/auth.js`, `src/components/LoginModal.jsx`, `src/pages/Landing.jsx`, `src/components/OnboardingModal.jsx`.
+    *   Database changes: None.
+    *   API changes: Deleted `POST /google-register`. Updated `POST /google-login` to check `store_requests` (handling pending/rejected merchants) and trigger a unified `requires_onboarding` flow for new users. Updated `POST /login` to return "Invalid credentials." for generic security.
+    *   Reason for change: The previous Google Auth flow was bypassing the merchant registration process, leaving new Google users with an empty dashboard because no store was created. The flow has been refactored so that brand new Google users are routed seamlessly into the existing `OnboardingModal` (skipping the password step by randomly generating it under the hood), thus perfectly reusing the existing `store_requests` approval pipeline and ensuring no user reaches the dashboard without a fully onboarded store.
+
 ---
 
 ## 10. Architecture Decisions

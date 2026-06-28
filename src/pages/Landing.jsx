@@ -23,6 +23,7 @@ const FeatureCard = ({ icon: Icon, title, description }) => (
 
 const LandingPage = () => {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [onboardingInitialData, setOnboardingInitialData] = useState(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
   const [storeRequestStatus, setStoreRequestStatus] = useState(null);
@@ -277,8 +278,21 @@ const LandingPage = () => {
       </main>
 
       <Footer />
-      <OnboardingModal isOpen={isOnboardingOpen} onClose={() => setIsOnboardingOpen(false)} />
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onStoreStatus={setStoreRequestStatus} onForgot={() => setIsPasswordResetOpen(true)} />
+      <OnboardingModal 
+        isOpen={isOnboardingOpen} 
+        onClose={() => { setIsOnboardingOpen(false); setOnboardingInitialData(null); }} 
+        initialData={onboardingInitialData} 
+      />
+      <LoginModal 
+        isOpen={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
+        onStoreStatus={setStoreRequestStatus} 
+        onForgot={() => setIsPasswordResetOpen(true)}
+        onGoogleOnboarding={(email) => {
+          setOnboardingInitialData({ isGoogleAuth: true, email });
+          setIsOnboardingOpen(true);
+        }}
+      />
       <PasswordResetModal isOpen={isPasswordResetOpen} onClose={() => setIsPasswordResetOpen(false)} />
       <StoreStatusModal isOpen={!!storeRequestStatus} onClose={() => setStoreRequestStatus(null)} storeRequestStatus={storeRequestStatus} />
     </div>

@@ -25,7 +25,7 @@ const StepIndicator = ({ current, total }) => (
   </div>
 );
 
-const OnboardingModal = ({ isOpen, onClose }) => {
+const OnboardingModal = ({ isOpen, onClose, initialData }) => {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
   const { t } = useAppContext();
@@ -55,6 +55,34 @@ const OnboardingModal = ({ isOpen, onClose }) => {
   const [cooldown, setCooldown] = useState(0);
   const [globalLockUntil, setGlobalLockUntil] = useState(null);
   const [lockCountdown, setLockCountdown] = useState('');
+
+  useEffect(() => {
+    if (isOpen && initialData?.isGoogleAuth) {
+      setEmail(initialData.email);
+      // Generate a highly secure random password for the user since they authenticate via Google
+      const randomPassword = crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      setPassword(randomPassword);
+      setStep(2); // Skip Step 1 and jump to OTP verification
+    } else if (!isOpen) {
+      // Clean up when modal closes, reset everything
+      setStep(1);
+      setEmail('');
+      setPassword('');
+      setVerificationCode('');
+      setFirstName('');
+      setLastName('');
+      setStoreName('');
+      setSubdomain('');
+      setBankName('');
+      setAccountHolderName('');
+      setAccountNumber('');
+      setKycDocument(null);
+      setErrorMsg('');
+      setSuccessMsg('');
+    }
+  }, [isOpen, initialData]);
 
   useEffect(() => {
     let timer;
