@@ -146,6 +146,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
           )}
         </button>
 
+        {/* Temporarily hidden Google Login
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-white/10"></div>
@@ -166,6 +167,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
             shape="rectangular"
           />
         </div>
+        */}
 
         <div className="pt-4 border-t border-white/6">
           <p className="text-xs font-semibold text-slate-500 mb-2">Test Credentials</p>
