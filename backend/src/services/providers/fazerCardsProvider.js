@@ -20,23 +20,37 @@ class FazerCardsProvider {
       fields: fields
     };
 
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-API-Key': this.apiKey,
+      'Idempotency-Key': idempotencyKey || Date.now().toString()
+    };
+
+    console.log('\n--- FazerCards API Request ---');
+    console.log('URL:', url);
+    console.log('Method: POST');
+    console.log('Headers:', { ...headers, 'X-API-Key': '***HIDDEN***' });
+    console.log('Body:', JSON.stringify(body, null, 2));
+    console.log('------------------------------\n');
+
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-API-Key': this.apiKey,
-          'Idempotency-Key': idempotencyKey || Date.now().toString()
-        },
+        headers: headers,
         body: JSON.stringify(body),
         timeout: 15000 // 15 seconds timeout
       });
 
       const responseData = await response.json().catch(() => null);
 
+      console.log('\n--- FazerCards API Response ---');
+      console.log('Status:', response.status);
+      console.log('Body:', JSON.stringify(responseData, null, 2));
+      console.log('-------------------------------\n');
+
       if (!response.ok) {
-        throw new Error(responseData?.message || `Provider API Error: ${response.status}`);
+        throw new Error(responseData?.message || JSON.stringify(responseData) || `Provider API Error: ${response.status}`);
       }
 
       return {
