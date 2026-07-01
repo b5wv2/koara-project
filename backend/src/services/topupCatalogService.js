@@ -10,8 +10,8 @@ class TopupCatalogService {
 
   loadCatalog() {
     try {
-      // Load the single source of truth JSON file from the project root
-      const jsonPath = path.resolve(__dirname, '../../../../free_fire_mena_offers.json');
+      // Load the single source of truth JSON file from the data directory
+      const jsonPath = path.join(__dirname, '../data/free_fire_mena_offers.json');
       const data = fs.readFileSync(jsonPath, 'utf8');
       this.catalogData = JSON.parse(data);
 
