@@ -198,6 +198,42 @@ const createMerchantProductsTableQuery = `
   );
 `;
 
+// --- Direct Top-up Architecture Tables ---
+
+const createMerchantTopupProductsTableQuery = `
+  CREATE TABLE IF NOT EXISTS merchant_topup_products (
+    id SERIAL PRIMARY KEY,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    offer_id VARCHAR(255) NOT NULL,
+    selling_price NUMERIC(10,2) NOT NULL,
+    is_enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(store_id, offer_id)
+  );
+`;
+
+const createTopupOrdersTableQuery = `
+  CREATE TABLE IF NOT EXISTS topup_orders (
+    id SERIAL PRIMARY KEY,
+    local_order_id VARCHAR(255) UNIQUE NOT NULL,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    provider_order_id VARCHAR(255),
+    category_id VARCHAR(255),
+    offer_id VARCHAR(255),
+    player_id VARCHAR(255),
+    dynamic_fields JSONB,
+    customer_name VARCHAR(255),
+    customer_email VARCHAR(255),
+    whatsapp VARCHAR(50),
+    cost_price NUMERIC(10,2),
+    selling_price NUMERIC(10,2),
+    merchant_profit NUMERIC(10,2),
+    provider_response JSONB,
+    status VARCHAR(50) DEFAULT 'processing',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
   const client = await db.pool.connect();
@@ -283,6 +319,10 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS custom_description TEXT,
       ADD COLUMN IF NOT EXISTS custom_image_url TEXT;
     `);
+
+    // Create Direct Top-up Tables
+    await client.query(createMerchantTopupProductsTableQuery);
+    await client.query(createTopupOrdersTableQuery);
 
     // --- Order System Enhancements ---
     await client.query(`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`);

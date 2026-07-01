@@ -95,6 +95,11 @@ const AdminDashboard = () => {
   // Merchant price editing
   const [editingMerchantPrice, setEditingMerchantPrice] = useState({});
 
+  // Merchant Top-ups
+  const [merchantTopups, setMerchantTopups] = useState([]);
+  const [topupsLoading, setTopupsLoading] = useState(false);
+  const [editingTopupPrice, setEditingTopupPrice] = useState({});
+
   if (!user) return <Navigate to="/" />;
 
   const role = user.role;
@@ -149,6 +154,14 @@ const AdminDashboard = () => {
     if (role === 'merchant' && storeId) {
       if (activeTab === 'products') {
         fetchMerchantPlatformProducts(storeId).catch(console.error);
+      }
+      if (activeTab === 'topups') {
+        setTopupsLoading(true);
+        fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`)
+          .then(r => r.json())
+          .then(data => { if(data.success) setMerchantTopups(data.topups); })
+          .catch(console.error)
+          .finally(() => setTopupsLoading(false));
       }
       if (activeTab === 'dashboard') {
         fetchMerchantOrders(storeId).catch(console.error);
@@ -286,7 +299,8 @@ const AdminDashboard = () => {
 
   const merchantNavItems = [
     { key: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { key: 'products', icon: Package, label: 'Products' },
+    { key: 'products', icon: Package, label: 'Gift Cards' },
+    { key: 'topups', icon: Package, label: 'Direct Top-ups' },
     { key: 'promotions', icon: Tag, label: 'Promotions' },
     { key: 'settings', icon: Settings, label: 'Store Settings' },
     { key: 'payouts', icon: CreditCard, label: 'Payment Details' },
@@ -863,6 +877,111 @@ const AdminDashboard = () => {
                                   });
                                   setEditingMerchantPrice(prev => { const n = { ...prev }; delete n[product.id]; return n; });
                                   await fetchMerchantPlatformProducts(storeId);
+                                }}
+                                className="dash-btn dash-btn-primary"
+                              >
+                                Save
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ══ MERCHANT: Direct Top-ups ══ */}
+            {role === 'merchant' && activeTab === 'topups' && (
+              <div className="dash-card overflow-hidden">
+                <SectionHeader
+                  title="Direct Top-ups (FazerCards)"
+                  description="Enable direct game top-ups for your customers. Prices listed under Cost are charged to your wallet."
+                />
+                <div className="overflow-x-auto">
+                  <table className="koara-table">
+                    <thead>
+                      <tr>
+                        <th>Enabled</th>
+                        <th>Product Name</th>
+                        <th>Provider Cost ($)</th>
+                        <th>Selling Price ($)</th>
+                        <th className="text-right">Save</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topupsLoading ? (
+                        <tr><td colSpan="5"><div className="koara-empty-state"><div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /><span>Loading topups...</span></div></td></tr>
+                      ) : merchantTopups.length === 0 ? (
+                        <tr><td colSpan="5"><div className="koara-empty-state"><Package size={32} /><span>No topups available.</span></div></td></tr>
+                      ) : merchantTopups.map(topup => {
+                        const currentPrice = editingTopupPrice[topup.offer_id] ?? (topup.selling_price || '');
+                        return (
+                          <tr key={topup.offer_id}>
+                            <td>
+                              <Toggle
+                                on={topup.is_enabled}
+                                onChange={async () => {
+                                  try {
+                                    await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        store_id: storeId,
+                                        selling_price: parseFloat(currentPrice) || 0,
+                                        is_enabled: !topup.is_enabled
+                                      })
+                                    });
+                                    // Reload
+                                    setTopupsLoading(true);
+                                    const res = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`);
+                                    const data = await res.json();
+                                    if (data.success) setMerchantTopups(data.topups);
+                                    setTopupsLoading(false);
+                                  } catch(e) {}
+                                }}
+                              />
+                            </td>
+                            <td className="cell-primary">{topup.name}</td>
+                            <td className="font-mono text-sm text-slate-400">${parseFloat(topup.price_usd).toFixed(4)}</td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                value={currentPrice}
+                                onChange={(e) => setEditingTopupPrice(prev => ({ ...prev, [topup.offer_id]: e.target.value }))}
+                                className="koara-input w-32 py-1.5 text-sm"
+                                dir="ltr"
+                                placeholder="0.00"
+                              />
+                            </td>
+                            <td className="text-right">
+                              <button
+                                onClick={async () => {
+                                  const price = parseFloat(editingTopupPrice[topup.offer_id] ?? topup.selling_price);
+                                  if (!price || price <= 0) return alert('Please enter a valid price');
+                                  try {
+                                    await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        store_id: storeId,
+                                        selling_price: price,
+                                        is_enabled: topup.is_enabled
+                                      })
+                                    });
+                                    setEditingTopupPrice(prev => { const n = { ...prev }; delete n[topup.offer_id]; return n; });
+                                    // Reload
+                                    setTopupsLoading(true);
+                                    const res = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`);
+                                    const data = await res.json();
+                                    if (data.success) setMerchantTopups(data.topups);
+                                    setTopupsLoading(false);
+                                  } catch (err) {
+                                    alert('Failed to save');
+                                  }
                                 }}
                                 className="dash-btn dash-btn-primary"
                               >

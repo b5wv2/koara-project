@@ -12,6 +12,8 @@ const storeRoutes = require('./routes/store');
 const merchantRoutes = require('./routes/merchant');
 const catalogRoutes = require('./routes/catalog');
 const merchantProductRoutes = require('./routes/merchantProducts');
+const merchantTopupsRoutes = require('./routes/merchantTopups');
+const storeTopupsRoutes = require('./routes/storeTopups');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,8 +28,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/merchant/products', merchantProductRoutes);
+app.use('/api/merchant/topups', merchantTopupsRoutes);
 app.use('/api/merchant', merchantRoutes);
 app.use('/api/admin/catalog', catalogRoutes);
+app.use('/api/store/topups', storeTopupsRoutes);
 
 // API Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -12,6 +12,7 @@ const Storefront = ({ store }) => {
   const storeId = store.id;
 
   const [catalog, setCatalog] = useState({ categories: [], products: [], promos: [], platform_products: [] });
+  const [topupsData, setTopupsData] = useState({ category: null, fields: [], offers: [] });
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [catalogError, setCatalogError] = useState(null);
 
@@ -19,9 +20,13 @@ const Storefront = ({ store }) => {
     const fetchCatalog = async () => {
       try {
         setLoadingCatalog(true);
-        const response = await fetch(`${API_BASE_URL}/api/store/${storeId}/catalog`);
-        if (response.ok) {
-          const data = await response.json();
+        const [catalogRes, topupsRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/store/${storeId}/catalog`),
+          fetch(`${API_BASE_URL}/api/store/topups/catalog/${storeId}`).catch(() => null)
+        ]);
+
+        if (catalogRes.ok) {
+          const data = await catalogRes.json();
           if (data.success) {
             setCatalog({
               categories: data.categories || [],
@@ -34,6 +39,17 @@ const Storefront = ({ store }) => {
           }
         } else {
           setCatalogError('Failed to load catalog.');
+        }
+
+        if (topupsRes && topupsRes.ok) {
+          const tData = await topupsRes.json();
+          if (tData.success) {
+            setTopupsData({
+              category: tData.category,
+              fields: tData.fields || [],
+              offers: tData.offers || []
+            });
+          }
         }
       } catch (err) {
         console.error('Error fetching catalog:', err);
@@ -59,6 +75,7 @@ const Storefront = ({ store }) => {
   const [receiptFile, setReceiptFile] = useState(null);
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [topupFormFields, setTopupFormFields] = useState({});
 
   // Map the passed store to the merchant structure expected by the UI
   const merchant = store ? {
@@ -116,9 +133,11 @@ const Storefront = ({ store }) => {
   const platformCategories = [...new Set(platformProducts.map(p => p.category))];
 
   const activeCategoryProducts = selectedCategoryId
-    ? (typeof selectedCategoryId === 'string'
-      ? platformProducts.filter(p => p.category === selectedCategoryId)
-      : storeProducts.filter(p => p.category_id === selectedCategoryId || p.categoryId === selectedCategoryId))
+    ? (selectedCategoryId === topupsData.category?.id
+        ? topupsData.offers.map(o => ({ ...o, id: o.offer_id, category: topupsData.category.id, isTopup: true }))
+        : typeof selectedCategoryId === 'string'
+          ? platformProducts.filter(p => p.category === selectedCategoryId)
+          : storeProducts.filter(p => p.category_id === selectedCategoryId || p.categoryId === selectedCategoryId))
     : [];
 
   const handleProductClick = (product) => {
@@ -132,6 +151,7 @@ const Storefront = ({ store }) => {
     setWhatsapp('');
     setReceiptFile(null);
     setSubmitError('');
+    setTopupFormFields({});
   };
 
   const calculateTotal = () => {
@@ -165,6 +185,36 @@ const Storefront = ({ store }) => {
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
     setSubmitError('');
+
+    if (selectedProduct.isTopup) {
+      setSubmittingOrder(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/store/topups/order/${storeId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            offerId: selectedProduct.id,
+            customerName,
+            customerEmail,
+            whatsapp,
+            fields: topupFormFields
+          })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setCurrentOrderId(data.order.orderId);
+          setCheckoutStep(2);
+        } else {
+          setSubmitError(data.error || 'Failed to submit top-up order.');
+        }
+      } catch (err) {
+        setSubmitError('Connection error. Please try again.');
+      } finally {
+        setSubmittingOrder(false);
+      }
+      return;
+    }
+
     if (!receiptFile) {
       setSubmitError('Please upload a payment receipt.');
       return;
@@ -411,6 +461,18 @@ const Storefront = ({ store }) => {
                   />
                 );
               })}
+
+              {topupsData.category && topupsData.offers.length > 0 && (
+                <CategoryCard
+                  key={`topups-${topupsData.category.id}`}
+                  onClick={() => setSelectedCategoryId(topupsData.category.id)}
+                  color={'#8b5cf6'}
+                  logoSrc={null}
+                  iconText={'T'}
+                  name={topupsData.category.name}
+                  productCount={topupsData.offers.length}
+                />
+              )}
             </div>
           </div>
         ) : (
@@ -558,9 +620,30 @@ const Storefront = ({ store }) => {
                 </div>
               </div>
 
-              {/* Payment Details */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#94A3B8' }}>Payment Details</h4>
+              {/* Dynamic Top-up Fields */}
+              {selectedProduct.isTopup && topupsData.fields && topupsData.fields.length > 0 && (
+                <div className="space-y-3 mt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>Top-up Details</h4>
+                  {topupsData.fields.map(field => (
+                    <div key={field.key}>
+                      <label className="koara-label">{field.label}</label>
+                      <input 
+                        required 
+                        type={field.type === 'text' ? 'text' : field.type} 
+                        placeholder={field.label} 
+                        className="koara-input" 
+                        value={topupFormFields[field.key] || ''} 
+                        onChange={e => setTopupFormFields(prev => ({...prev, [field.key]: e.target.value}))} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Payment Details (Only for Gift Cards) */}
+              {!selectedProduct.isTopup && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#94A3B8' }}>Payment Details</h4>
                 <div className="rounded-xl p-4 text-sm space-y-2 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                   <div className="flex justify-between">
                     <span style={{ color: '#64748B' }}>Bank:</span>
@@ -591,6 +674,7 @@ const Storefront = ({ store }) => {
                   <p className="text-xs mt-1" style={{ color: '#475569' }}>Image or PDF (Max 10MB)</p>
                 </label>
               </div>
+              )}
 
               {submitError && (
                 <div className="p-3 rounded-lg text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
