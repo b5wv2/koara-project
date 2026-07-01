@@ -11,7 +11,9 @@ class FazerCardsProvider {
       throw new Error('FazerCards API_KEY is not configured in the environment.');
     }
 
-    const url = `${this.apiUrl}/api/v2/topups/order`;
+    const baseUrl = this.apiUrl.endsWith('/') ? this.apiUrl.slice(0, -1) : this.apiUrl;
+    const urlPath = baseUrl.endsWith('/api/v2') ? '/topups/order' : '/api/v2/topups/order';
+    const url = `${baseUrl}${urlPath}`;
     const body = {
       category_id: categoryId,
       offer_id: offerId,
