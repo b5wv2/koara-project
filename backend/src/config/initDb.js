@@ -339,7 +339,10 @@ const initializeDatabase = async () => {
     await client.query(`
       ALTER TABLE topup_orders 
       ADD COLUMN IF NOT EXISTS admin_cost_price NUMERIC(10,2),
-      ADD COLUMN IF NOT EXISTS last_sync_time TIMESTAMP WITH TIME ZONE;
+      ADD COLUMN IF NOT EXISTS last_sync_time TIMESTAMP WITH TIME ZONE,
+      ADD COLUMN IF NOT EXISTS receipt_url TEXT;
+      
+      ALTER TABLE topup_orders ALTER COLUMN status SET DEFAULT 'pending';
     `);
 
     // --- Order System Enhancements ---
