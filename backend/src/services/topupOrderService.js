@@ -87,15 +87,16 @@ class TopupOrderService {
     }
   }
 
-  async approveOrder(localOrderId, storeId) {
+  async approveOrder(orderId, storeId) {
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
 
-      // 1. Fetch order & store
-      const orderRes = await client.query('SELECT * FROM topup_orders WHERE local_order_id = $1 AND store_id = $2 FOR UPDATE', [localOrderId, storeId]);
+      // 1. Fetch order & store by numeric ID
+      const orderRes = await client.query('SELECT * FROM topup_orders WHERE id = $1 AND store_id = $2 FOR UPDATE', [orderId, storeId]);
       if (orderRes.rows.length === 0) throw new Error('Order not found.');
       const order = orderRes.rows[0];
+      const localOrderId = order.local_order_id;
 
       if (order.status !== 'pending') {
         throw new Error(`Order cannot be approved because it is currently in '${order.status}' status.`);
@@ -129,15 +130,15 @@ class TopupOrderService {
         await db.query(`
           UPDATE topup_orders 
           SET provider_order_id = $1, provider_response = $2, status = $3
-          WHERE local_order_id = $4
-        `, [providerRes.provider_order_id, JSON.stringify(providerRes.raw_response), providerRes.status, localOrderId]);
+          WHERE id = $4
+        `, [providerRes.provider_order_id, JSON.stringify(providerRes.raw_response), providerRes.status, orderId]);
 
         return { success: true, orderId: localOrderId, status: providerRes.status };
       } else {
         // Rollback
         const offer = topupCatalogService.getOfferDetails(order.offer_id);
         const offerName = offer ? offer.name : order.offer_id;
-        await this.handleProviderFailure(storeId, store.email, store.store_name, localOrderId, offerName, adminCostPrice, providerRes.error);
+        await this.handleProviderFailure(storeId, store.email, store.store_name, orderId, localOrderId, offerName, adminCostPrice, providerRes.error);
         throw new Error('Provider failed to process the top-up order.');
       }
     } catch (error) {
@@ -148,19 +149,20 @@ class TopupOrderService {
     }
   }
 
-  async rejectOrder(localOrderId, storeId) {
+  async rejectOrder(orderId, storeId) {
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
-      const orderRes = await client.query('SELECT * FROM topup_orders WHERE local_order_id = $1 AND store_id = $2 FOR UPDATE', [localOrderId, storeId]);
+      const orderRes = await client.query('SELECT * FROM topup_orders WHERE id = $1 AND store_id = $2 FOR UPDATE', [orderId, storeId]);
       if (orderRes.rows.length === 0) throw new Error('Order not found.');
       const order = orderRes.rows[0];
+      const localOrderId = order.local_order_id;
 
       if (order.status !== 'pending') {
         throw new Error('Only pending orders can be rejected.');
       }
 
-      await client.query("UPDATE topup_orders SET status = 'rejected' WHERE local_order_id = $1", [localOrderId]);
+      await client.query("UPDATE topup_orders SET status = 'rejected' WHERE id = $1", [orderId]);
       await client.query('COMMIT');
 
       // Send rejection email to customer
@@ -182,11 +184,11 @@ class TopupOrderService {
     }
   }
 
-  async handleProviderFailure(storeId, storeEmail, storeName, localOrderId, productName, amount, errorMsg) {
+  async handleProviderFailure(storeId, storeEmail, storeName, orderId, localOrderId, productName, amount, errorMsg) {
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query("UPDATE topup_orders SET status = 'failed', provider_response = $1 WHERE local_order_id = $2", [JSON.stringify({ error: errorMsg }), localOrderId]);
+      await client.query("UPDATE topup_orders SET status = 'failed', provider_response = $1 WHERE id = $2", [JSON.stringify({ error: errorMsg }), orderId]);
       const refundRes = await client.query('UPDATE stores SET balance = balance + $1 WHERE id = $2 RETURNING balance', [amount, storeId]);
       const newBalance = refundRes.rows[0].balance;
 
