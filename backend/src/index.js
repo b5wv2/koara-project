@@ -14,6 +14,7 @@ const catalogRoutes = require('./routes/catalog');
 const merchantProductRoutes = require('./routes/merchantProducts');
 const merchantTopupsRoutes = require('./routes/merchantTopups');
 const storeTopupsRoutes = require('./routes/storeTopups');
+const topupSyncService = require('./services/topupSyncService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -48,6 +49,9 @@ const bootstrap = async () => {
   try {
     // Automatically check DDL tables on launch
     await initializeDatabase();
+    
+    // Start background sync
+    topupSyncService.start();
 
     app.listen(PORT, () => {
       console.log(`-----------------------------------------------`);

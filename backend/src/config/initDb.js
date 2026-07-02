@@ -206,6 +206,7 @@ const createMerchantTopupProductsTableQuery = `
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
     offer_id VARCHAR(255) NOT NULL,
     selling_price NUMERIC(10,2) NOT NULL,
+    admin_cost_price NUMERIC(10,2),
     is_enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(store_id, offer_id)
@@ -226,10 +227,13 @@ const createTopupOrdersTableQuery = `
     customer_email VARCHAR(255),
     whatsapp VARCHAR(50),
     cost_price NUMERIC(10,2),
+    admin_cost_price NUMERIC(10,2),
     selling_price NUMERIC(10,2),
     merchant_profit NUMERIC(10,2),
     provider_response JSONB,
-    status VARCHAR(50) DEFAULT 'processing',
+    status VARCHAR(50) DEFAULT 'pending',
+    receipt_url TEXT,
+    last_sync_time TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 `;

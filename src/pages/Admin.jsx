@@ -197,8 +197,8 @@ const AdminDashboard = () => {
     setPromos(promos.map(p => p.id === id ? { ...p, active: !p.active } : p));
   };
 
-  const handleProcessOrder = async (id, action) => {
-    const res = await updateOrderStatus(id, storeId, action);
+  const handleProcessOrder = async (id, action, isTopup = false) => {
+    const res = await updateOrderStatus(id, storeId, action, isTopup);
     if (res.success) {
       setSelectedReceipt(null);
     } else {
@@ -1366,10 +1366,10 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <button onClick={() => handleProcessOrder(selectedReceipt.id, 'rejected')} className="dash-btn dash-btn-danger flex-1 justify-center py-2.5 rounded-xl">
+              <button onClick={() => handleProcessOrder(selectedReceipt.id, 'rejected', selectedReceipt.order_type === 'topup')} className="dash-btn dash-btn-danger flex-1 justify-center py-2.5 rounded-xl">
                 Reject Order
               </button>
-              <button onClick={() => handleProcessOrder(selectedReceipt.id, 'approved')} className="dash-btn dash-btn-success flex-1 justify-center py-2.5 rounded-xl">
+              <button onClick={() => handleProcessOrder(selectedReceipt.id, 'approved', selectedReceipt.order_type === 'topup')} className="dash-btn dash-btn-success flex-1 justify-center py-2.5 rounded-xl">
                 Approve Payment
               </button>
             </div>

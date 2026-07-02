@@ -67,6 +67,47 @@ class FazerCardsProvider {
       };
     }
   }
+
+  async getOrders(page = 1, limit = 20) {
+    if (!this.apiKey) {
+      throw new Error('FazerCards API_KEY is not configured in the environment.');
+    }
+
+    const baseUrl = this.apiUrl.endsWith('/') ? this.apiUrl.slice(0, -1) : this.apiUrl;
+    const urlPath = baseUrl.endsWith('/api/v2') ? `/orders?page=${page}&limit=${limit}` : `/api/v2/orders?page=${page}&limit=${limit}`;
+    const url = `${baseUrl}${urlPath}`;
+
+    const headers = {
+      'Accept': 'application/json',
+      'X-API-Key': this.apiKey
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: headers,
+        timeout: 10000
+      });
+
+      const responseData = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(responseData?.message || `Provider API Error: ${response.status}`);
+      }
+
+      return {
+        success: true,
+        orders: responseData.orders || responseData.data || [],
+        raw_response: responseData
+      };
+    } catch (error) {
+      console.error('FazerCards Provider GetOrders Error:', error.message);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 }
 
 module.exports = new FazerCardsProvider();

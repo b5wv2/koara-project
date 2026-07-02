@@ -186,19 +186,25 @@ const Storefront = ({ store }) => {
     e.preventDefault();
     setSubmitError('');
 
+    if (!receiptFile) {
+      setSubmitError(t('upload_receipt_required') || 'Please upload a payment receipt.');
+      return;
+    }
+
     if (selectedProduct.isTopup) {
       setSubmittingOrder(true);
       try {
+        const formData = new FormData();
+        formData.append('offerId', selectedProduct.id);
+        formData.append('customerName', customerName);
+        formData.append('customerEmail', customerEmail);
+        formData.append('whatsapp', whatsapp);
+        formData.append('fields', JSON.stringify(topupFormFields));
+        formData.append('receipt', receiptFile);
+
         const response = await fetch(`${API_BASE_URL}/api/store/topups/order/${storeId}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            offerId: selectedProduct.id,
-            customerName,
-            customerEmail,
-            whatsapp,
-            fields: topupFormFields
-          })
+          body: formData
         });
         const data = await response.json();
         if (response.ok && data.success) {
@@ -215,10 +221,6 @@ const Storefront = ({ store }) => {
       return;
     }
 
-    if (!receiptFile) {
-      setSubmitError('Please upload a payment receipt.');
-      return;
-    }
 
     setSubmittingOrder(true);
     try {
@@ -640,10 +642,9 @@ const Storefront = ({ store }) => {
                 </div>
               )}
 
-              {/* Payment Details (Only for Gift Cards) */}
-              {!selectedProduct.isTopup && (
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#94A3B8' }}>Payment Details</h4>
+              {/* Payment Details */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#94A3B8' }}>Payment Details</h4>
                 <div className="rounded-xl p-4 text-sm space-y-2 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                   <div className="flex justify-between">
                     <span style={{ color: '#64748B' }}>Bank:</span>
@@ -674,7 +675,6 @@ const Storefront = ({ store }) => {
                   <p className="text-xs mt-1" style={{ color: '#475569' }}>Image or PDF (Max 10MB)</p>
                 </label>
               </div>
-              )}
 
               {submitError && (
                 <div className="p-3 rounded-lg text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>

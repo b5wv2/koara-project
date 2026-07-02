@@ -353,19 +353,29 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const updateOrderStatus = async (orderId, storeId, status) => {
+  const updateOrderStatus = async (orderId, storeId, status, isTopup = false) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/merchant/orders/${orderId}/status`, {
-        method: 'PUT',
+      let url = `${API_BASE_URL}/api/merchant/orders/${orderId}/status`;
+      let body = { store_id: storeId, status };
+      let method = 'PUT';
+      
+      if (isTopup) {
+         url = `${API_BASE_URL}/api/merchant/topups/orders/${orderId}/${status === 'approved' ? 'approve' : 'reject'}`;
+         body = { store_id: storeId };
+         method = 'POST';
+      }
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ store_id: storeId, status })
+        body: JSON.stringify(body)
       });
       const data = await response.json();
-      if (response.ok) {
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+      if (response.ok && (data.success || data.order)) {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: isTopup && status === 'approved' ? 'processing' : status } : o));
         return { success: true };
       }
-      return { success: false, message: data.error };
+      return { success: false, message: data.error || 'Update failed' };
     } catch (err) {
       console.error('Error updating order status:', err);
       return { success: false, message: 'Connection error' };

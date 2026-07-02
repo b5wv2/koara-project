@@ -75,4 +75,36 @@ router.put('/:offerId', async (req, res) => {
   }
 });
 
+// POST /api/merchant/topups/orders/:orderId/approve
+router.post('/orders/:orderId/approve', async (req, res) => {
+  const { orderId } = req.params;
+  const { store_id } = req.body;
+  if (!store_id) return res.status(400).json({ error: 'store_id is required' });
+
+  try {
+    const topupOrderService = require('../services/topupOrderService');
+    const result = await topupOrderService.approveOrder(orderId, store_id);
+    res.json(result);
+  } catch (err) {
+    console.error('Approve order failed:', err);
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/merchant/topups/orders/:orderId/reject
+router.post('/orders/:orderId/reject', async (req, res) => {
+  const { orderId } = req.params;
+  const { store_id } = req.body;
+  if (!store_id) return res.status(400).json({ error: 'store_id is required' });
+
+  try {
+    const topupOrderService = require('../services/topupOrderService');
+    const result = await topupOrderService.rejectOrder(orderId, store_id);
+    res.json(result);
+  } catch (err) {
+    console.error('Reject order failed:', err);
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

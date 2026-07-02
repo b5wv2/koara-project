@@ -167,8 +167,6 @@ router.delete('/promos/:id', async (req, res) => {
 
 // GET /api/merchant/orders
 router.get('/orders', async (req, res) => {
-  // We assume the store_id is either in req.query or fetched from an authenticated session
-  // Since authentication middleware is missing right now, we require it in query
   const { store_id } = req.query;
   
   if (!store_id) {
@@ -177,7 +175,26 @@ router.get('/orders', async (req, res) => {
 
   try {
     const orders = await orderService.getStoreOrders(store_id);
-    res.status(200).json({ success: true, orders });
+    const topupOrdersRes = await db.query(`SELECT * FROM topup_orders WHERE store_id = $1 ORDER BY created_at DESC`, [store_id]);
+    
+    // Map normal orders
+    const mappedOrders = orders.map(o => ({
+      ...o,
+      order_type: 'gift_card'
+    }));
+
+    // Map topup orders
+    const mappedTopups = topupOrdersRes.rows.map(o => ({
+      ...o,
+      order_type: 'topup',
+      order_number: o.local_order_id,
+      product_name: o.offer_id, // we might want to resolve this to actual name on frontend
+      total_amount: o.selling_price
+    }));
+
+    const allOrders = [...mappedOrders, ...mappedTopups].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    res.status(200).json({ success: true, orders: allOrders });
   } catch (err) {
     console.error('Error fetching orders:', err.message);
     res.status(500).json({ error: 'Internal server error' });

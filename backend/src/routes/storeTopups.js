@@ -3,6 +3,32 @@ const router = express.Router();
 const db = require('../config/db');
 const topupCatalogService = require('../services/topupCatalogService');
 const topupOrderService = require('../services/topupOrderService');
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../../uploads'));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'receipt-topup-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, 
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only images and PDF files are allowed!'));
+    }
+  }
+});
 
 // GET /api/store/:storeId/topups/catalog
 router.get('/catalog/:storeId', async (req, res) => {
@@ -48,20 +74,36 @@ router.get('/catalog/:storeId', async (req, res) => {
 });
 
 // POST /api/store/:storeId/topups/order
-router.post('/order/:storeId', async (req, res) => {
+router.post('/order/:storeId', upload.single('receipt'), async (req, res) => {
   const { storeId } = req.params;
-  const { offerId, fields, customerName, customerEmail, whatsapp } = req.body;
+  let { offerId, fields, customerName, customerEmail, whatsapp } = req.body;
 
   if (!offerId || !fields || !customerName || !customerEmail || !whatsapp) {
     return res.status(400).json({ error: 'Missing required order fields.' });
   }
 
+  if (!req.file) {
+    return res.status(400).json({ error: 'Payment receipt is required for top-up orders' });
+  }
+
+  const receiptUrl = `/uploads/${req.file.filename}`;
+
+  // If fields is sent via FormData it might be a string
+  if (typeof fields === 'string') {
+    try {
+      fields = JSON.parse(fields);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid fields format' });
+    }
+  }
+
   try {
-    const result = await topupOrderService.createOrder({
+    const result = await topupOrderService.createPendingOrder({
       storeId,
       offerId,
       dynamicFields: fields,
-      customerInfo: { name: customerName, email: customerEmail, whatsapp }
+      customerInfo: { name: customerName, email: customerEmail, whatsapp },
+      receiptUrl
     });
 
     res.status(201).json({ success: true, order: result });
