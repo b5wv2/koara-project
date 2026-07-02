@@ -326,7 +326,21 @@ const initializeDatabase = async () => {
 
     // Create Direct Top-up Tables
     await client.query(createMerchantTopupProductsTableQuery);
+    
+    // Safely migrate existing merchant_topup_products
+    await client.query(`
+      ALTER TABLE merchant_topup_products 
+      ADD COLUMN IF NOT EXISTS admin_cost_price NUMERIC(10,2);
+    `);
+
     await client.query(createTopupOrdersTableQuery);
+
+    // Safely migrate existing topup_orders
+    await client.query(`
+      ALTER TABLE topup_orders 
+      ADD COLUMN IF NOT EXISTS admin_cost_price NUMERIC(10,2),
+      ADD COLUMN IF NOT EXISTS last_sync_time TIMESTAMP WITH TIME ZONE;
+    `);
 
     // --- Order System Enhancements ---
     await client.query(`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`);
