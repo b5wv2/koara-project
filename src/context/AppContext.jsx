@@ -9,6 +9,34 @@ export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null); // { role: 'admin' | 'merchant', email, storeName }
   const [store, setStore] = useState(null);
   const [language, setLanguage] = useState('en');
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUser({
+            id: data.user.id,
+            role: data.user.role === 'super_admin' ? 'admin' : data.user.role,
+            email: data.user.email,
+            name: data.user.name,
+            storeId: data.store ? data.store.id : null,
+            storeName: data.store ? data.store.store_name : null
+          });
+          setStore(data.store);
+        }
+      } catch (err) {
+        console.error('Failed to restore session:', err);
+      } finally {
+        setIsAuthLoading(false);
+      }
+    };
+    checkSession();
+  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -45,6 +73,7 @@ export const AppProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       });
 
@@ -126,6 +155,7 @@ export const AppProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ idToken })
       });
 
@@ -227,7 +257,15 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     setUser(null);
     setStore(null);
   };
@@ -645,7 +683,7 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      user, store, login, googleLogin, googleRegister, logout,
+      user, store, isAuthLoading, login, googleLogin, googleRegister, logout,
       language, setLanguage,
       t,
       merchants, setMerchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, toggleStoreActive, updateMerchantBanking,

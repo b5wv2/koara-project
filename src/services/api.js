@@ -15,7 +15,12 @@ export const API_BASE_URL =
 export async function apiFetch(path, options = {}) {
   const url = `${API_BASE_URL}${path}`;
 
-  const response = await fetch(url, options);
+  const fetchOptions = {
+    credentials: 'include', // Automatically send cookies
+    ...options,
+  };
+
+  const response = await fetch(url, fetchOptions);
   const data = await response.json();
 
   return { ok: response.ok, status: response.status, data };

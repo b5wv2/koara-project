@@ -1,9 +1,17 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 
 // Load environment variables early
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
+// STRICT SECURITY CHECK
+if (!process.env.JWT_SECRET) {
+  console.error('CRITICAL ERROR: JWT_SECRET environment variable is not configured.');
+  console.error('The application requires JWT_SECRET to start securely. Generating a fallback secret is disabled.');
+  process.exit(1);
+}
 
 const initializeDatabase = require('./config/initDb');
 const authRoutes = require('./routes/auth');
@@ -21,8 +29,26 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Standard Middlewares
-app.use(cors());
+const allowedOrigins = [
+  'https://www.getkoara.com',
+  'https://getkoara.com',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+];
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Register API Routes

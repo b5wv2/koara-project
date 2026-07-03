@@ -8,8 +8,24 @@ const { generateOTP, sendEmail } = require('../services/emailService');
 const { logAudit } = require('../services/auditService');
 const { validateSubdomainFormat } = require('../utils/subdomainValidation');
 const { OAuth2Client } = require('google-auth-library');
+const jwt = require('jsonwebtoken');
+const authMiddleware = require('../middleware/authMiddleware');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const setSessionCookie = (res, user) => {
+  const token = jwt.sign(
+    { id: user.id, role: user.role, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+  res.cookie('koara_session', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+};
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -312,6 +328,8 @@ router.post('/google-login', async (req, res) => {
       store = storeResult.rows[0];
     }
 
+    setSessionCookie(res, user);
+
     return res.status(200).json({
       user: {
         id: user.id,
@@ -385,6 +403,8 @@ router.post('/login', async (req, res) => {
       store = storeResult.rows[0];
     }
 
+    setSessionCookie(res, user);
+
     return res.status(200).json({
       user: {
         id: user.id,
@@ -407,6 +427,59 @@ router.post('/login', async (req, res) => {
     console.error('Database query error during merchant login:', error.message);
     return res.status(500).json({ message: 'An internal database error occurred. Please try again.' });
   }
+});
+
+// GET /me route (Session Restoration)
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const userQuery = 'SELECT id, name, email, role FROM users WHERE id = $1';
+    const userResult = await db.query(userQuery, [req.user.id]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ message: 'User no longer exists.' });
+    }
+
+    const user = userResult.rows[0];
+
+    let store = null;
+    const storeQuery = 'SELECT * FROM stores WHERE owner_id = $1';
+    const storeResult = await db.query(storeQuery, [user.id]);
+    if (storeResult.rows.length > 0) {
+      store = storeResult.rows[0];
+    }
+
+    return res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      store: store ? {
+        id: store.id,
+        store_name: store.store_name,
+        subdomain: store.subdomain,
+        status: store.status,
+        bank_name: store.bank_name,
+        account_no: store.account_no,
+        account_name: store.account_name,
+        balance: store.balance
+      } : null
+    });
+  } catch (error) {
+    console.error('Error restoring session:', error.message);
+    return res.status(500).json({ message: 'Server error restoring session.' });
+  }
+});
+
+// POST /logout route
+router.post('/logout', (req, res) => {
+  res.clearCookie('koara_session', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none'
+  });
+  return res.status(200).json({ success: true, message: 'Logged out successfully.' });
 });
 
 // POST /resubmit route
