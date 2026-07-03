@@ -4,6 +4,8 @@ import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
 import KoaraLogo from '../assets/koara-logo.svg';
+import PaymentProviderModal from '../components/PaymentProviderModal';
+import CryptoPaymentModal from '../components/CryptoPaymentModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
 
@@ -79,6 +81,8 @@ const AdminDashboard = () => {
   const [balanceModal, setBalanceModal] = useState({ isOpen: false, type: '', storeId: null, amount: 0, error: '' });
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, storeId: null, storeName: '' });
   const [merchantActionModal, setMerchantActionModal] = useState({ isOpen: false, type: '', amount: 0 });
+  const [providerModal, setProviderModal] = useState({ isOpen: false, amount: 0 });
+  const [cryptoModal, setCryptoModal] = useState({ isOpen: false, amount: 0 });
   const [selectedKyc, setSelectedKyc] = useState(null);
   const [rejectKycModal, setRejectKycModal] = useState({ isOpen: false, storeId: null });
   const [rejectReason, setRejectReason] = useState('');
@@ -232,10 +236,16 @@ const AdminDashboard = () => {
 
   const handleMerchantAction = (e) => {
     e.preventDefault();
-    setTimeout(() => {
-      alert(`Request to ${merchantActionModal.type} $${merchantActionModal.amount} submitted to admin.`);
+    if (merchantActionModal.type === 'add') {
+      const amount = merchantActionModal.amount;
       setMerchantActionModal({ isOpen: false, type: '', amount: 0 });
-    }, 500);
+      setProviderModal({ isOpen: true, amount });
+    } else {
+      setTimeout(() => {
+        alert(`Request to ${merchantActionModal.type} $${merchantActionModal.amount} submitted to admin.`);
+        setMerchantActionModal({ isOpen: false, type: '', amount: 0 });
+      }, 500);
+    }
   };
 
   const handleApproveKyc = async (storeId) => {
@@ -1220,6 +1230,27 @@ const AdminDashboard = () => {
           </button>
         </form>
       </Modal>
+
+      {/* Payment Provider Modal */}
+      <PaymentProviderModal
+        isOpen={providerModal.isOpen}
+        onClose={() => setProviderModal({ isOpen: false, amount: 0 })}
+        amount={providerModal.amount}
+        onSelectProvider={(provider) => {
+          if (provider === 'nowpayments') {
+            const amount = providerModal.amount;
+            setProviderModal({ isOpen: false, amount: 0 });
+            setCryptoModal({ isOpen: true, amount });
+          }
+        }}
+      />
+
+      <CryptoPaymentModal
+        isOpen={cryptoModal.isOpen}
+        onClose={() => setCryptoModal({ isOpen: false, amount: 0 })}
+        amount={cryptoModal.amount}
+        storeId={storeId}
+      />
 
       {/* Customize Product Modal */}
       <Modal isOpen={!!customizingProduct} onClose={() => setCustomizingProduct(null)} title="Customize Product Display">

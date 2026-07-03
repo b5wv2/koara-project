@@ -4,6 +4,8 @@ import { AppProvider } from './context/AppContext';
 import LandingPage from './pages/Landing';
 import AdminDashboard from './pages/Admin';
 import Storefront from './pages/Storefront';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 import StoreResolver from './components/StoreResolver';
 import { getSubdomain } from './lib/getSubdomain';
 
@@ -15,6 +17,8 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
           </Routes>
         </Router>
       </StoreResolver>

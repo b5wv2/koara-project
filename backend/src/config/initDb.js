@@ -238,6 +238,19 @@ const createTopupOrdersTableQuery = `
   );
 `;
 
+const createCryptoInvoicesTableQuery = `
+  CREATE TABLE IF NOT EXISTS crypto_invoices (
+    id SERIAL PRIMARY KEY,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    invoice_id VARCHAR(255) UNIQUE NOT NULL,
+    payment_id VARCHAR(255),
+    amount NUMERIC(10,2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'usd',
+    status VARCHAR(50) DEFAULT 'waiting',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
   const client = await db.pool.connect();
@@ -344,6 +357,9 @@ const initializeDatabase = async () => {
       
       ALTER TABLE topup_orders ALTER COLUMN status SET DEFAULT 'pending';
     `);
+
+    // Create crypto_invoices table
+    await client.query(createCryptoInvoicesTableQuery);
 
     // --- Order System Enhancements ---
     await client.query(`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`);
