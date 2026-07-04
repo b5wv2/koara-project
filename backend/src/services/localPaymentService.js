@@ -1,5 +1,6 @@
 const pdfStatementParser = require('./pdfStatementParser');
 const walletCreditService = require('./walletCreditService');
+const axios = require('axios');
 
 class LocalPaymentService {
   /**
@@ -20,42 +21,46 @@ class LocalPaymentService {
 
     while (attempts < maxAttempts) {
       attempts++;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
+      console.log('--- Pre-flight Logs ---');
+      console.log('LOCAL_PAYMENT_SOURCE_URL:', url);
+      console.log('LOCAL_PAYMENT_SOURCE_TOKEN exists:', !!token);
+      console.log('Request URL (without token):', url);
+      console.log('Timeout value:', 10000);
+      console.log('HTTP client being used:', 'axios');
+      console.log('-----------------------');
 
       try {
-        const response = await fetch(fetchUrl, {
-          method: 'GET',
+        const response = await axios.get(url, {
+          params: { data: token },
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
           },
-          signal: controller.signal
+          responseType: 'arraybuffer',
+          timeout: 10000
         });
 
-        clearTimeout(timeoutId);
+        return Buffer.from(response.data);
 
-        if (response.ok) {
-          const arrayBuffer = await response.arrayBuffer();
-          return Buffer.from(arrayBuffer);
-        }
-
-        // Do not retry on authentication/authorization failures
-        if (response.status >= 400 && response.status < 500) {
-          throw new Error(`Authentication/Authorization error from source: ${response.status}`);
-        }
-
-        // Retry on 5xx errors
-        if (response.status >= 500) {
-          console.warn(`Attempt ${attempts} failed with status ${response.status}. Retrying...`);
-        }
       } catch (error) {
-        clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
+        console.warn(`Attempt ${attempts} network failure. Exception details:`);
+        console.warn('error.name:', error.name);
+        console.warn('error.message:', error.message);
+        console.warn('error.code:', error.code);
+        console.warn('error.stack:', error.stack);
+
+        if (error.response) {
+          const status = error.response.status;
+          if (status >= 400 && status < 500) {
+            throw new Error(`Authentication/Authorization error from source: ${status}`);
+          }
+          if (status >= 500) {
+            console.warn(`Attempt ${attempts} failed with status ${status}. Retrying...`);
+          }
+        } else if (error.code === 'ECONNABORTED') {
           console.warn(`Attempt ${attempts} timed out. Retrying...`);
-        } else if (error.message.includes('Authentication')) {
-          throw error;
         } else {
-          console.warn(`Attempt ${attempts} network failure: ${error.message}. Retrying...`);
+          console.warn(`Attempt ${attempts} unknown network failure. Retrying...`);
         }
       }
       
