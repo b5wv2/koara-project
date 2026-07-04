@@ -1,82 +1,89 @@
-const { PdfReader } = require('pdfreader');
+const { execFile } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const util = require('util');
+const execFileAsync = util.promisify(execFile);
 
 class PdfStatementParser {
   /**
-   * Parse the PDF buffer into plain text
+   * Spawns Python to parse the PDF buffer and returns structured JSON
    */
   async parseBuffer(buffer) {
-    return new Promise((resolve, reject) => {
-      let fullText = '';
+    const tempFile = path.join(os.tmpdir(), `koara_stmt_${Date.now()}_${Math.floor(Math.random() * 1000)}.pdf`);
+    
+    try {
+      fs.writeFileSync(tempFile, buffer);
+      
+      const pythonScriptPath = path.join(__dirname, '../../python/pdf_statement_parser.py');
+      
+      let stdout;
       try {
-        new PdfReader().parseBuffer(buffer, (err, item) => {
-          if (err) {
-            reject(err);
-          } else if (!item) {
-            resolve(fullText);
-          } else if (item.text) {
-            fullText += item.text + ' ';
-          }
-        });
+        const result = await execFileAsync('python3', [pythonScriptPath, tempFile]);
+        stdout = result.stdout;
       } catch (err) {
-        console.error('PDF parsing error:', err);
-        reject(new Error('Failed to parse statement PDF'));
+        // Fallback for Windows local development where 'python3' might not exist
+        if (err.code === 'ENOENT') {
+           const result = await execFileAsync('python', [pythonScriptPath, tempFile]);
+           stdout = result.stdout;
+        } else {
+           throw new Error(`Python execution failed: ${err.message}`);
+        }
       }
-    });
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(stdout);
+      } catch (err) {
+        console.error('Raw stdout:', stdout);
+        throw new Error('Python parser returned invalid JSON.');
+      }
+      
+      if (!parsed.success) {
+        throw new Error(`Python parsing failed: ${parsed.error}`);
+      }
+      
+      return parsed;
+    } finally {
+      if (fs.existsSync(tempFile)) {
+        try {
+          fs.unlinkSync(tempFile);
+        } catch (e) {
+          console.error(`Failed to delete temporary file ${tempFile}:`, e);
+        }
+      }
+    }
   }
 
   /**
-   * Validates if a transaction exists in the statement text with the correct amount.
-   * Fulfills requirements:
-   * - tolerate changes in line order
-   * - ignore malformed transaction blocks
-   * - compare decimal amounts safely
+   * Validates if the expected transaction exists in the structured JSON returned by Python.
    */
-  validateTransaction(statementText, transactionId, expectedAmount) {
-    // 1. Tolerate changes in line order by extracting a block of text around the transaction ID
-    const txIndex = statementText.indexOf(transactionId);
-    if (txIndex === -1) {
+  validateTransaction(parsedJson, transactionId, expectedAmount) {
+    if (!parsedJson || !parsedJson.transactions) {
+      return { valid: false, reason: 'Invalid JSON structure from parser' };
+    }
+
+    const transactions = parsedJson.transactions;
+    
+    // Find matching transaction by ID
+    const matchingTx = transactions.find(tx => String(tx.transaction_id) === String(transactionId));
+    
+    if (!matchingTx) {
       return { valid: false, reason: 'Transaction ID not found in statement' };
     }
 
-    // Extract a 1000-character block around the transaction ID to capture all related fields.
-    // This allows us to ignore malformed blocks elsewhere and focus on this transaction.
-    const start = Math.max(0, txIndex - 500);
-    const end = Math.min(statementText.length, txIndex + 500);
-    const block = statementText.substring(start, end);
-
-    // 2. Safely compare decimal amounts (avoid floating-point precision issues)
-    // Extract all potential amounts in the block (e.g., 1,000.00 or 1000.0)
-    const amountRegex = /[\d,]+\.\d{1,2}/g;
-    const matches = [...block.matchAll(amountRegex)].map(m => m[0]);
-    
-    if (matches.length === 0) {
-      return { valid: false, reason: 'No amount found near transaction ID' };
-    }
-
+    // Safely compare amounts
     const expected = parseFloat(expectedAmount);
-    let amountMatched = false;
+    const parsedAmount = parseFloat(matchingTx.amount);
 
-    for (const matchStr of matches) {
-      const parsedAmount = parseFloat(matchStr.replace(/,/g, ''));
-      // Safe float comparison (epsilon)
-      if (Math.abs(parsedAmount - expected) < 0.01) {
-        amountMatched = true;
-        break;
-      }
-    }
-
-    if (!amountMatched) {
+    if (Math.abs(parsedAmount - expected) >= 0.01) {
       return { valid: false, reason: 'Amount does not match expected amount' };
     }
 
-    // 3. Ensure it's an incoming deposit. 
-    // We can do a basic heuristic: look for withdrawal keywords in the immediate vicinity
-    // and fail if it looks like a debit.
-    const withdrawalKeywords = ['withdrawal', 'debit', 'transfer out', 'payment to', 'deduction'];
-    const lowerBlock = block.toLowerCase();
-    
-    // Optional: if your specific bank statement uses specific words, they'd be checked here.
-    // We will consider it valid as long as we found the transaction ID and amount.
+    // Check deposit sign
+    if (matchingTx.sign === '-') {
+      return { valid: false, reason: 'Transaction is a withdrawal/debit, expected a deposit' };
+    }
 
     return { valid: true };
   }
