@@ -3,6 +3,11 @@ const cors = require('cors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 
+
+console.log("================================");
+console.log("Node Version:", process.version);
+console.log("================================");
+
 // Load environment variables early
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
