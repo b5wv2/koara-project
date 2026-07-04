@@ -12,10 +12,7 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: p
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
-<<<<<<< HEAD
-=======
   const [successMsg, setSuccessMsg] = useState('');
->>>>>>> daa8d37 (fiX14  db locel bank my cashi)
   
   const storeId = propStoreId || user?.storeId;
 
@@ -53,10 +50,7 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: p
 
     setIsVerifying(true);
     setError('');
-<<<<<<< HEAD
-=======
     setSuccessMsg('');
->>>>>>> daa8d37 (fiX14  db locel bank my cashi)
 
     try {
       if (!storeId) {
@@ -88,14 +82,10 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: p
         throw new Error(data.error || 'Verification failed. Please try again.');
       }
 
-<<<<<<< HEAD
-      onSuccess();
-=======
       setSuccessMsg('Wallet credited successfully.');
       setTimeout(() => {
         onSuccess();
       }, 2000);
->>>>>>> daa8d37 (fiX14  db locel bank my cashi)
     } catch (err) {
       setError(err.message);
     } finally {
@@ -153,39 +143,25 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: p
 
             <button
               onClick={handleVerify}
-<<<<<<< HEAD
-              disabled={isVerifying}
-              className="w-full py-3 rounded-lg font-bold text-white flex justify-center items-center gap-2 transition-all"
-              style={{ 
-                background: isVerifying ? 'rgba(255,255,255,0.1)' : 'var(--koara-primary)',
-                opacity: isVerifying ? 0.7 : 1
-=======
               disabled={isVerifying || !!successMsg}
               className="w-full py-3 rounded-lg font-bold text-white flex justify-center items-center gap-2 transition-all"
               style={{ 
                 background: (isVerifying || successMsg) ? 'rgba(255,255,255,0.1)' : 'var(--koara-primary)',
                 opacity: (isVerifying || successMsg) ? 0.7 : 1
->>>>>>> daa8d37 (fiX14  db locel bank my cashi)
               }}
             >
               {isVerifying ? (
                 <>
                   <Loader2 size={18} className="animate-spin" /> Verifying...
                 </>
-<<<<<<< HEAD
-=======
               ) : successMsg ? (
                 <>
                   <CheckCircle size={18} /> Verified
                 </>
->>>>>>> daa8d37 (fiX14  db locel bank my cashi)
               ) : (
                 'Verify Payment'
               )}
             </button>
-<<<<<<< HEAD
-=======
-
             {isVerifying && (
               <div className="text-xs text-blue-400 mt-2 text-center leading-relaxed">
                 Verifying your payment...<br/>
@@ -197,7 +173,6 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: p
                 {successMsg}
               </div>
             )}
->>>>>>> daa8d37 (fiX14  db locel bank my cashi)
           </div>
         ) : (
           <div className="text-red-400 text-sm">Failed to load bank configuration.</div>
