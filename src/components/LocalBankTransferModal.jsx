@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { Copy, CheckCircle, Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '../services/api';
 
 const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess }) => {
   const [config, setConfig] = useState(null);
@@ -18,7 +19,7 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess }) => {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch('/api/payments/local/config');
+      const response = await fetch(`${API_BASE_URL}/api/payments/local/config`);
       const data = await response.json();
       setConfig(data);
     } catch (err) {
@@ -53,7 +54,7 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess }) => {
         throw new Error('Store ID not found. Please log in again.');
       }
 
-      const response = await fetch('/api/payments/local/verify', {
+      const response = await fetch(`${API_BASE_URL}/api/payments/local/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
