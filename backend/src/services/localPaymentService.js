@@ -1,6 +1,9 @@
 const pdfStatementParser = require('./pdfStatementParser');
 const walletCreditService = require('./walletCreditService');
 const axios = require('axios');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 class LocalPaymentService {
   /**
@@ -40,7 +43,34 @@ class LocalPaymentService {
           timeout: 10000
         });
 
-        return Buffer.from(response.data);
+        const rawBuffer = Buffer.from(response.data);
+        
+        const contentType = response.headers['content-type'];
+        const contentLength = response.headers['content-length'] || rawBuffer.length;
+        
+        console.log('--- Response Diagnostics ---');
+        console.log('response.status:', response.status);
+        console.log("response.headers['content-type']:", contentType);
+        console.log("response.headers['content-length']:", contentLength);
+        
+        const tempFile = path.join(os.tmpdir(), `raw_statement_${Date.now()}.tmp`);
+        fs.writeFileSync(tempFile, rawBuffer);
+        console.log(`Raw response saved to: ${tempFile}`);
+        
+        const first100Bytes = rawBuffer.subarray(0, 100).toString('utf8');
+        console.log('First 100 bytes:', first100Bytes);
+        console.log('----------------------------');
+
+        const isPdfType = contentType && contentType.toLowerCase().includes('application/pdf');
+        const hasPdfSignature = first100Bytes.trimStart().startsWith('%PDF-');
+
+        if (!isPdfType || !hasPdfSignature) {
+           const bodySnippet = rawBuffer.toString('utf8').substring(0, 1000);
+           console.error('Invalid PDF Response. Body snippet:', bodySnippet);
+           throw new Error('Statement source returned invalid format instead of a PDF. Check backend logs for the raw response body.');
+        }
+
+        return rawBuffer;
 
       } catch (error) {
         console.warn(`Attempt ${attempts} network failure. Exception details:`);
