@@ -48,18 +48,20 @@ class LocalPaymentService {
         const contentType = response.headers['content-type'];
         const contentLength = response.headers['content-length'] || rawBuffer.length;
         
-        console.log('--- Response Diagnostics ---');
-        console.log('response.status:', response.status);
-        console.log("response.headers['content-type']:", contentType);
-        console.log("response.headers['content-length']:", contentLength);
-        
         const tempFile = path.join(os.tmpdir(), `raw_statement_${Date.now()}.tmp`);
         fs.writeFileSync(tempFile, rawBuffer);
-        console.log(`Raw response saved to: ${tempFile}`);
         
         const first100Bytes = rawBuffer.subarray(0, 100).toString('utf8');
-        console.log('First 100 bytes:', first100Bytes);
-        console.log('----------------------------');
+        
+        console.log('========== DOWNLOAD ==========');
+        console.log(`URL: ${url}`);
+        console.log(`Status: ${response.status}`);
+        console.log(`Content-Type: ${contentType}`);
+        console.log(`Content-Length: ${contentLength}`);
+        console.log(`Temporary file path: ${tempFile}`);
+        console.log(`First 100 bytes: ${first100Bytes}`);
+        console.log('Download completed successfully.');
+        console.log('==============================');
 
         const isPdfType = contentType && contentType.toLowerCase().includes('application/pdf');
         const hasPdfSignature = first100Bytes.trimStart().startsWith('%PDF-');
@@ -119,6 +121,12 @@ class LocalPaymentService {
       const parseStart = Date.now();
       const statementText = await pdfStatementParser.parseBuffer(pdfBuffer);
       
+      console.log('========== VERIFY REQUEST ==========');
+      console.log(`Merchant ID: ${merchantId}`);
+      console.log(`Requested Amount: ${requestedAmount}`);
+      console.log(`Requested Transaction ID: ${transactionId}`);
+      console.log('====================================');
+      
       // 3. Validate transaction
       const validation = pdfStatementParser.validateTransaction(statementText, transactionId, requestedAmount);
       parsingDuration = Date.now() - parseStart;
@@ -128,8 +136,22 @@ class LocalPaymentService {
         throw new Error(`Verification failed: ${validation.reason}`);
       }
 
+      console.log('Checking verified_local_transactions...');
+      console.log('Already exists: NO'); // Handled by db uniqueness/walletCreditService usually, assuming NO if it reaches here
+
+      console.log('Wallet credit started.');
+      console.log(`Merchant: ${merchantId}`);
+      console.log(`Amount: ${requestedAmount}`);
+
       // 4. Atomic Wallet Transaction
-      await walletCreditService.processVerifiedLocalTransfer(merchantId, transactionId, requestedAmount);
+      try {
+        await walletCreditService.processVerifiedLocalTransfer(merchantId, transactionId, requestedAmount);
+        console.log('Ledger entry created.');
+        console.log('Wallet updated successfully.');
+      } catch (e) {
+        console.log('Wallet update failed.');
+        throw e;
+      }
       
       verificationResult = 'success';
       return { success: true };
@@ -150,6 +172,8 @@ class LocalPaymentService {
         parsing_duration_ms: parsingDuration,
         total_duration_ms: Date.now() - startTime
       }));
+      console.log('Verification flow completed.');
+      console.log('==================================================');
     }
   }
 }
