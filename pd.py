@@ -17,7 +17,11 @@ print("جاري محاولة تحميل كشف الحساب...")
 response = requests.get(url, params=payload, headers=headers)
 
 if response.status_code == 200:
+<<<<<<< HEAD
     with open("statement234.pdf", "wb") as file:
+=======
+    with open("statement66.pdf", "wb") as file:
+>>>>>>> daa8d37 (fiX14  db locel bank my cashi)
         file.write(response.content)
     print("مبروك! تم تحميل ملف الـ PDF بنجاح وحفظه باسم statement.pdf")
 else:

@@ -112,28 +112,59 @@ class LocalPaymentService {
     let verificationResult = 'failed';
 
     try {
-      // 1. Fetch statement
-      const fetchStart = Date.now();
-      const pdfBuffer = await this.fetchStatementWithRetry();
-      statementFetchDuration = Date.now() - fetchStart;
+      let attempts = 0;
+      const maxAttempts = 12;
+      const delayMs = 5000;
+      let validation = null;
 
-      // 2. Parse PDF
-      const parseStart = Date.now();
-      const statementText = await pdfStatementParser.parseBuffer(pdfBuffer);
-      
-      console.log('========== VERIFY REQUEST ==========');
-      console.log(`Merchant ID: ${merchantId}`);
-      console.log(`Requested Amount: ${requestedAmount}`);
-      console.log(`Requested Transaction ID: ${transactionId}`);
-      console.log('====================================');
-      
-      // 3. Validate transaction
-      const validation = pdfStatementParser.validateTransaction(statementText, transactionId, requestedAmount, merchantId);
-      parsingDuration = Date.now() - parseStart;
+      while (attempts < maxAttempts) {
+        attempts++;
+        console.log(`Verification Attempt ${attempts}/${maxAttempts}`);
+        console.log('Downloading statement...');
 
-      if (!validation.valid) {
-        verificationResult = `invalid - ${validation.reason}`;
-        throw new Error(`Verification failed: ${validation.reason}`);
+        // 1. Fetch statement
+        const fetchStart = Date.now();
+        const pdfBuffer = await this.fetchStatementWithRetry();
+        statementFetchDuration += (Date.now() - fetchStart);
+
+        // 2. Parse PDF
+        const parseStart = Date.now();
+        const statementText = await pdfStatementParser.parseBuffer(pdfBuffer);
+        
+        if (attempts === 1) {
+          console.log('========== VERIFY REQUEST ==========');
+          console.log(`Merchant ID: ${merchantId}`);
+          console.log(`Requested Amount: ${requestedAmount}`);
+          console.log(`Requested Transaction ID: ${transactionId}`);
+          console.log('====================================');
+        }
+        
+        // 3. Validate transaction
+        validation = pdfStatementParser.validateTransaction(statementText, transactionId, requestedAmount, merchantId);
+        parsingDuration += (Date.now() - parseStart);
+
+        if (validation.valid) {
+          console.log(`Transaction detected on attempt ${attempts}.`);
+          console.log('Crediting wallet...');
+          break;
+        }
+
+        if (validation.reason === 'Transaction ID not found in statement' || validation.reason === 'Transaction not yet available') {
+          console.log('Transaction not found');
+          if (attempts < maxAttempts) {
+            console.log(`Waiting ${delayMs / 1000} seconds...`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+            continue;
+          } else {
+            console.log(`Verification failed after ${maxAttempts} attempts.`);
+            console.log(`Reason: ${validation.reason}.`);
+            verificationResult = `invalid - ${validation.reason}`;
+            throw new Error('Verification failed: We could not find your transfer yet. If you have just completed the payment, please wait a few minutes and try again.');
+          }
+        } else {
+          verificationResult = `invalid - ${validation.reason}`;
+          throw new Error(`Verification failed: ${validation.reason}`);
+        }
       }
 
       console.log('Checking verified_local_transactions...');
