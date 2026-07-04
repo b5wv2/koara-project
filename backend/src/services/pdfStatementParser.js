@@ -1,113 +1,176 @@
-const { execFile } = require('child_process');
 const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const util = require('util');
-const execFileAsync = util.promisify(execFile);
 
 class PdfStatementParser {
   /**
-   * Spawns Python to parse the PDF buffer and returns structured JSON
+   * Reads a PDF buffer using pdfjs-dist, extracts text items, builds rows based on coordinates,
+   * groups rows into transaction blocks separated by amounts (+/-), and parses them.
    */
   async parseBuffer(buffer) {
-    const tempFile = path.join(os.tmpdir(), `koara_stmt_${Date.now()}_${Math.floor(Math.random() * 1000)}.pdf`);
-    
+    let pdfjsLib;
     try {
-      fs.writeFileSync(tempFile, buffer);
-      
-      const pythonScriptPath = path.join(__dirname, '../../python/pdf_statement_parser.py');
-      
-      console.log('========== PYTHON ==========');
-      console.log(`Python executable: python3 (fallback: python)`);
-      console.log(`Parser path: ${pythonScriptPath}`);
-      console.log(`Working directory: ${process.cwd()}`);
-      console.log(`Temporary PDF: ${tempFile}`);
-      console.log(`Command: python3 ${pythonScriptPath} ${tempFile}`);
-      console.log('============================');
-      
-      let stdout;
-      let stderr = '';
-      let exitCode = 0;
-      const t0 = Date.now();
-      
-      try {
-        const result = await execFileAsync('python3', [pythonScriptPath, tempFile]);
-        stdout = result.stdout;
-        stderr = result.stderr || '';
-      } catch (err) {
-        if (err.code === 'ENOENT') {
-           try {
-             const result = await execFileAsync('python', [pythonScriptPath, tempFile]);
-             stdout = result.stdout;
-             stderr = result.stderr || '';
-           } catch (err2) {
-             exitCode = err2.code || 1;
-             stdout = err2.stdout || '';
-             stderr = err2.stderr || err2.message;
-             throw err2;
-           }
-        } else {
-           exitCode = err.code || 1;
-           stdout = err.stdout || '';
-           stderr = err.stderr || err.message;
-           throw err;
-        }
-      } finally {
-        const t1 = Date.now();
-        console.log('========== PYTHON RESULT ==========');
-        console.log(`Exit Code: ${exitCode}`);
-        console.log(`Execution Time: ${t1 - t0}ms`);
-        console.log('STDOUT:');
-        console.log(stdout);
-        console.log('STDERR:');
-        console.log(stderr);
-        console.log('===================================');
-      }
-      
-      let parsed;
-      try {
-        parsed = JSON.parse(stdout);
-      } catch (err) {
-        console.log('Python returned invalid JSON.');
-        throw new Error('Python parser returned invalid JSON.');
-      }
-      
-      if (!parsed.success) {
-        throw new Error(`Python parsing failed: ${parsed.error}`);
-      }
-      
-      const txs = parsed.transactions || [];
-      console.log('========== PARSED DATA ==========');
-      console.log(`success: ${parsed.success}`);
-      console.log(`Number of transactions: ${txs.length}`);
-      
-      for (const tx of txs) {
-        console.log('--------------------------------');
-        console.log(`Transaction ID: ${tx.transaction_id}`);
-        console.log(`Amount: ${tx.amount}`);
-        console.log(`Sign: ${tx.sign}`);
-        console.log(`Timestamp: ${tx.timestamp}`);
-      }
-      console.log('--------------------------------');
-      console.log(`Total transactions extracted: ${txs.length}`);
-      console.log('================================');
-      
-      return parsed;
-    } finally {
-      if (fs.existsSync(tempFile)) {
-        try {
-          fs.unlinkSync(tempFile);
-          console.log('Temporary PDF deleted successfully.');
-        } catch (e) {
-          console.error(`Failed to delete temporary file ${tempFile}:`, e);
-        }
-      }
-      console.log('Python process completed.');
+      pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    } catch (e) {
+      throw new Error(`Failed to load pdfjs-dist: ${e.message}`);
     }
+
+    const uint8Array = new Uint8Array(buffer);
+    
+    // 1. Read the PDF using pdfjs-dist
+    const loadingTask = pdfjsLib.getDocument({
+      data: uint8Array,
+      disableWorker: true,
+      useSystemFonts: true
+    });
+    
+    const pdfDoc = await loadingTask.promise;
+    
+    let totalTextItems = 0;
+    const allRows = [];
+    
+    // 2. Iterate through every page
+    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+      const page = await pdfDoc.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      totalTextItems += textContent.items.length;
+      
+      // 3. Build rows: Group text items by their Y coordinate
+      const rowsMap = {};
+      for (const item of textContent.items) {
+        if (!item.str || item.str.trim() === '') continue;
+        
+        // Transform [a, b, c, d, e, f] where e is X, f is Y
+        const x = item.transform[4];
+        // Round Y to handle slight vertical misalignments in PDF generation
+        const y = Math.round(item.transform[5]);
+        
+        if (!rowsMap[y]) {
+          rowsMap[y] = [];
+        }
+        rowsMap[y].push({ x, text: item.str });
+      }
+      
+      // Sort Y coordinates descending (Top to Bottom since Y grows upwards in PDF coordinates)
+      const yKeys = Object.keys(rowsMap).map(Number).sort((a, b) => b - a);
+      
+      // 4. Sort every row by X coordinate
+      for (const y of yKeys) {
+        rowsMap[y].sort((a, b) => a.x - b.x);
+        // Combine text items into a single row string
+        const rowStr = rowsMap[y].map(item => item.text).join(' ').replace(/\s+/g, ' ').trim();
+        if (rowStr) {
+          allRows.push(rowStr);
+        }
+      }
+    }
+    
+    // 5. Build transaction blocks
+    const transactions = [];
+    let currentBlock = [];
+    
+    // A transaction starts whenever a row begins with: + amount or - amount
+    const isAmountRow = (str) => /^[+-]\s*\d+(?:,\d{3})*\.\d{2}/.test(str);
+    
+    for (const row of allRows) {
+      if (isAmountRow(row)) {
+        if (currentBlock.length > 0) {
+          const parsedTx = this._parseBlock(currentBlock);
+          if (parsedTx) {
+            transactions.push(parsedTx);
+          }
+        }
+        currentBlock = [row]; // Start new block
+      } else {
+        if (currentBlock.length > 0) {
+          currentBlock.push(row);
+        }
+      }
+    }
+    
+    // Process the last block
+    if (currentBlock.length > 0) {
+      const parsedTx = this._parseBlock(currentBlock);
+      if (parsedTx) {
+        transactions.push(parsedTx);
+      }
+    }
+    
+    // 6. Logging
+    console.log('========== PDF.js ==========');
+    console.log(`Pages: ${pdfDoc.numPages}`);
+    console.log(`Text items: ${totalTextItems}`);
+    console.log(`Rows: ${allRows.length}`);
+    console.log(`Transaction blocks: ${transactions.length}`); // Could differ if parse failed, but we use length
+    console.log(`Transactions extracted: ${transactions.length}`);
+    console.log('============================');
+    
+    for (const tx of transactions) {
+      console.log('Transaction ID:', tx.transaction_id);
+      console.log('Amount:', tx.amount);
+      console.log('Sign:', tx.sign);
+      console.log('Timestamp:', tx.timestamp);
+    }
+    
+    return {
+      success: true,
+      transactions: transactions
+    };
   }
 
   /**
-   * Validates if the expected transaction exists in the structured JSON returned by Python.
+   * Internal helper to parse a single isolated transaction block
+   */
+  _parseBlock(lines) {
+    const text = lines.join('\n');
+    const firstLine = lines[0];
+    
+    // Extract amount and sign from the first line (the delimiter)
+    const amountMatch = firstLine.match(/^([+-])\s*(\d+(?:,\d{3})*\.\d{2})/);
+    if (!amountMatch) return null;
+    
+    const sign = amountMatch[1];
+    const amount = parseFloat(amountMatch[2].replace(/,/g, ''));
+    
+    // Extract transaction_id anywhere in the block (usually 9 digits, fallback to 6-15)
+    let tx_id = null;
+    const allNumbers = text.match(/\b\d{6,15}\b/g) || [];
+    
+    for (const num of allNumbers) {
+      if (/^\d{9}$/.test(num)) {
+        tx_id = num;
+        break;
+      }
+    }
+    if (!tx_id && allNumbers.length > 0) {
+      tx_id = allNumbers[0];
+    }
+    
+    if (!tx_id) return null; // Transaction ID is mandatory
+    
+    // Extract timestamp
+    let timestamp = '';
+    const tsMatch = text.match(/\b(\d{2,4}[-/]\d{2}[-/]\d{2,4}(?:\s+(?:AM|PM)\s+\d{1,2}:\d{2}|\s+\d{1,2}:\d{2}\s+(?:AM|PM))?)\b/i);
+    if (tsMatch) {
+       timestamp = tsMatch[1];
+    } else {
+       // Look for timestamp split across lines (e.g. date on one line, time on another)
+       const flatText = lines.join(' ').replace(/\s+/g, ' ');
+       const tsFlatMatch = flatText.match(/\b(\d{2,4}[-/]\d{2}[-/]\d{2,4}(?:\s+(?:AM|PM)\s+\d{1,2}:\d{2}|\s+\d{1,2}:\d{2}\s+(?:AM|PM))?)\b/i);
+       if (tsFlatMatch) timestamp = tsFlatMatch[1];
+    }
+    
+    return {
+      transaction_id: tx_id,
+      amount: amount,
+      sign: sign,
+      timestamp: timestamp,
+      raw_text: text
+    };
+  }
+
+  /**
+   * Validates if the expected transaction exists in the structured JSON returned by PDF.js
+   * (Keep Business Logic Unchanged)
    */
   validateTransaction(parsedJson, transactionId, expectedAmount) {
     if (!parsedJson || !parsedJson.transactions) {
