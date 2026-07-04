@@ -1,4 +1,5 @@
 const fs = require('fs');
+const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
 
 class PdfStatementParser {
   /**
@@ -6,13 +7,6 @@ class PdfStatementParser {
    * groups rows into transaction blocks separated by amounts (+/-), and parses them.
    */
   async parseBuffer(buffer) {
-    let pdfjsLib;
-    try {
-      pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    } catch (e) {
-      throw new Error(`Failed to load pdfjs-dist: ${e.message}`);
-    }
-
     const uint8Array = new Uint8Array(buffer);
     
     // 1. Read the PDF using pdfjs-dist
