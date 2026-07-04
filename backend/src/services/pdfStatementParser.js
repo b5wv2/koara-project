@@ -166,61 +166,77 @@ class PdfStatementParser {
    * Validates if the expected transaction exists in the structured JSON returned by PDF.js
    * (Keep Business Logic Unchanged)
    */
-  validateTransaction(parsedJson, transactionId, expectedAmount) {
+  validateTransaction(parsedJson, transactionId, expectedAmount, merchantId = 'N/A') {
     if (!parsedJson || !parsedJson.transactions) {
       return { valid: false, reason: 'Invalid JSON structure from parser' };
     }
 
     const transactions = parsedJson.transactions;
-    const expected = parseFloat(expectedAmount);
+    const normExpectedAmount = Number(expectedAmount);
+    const normExpectedId = String(transactionId).trim();
     
+    console.log('========== VALIDATION ==========');
+    console.log(`Incoming transactionId: ${transactionId}`);
+    console.log(`Incoming amount: ${expectedAmount}`);
+    console.log(`Incoming store_id: ${merchantId}`);
+    console.log(`Number of extracted transactions: ${transactions.length}`);
+
     let matchingTx = null;
+    let finalDecision = false;
+    let failReason = 'Transaction ID not found in statement';
 
     for (const tx of transactions) {
-      console.log('Checking transaction:');
-      console.log(`ID: ${tx.transaction_id}`);
-      console.log(`Amount: ${tx.amount}`);
-      console.log(`Sign: ${tx.sign}`);
-      console.log('Result:');
+      console.log('------------------------');
+      console.log('Transaction Object:\n');
+      console.log(`transaction_id: ${tx.transaction_id}`);
+      console.log(`amount: ${tx.amount}`);
+      console.log(`sign: ${tx.sign}`);
+      console.log(`timestamp: ${tx.timestamp}\n`);
+      console.log('Comparing against request...\n');
       
-      const isIdMatch = String(tx.transaction_id) === String(transactionId);
-      const isAmountMatch = Math.abs(parseFloat(tx.amount) - expected) < 0.01;
+      const normTxId = String(tx.transaction_id).trim();
+      const normTxAmount = Number(tx.amount);
+      
+      console.log(`Normalized Transaction ID: ${normTxId}`);
+      console.log(`Normalized Request ID: ${normExpectedId}\n`);
+      
+      const isIdMatch = normTxId === normExpectedId;
+      const isAmountMatch = Math.abs(normTxAmount - normExpectedAmount) < 0.01;
       const isSignMatch = tx.sign === '+';
       
-      console.log(`ID MATCH: ${isIdMatch ? 'YES' : 'NO'}`);
-      console.log(`AMOUNT MATCH: ${isAmountMatch ? 'YES' : 'NO'}`);
-      console.log(`SIGN MATCH: ${isSignMatch ? 'YES' : 'NO'}`);
-      console.log('------------------------------------');
+      console.log(`ID Match: ${isIdMatch}`);
+      console.log(`Amount Match: ${isAmountMatch}`);
+      console.log(`Sign Match: ${isSignMatch}`);
+      console.log('------------------------');
       
       if (isIdMatch) {
-         matchingTx = tx;
+         if (!isAmountMatch) {
+            failReason = 'Amount does not match expected amount';
+         } else if (!isSignMatch) {
+            failReason = 'Transaction is a withdrawal/debit, expected a deposit';
+         } else {
+            matchingTx = tx;
+            finalDecision = true;
+            failReason = 'None';
+         }
       }
     }
     
-    if (!matchingTx) {
-      console.log('No matching transaction found.');
-      return { valid: false, reason: 'Transaction ID not found in statement' };
+    console.log(`Found matching transaction: ${finalDecision}`);
+    if (!finalDecision) {
+      let printReason = failReason;
+      if (failReason === 'Transaction ID not found in statement') {
+        printReason = 'ID mismatch';
+      }
+      console.log(`Reason:\n- ${printReason}`);
+    } else {
+      console.log(`Reason:\n- Valid match found`);
     }
+    console.log('========== VALIDATION COMPLETE ==========');
 
-    const parsedAmount = parseFloat(matchingTx.amount);
-
-    if (Math.abs(parsedAmount - expected) >= 0.01) {
-      console.log('No matching transaction found.');
-      return { valid: false, reason: 'Amount does not match expected amount' };
+    if (!finalDecision) {
+       return { valid: false, reason: failReason };
     }
-
-    // Check deposit sign
-    if (matchingTx.sign === '-') {
-      console.log('No matching transaction found.');
-      return { valid: false, reason: 'Transaction is a withdrawal/debit, expected a deposit' };
-    }
-    
-    console.log('MATCH FOUND');
-    console.log('Matched Transaction:');
-    console.log(`ID: ${matchingTx.transaction_id}`);
-    console.log(`Amount: ${matchingTx.amount}`);
-    console.log(`Sign: ${matchingTx.sign}`);
-    console.log(`Timestamp: ${matchingTx.timestamp}`);
 
     return { valid: true };
   }

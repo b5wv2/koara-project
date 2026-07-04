@@ -128,7 +128,7 @@ class LocalPaymentService {
       console.log('====================================');
       
       // 3. Validate transaction
-      const validation = pdfStatementParser.validateTransaction(statementText, transactionId, requestedAmount);
+      const validation = pdfStatementParser.validateTransaction(statementText, transactionId, requestedAmount, merchantId);
       parsingDuration = Date.now() - parseStart;
 
       if (!validation.valid) {
