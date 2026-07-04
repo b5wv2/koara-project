@@ -2,14 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { Copy, CheckCircle, Loader2 } from 'lucide-react';
 import { API_BASE_URL } from '../services/api';
+import { useAppContext } from '../context/AppContext';
 
-const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess }) => {
+const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: propStoreId }) => {
+  const { user, store } = useAppContext();
   const [config, setConfig] = useState(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [transactionId, setTransactionId] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  
+  const storeId = propStoreId || user?.storeId;
 
   useEffect(() => {
     if (isOpen) {
@@ -47,12 +51,16 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess }) => {
     setError('');
 
     try {
-      const storeIdStr = localStorage.getItem('koara_store_id');
-      const storeId = storeIdStr ? parseInt(storeIdStr, 10) : null;
-
       if (!storeId) {
         throw new Error('Store ID not found. Please log in again.');
       }
+
+      console.log({
+        user,
+        merchant: user,
+        store,
+        storeId
+      });
 
       const response = await fetch(`${API_BASE_URL}/api/payments/local/verify`, {
         method: 'POST',
