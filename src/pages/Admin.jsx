@@ -1225,7 +1225,7 @@ const AdminDashboard = () => {
           </p>
           <div>
             <label className="koara-label">Amount ($)</label>
-            <input type="number" step="0.01" min="10" value={merchantActionModal.amount} onChange={(e) => setMerchantActionModal({ ...merchantActionModal, amount: e.target.value })} className="koara-input" required dir="ltr" />
+            <input type="number" step="0.01" min="0.01" value={merchantActionModal.amount} onChange={(e) => setMerchantActionModal({ ...merchantActionModal, amount: e.target.value })} className="koara-input" required dir="ltr" />
           </div>
           <button type="submit" className="dash-btn dash-btn-primary w-full justify-center py-2.5 rounded-xl text-sm font-semibold">
             Submit Request

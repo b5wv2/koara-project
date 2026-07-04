@@ -15,8 +15,8 @@ router.post('/verify', async (req, res) => {
   // Use store_id as merchant_id to align with existing architecture
   const { store_id, transaction_id, amount } = req.body;
 
-  if (!store_id || !transaction_id || !amount) {
-    return res.status(400).json({ error: 'store_id, transaction_id, and amount are required' });
+  if (!store_id || !transaction_id || amount === undefined || amount === null || isNaN(amount) || Number(amount) <= 0) {
+    return res.status(400).json({ error: 'store_id, transaction_id are required, and amount must be greater than 0' });
   }
 
   try {

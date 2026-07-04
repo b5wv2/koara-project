@@ -7,8 +7,8 @@ const db = require('../config/db');
 router.post('/nowpayments/invoice', async (req, res) => {
   const { store_id, amount } = req.body;
 
-  if (!store_id || !amount) {
-    return res.status(400).json({ error: 'store_id and amount are required' });
+  if (!store_id || amount === undefined || amount === null || isNaN(amount) || Number(amount) <= 0) {
+    return res.status(400).json({ error: 'store_id is required and amount must be greater than 0' });
   }
 
   try {
