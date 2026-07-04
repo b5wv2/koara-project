@@ -44,20 +44,35 @@ const PaymentProviderModal = ({ isOpen, onClose, amount, onSelectProvider }) => 
             <ChevronRight size={18} style={{ color: '#64748B' }} />
           </button>
 
-          {/* Future Extensibility: Stripe, PayPal, etc. */}
-          {/* 
-          <button disabled className="w-full flex items-center justify-between p-4 rounded-xl opacity-50 cursor-not-allowed" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-             <div className="flex items-center gap-4">
-               <div className="w-12 h-12 flex items-center justify-center rounded-lg" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                 <CreditCard size={20} style={{ color: '#94A3B8' }} />
-               </div>
-               <div className="text-left">
-                 <div className="text-sm font-bold text-white">Stripe (Coming Soon)</div>
-                 <div className="text-xs" style={{ color: '#94A3B8' }}>Credit / Debit Cards</div>
-               </div>
-             </div>
+          {/* Local Bank Transfer Option */}
+          <button
+            onClick={() => onSelectProvider('local_bank')}
+            className="w-full flex items-center justify-between p-4 rounded-xl transition-all mt-3"
+            style={{ 
+              background: 'rgba(255,255,255,0.03)', 
+              border: '1px solid rgba(255,255,255,0.08)' 
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-white/5 shrink-0">
+                <CreditCard size={24} className="text-koara-primary" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-bold text-white">Local Bank Transfer</div>
+                <div className="text-xs" style={{ color: '#94A3B8' }}>Direct Transfer to our Bank</div>
+              </div>
+            </div>
+            <ChevronRight size={18} style={{ color: '#64748B' }} />
           </button>
-          */}
+
         </div>
       </div>
     </Modal>

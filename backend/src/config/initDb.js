@@ -249,7 +249,17 @@ const createCryptoInvoicesTableQuery = `
     status VARCHAR(50) DEFAULT 'waiting',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
-`;
+\`;
+
+const createVerifiedLocalTransactionsTableQuery = `
+  CREATE TABLE IF NOT EXISTS verified_local_transactions (
+    id SERIAL PRIMARY KEY,
+    transaction_id VARCHAR(255) UNIQUE NOT NULL,
+    merchant_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    amount NUMERIC(10,2) NOT NULL,
+    verified_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+\`;
 
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
@@ -360,6 +370,9 @@ const initializeDatabase = async () => {
 
     // Create crypto_invoices table
     await client.query(createCryptoInvoicesTableQuery);
+
+    // Create verified_local_transactions table
+    await client.query(createVerifiedLocalTransactionsTableQuery);
 
     // --- Order System Enhancements ---
     await client.query(`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`);

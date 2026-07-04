@@ -23,6 +23,7 @@ const merchantProductRoutes = require('./routes/merchantProducts');
 const merchantTopupsRoutes = require('./routes/merchantTopups');
 const storeTopupsRoutes = require('./routes/storeTopups');
 const paymentRoutes = require('./routes/payments');
+const localPaymentRoutes = require('./routes/localPayment');
 const topupSyncService = require('./services/topupSyncService');
 
 const app = express();
@@ -61,6 +62,7 @@ app.use('/api/merchant', merchantRoutes);
 app.use('/api/admin/catalog', catalogRoutes);
 app.use('/api/store/topups', storeTopupsRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/payments/local', localPaymentRoutes);
 
 // API Health check endpoint
 app.get('/api/health', (req, res) => {

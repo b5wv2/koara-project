@@ -6,6 +6,7 @@ import { useAppContext } from '../context/AppContext';
 import KoaraLogo from '../assets/koara-logo.svg';
 import PaymentProviderModal from '../components/PaymentProviderModal';
 import CryptoPaymentModal from '../components/CryptoPaymentModal';
+import LocalBankTransferModal from '../components/LocalBankTransferModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
 
@@ -83,6 +84,7 @@ const AdminDashboard = () => {
   const [merchantActionModal, setMerchantActionModal] = useState({ isOpen: false, type: '', amount: 0 });
   const [providerModal, setProviderModal] = useState({ isOpen: false, amount: 0 });
   const [cryptoModal, setCryptoModal] = useState({ isOpen: false, amount: 0 });
+  const [localBankModal, setLocalBankModal] = useState({ isOpen: false, amount: 0 });
   const [selectedKyc, setSelectedKyc] = useState(null);
   const [rejectKycModal, setRejectKycModal] = useState({ isOpen: false, storeId: null });
   const [rejectReason, setRejectReason] = useState('');
@@ -1237,10 +1239,12 @@ const AdminDashboard = () => {
         onClose={() => setProviderModal({ isOpen: false, amount: 0 })}
         amount={providerModal.amount}
         onSelectProvider={(provider) => {
+          const amount = providerModal.amount;
+          setProviderModal({ isOpen: false, amount: 0 });
           if (provider === 'nowpayments') {
-            const amount = providerModal.amount;
-            setProviderModal({ isOpen: false, amount: 0 });
             setCryptoModal({ isOpen: true, amount });
+          } else if (provider === 'local_bank') {
+            setLocalBankModal({ isOpen: true, amount });
           }
         }}
       />
@@ -1249,6 +1253,22 @@ const AdminDashboard = () => {
         isOpen={cryptoModal.isOpen}
         onClose={() => setCryptoModal({ isOpen: false, amount: 0 })}
         amount={cryptoModal.amount}
+        storeId={storeId}
+      />
+
+      <LocalBankTransferModal
+        isOpen={localBankModal.isOpen}
+        onClose={() => setLocalBankModal({ isOpen: false, amount: 0 })}
+        amount={localBankModal.amount}
+        onSuccess={() => {
+          setLocalBankModal({ isOpen: false, amount: 0 });
+          alert('Local bank transfer successful!');
+          if (activeTab === 'dashboard') {
+            fetchMerchantOrders(storeId).catch(console.error);
+            // Re-fetch to update balance if needed. Since we don't have a direct fetchBalance method,
+            // merchant can refresh or it might automatically update.
+          }
+        }}
         storeId={storeId}
       />
 
