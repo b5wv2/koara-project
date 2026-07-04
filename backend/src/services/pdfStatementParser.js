@@ -1,24 +1,27 @@
-const fs = require('fs');
-
-// Handle pdf-parse export properly regardless of version
-const pdfParse = require('pdf-parse');
-const parsePdf = typeof pdfParse === 'function' ? pdfParse : (pdfParse.default || Object.values(pdfParse).find(v => typeof v === 'function'));
+const { PdfReader } = require('pdfreader');
 
 class PdfStatementParser {
   /**
    * Parse the PDF buffer into plain text
    */
   async parseBuffer(buffer) {
-    try {
-      if (!parsePdf) {
-        throw new Error('pdf-parse function not found. Check package installation.');
+    return new Promise((resolve, reject) => {
+      let fullText = '';
+      try {
+        new PdfReader().parseBuffer(buffer, (err, item) => {
+          if (err) {
+            reject(err);
+          } else if (!item) {
+            resolve(fullText);
+          } else if (item.text) {
+            fullText += item.text + ' ';
+          }
+        });
+      } catch (err) {
+        console.error('PDF parsing error:', err);
+        reject(new Error('Failed to parse statement PDF'));
       }
-      const data = await parsePdf(buffer);
-      return data.text;
-    } catch (err) {
-      console.error('PDF parsing error:', err);
-      throw new Error('Failed to parse statement PDF');
-    }
+    });
   }
 
   /**

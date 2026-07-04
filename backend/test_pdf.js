@@ -1,16 +1,15 @@
 const fs = require('fs');
-const pdfParse = require('pdf-parse');
+const pdfParser = require('./src/services/pdfStatementParser');
 
 async function test() {
     try {
-        console.log(typeof pdfParse);
-        const data1 = await pdfParse(fs.readFileSync('../statement1.pdf'));
+        const text1 = await pdfParser.parseBuffer(fs.readFileSync('../statement1.pdf'));
         console.log("=== STATEMENT 1 ===");
-        console.log(data1.text);
+        console.log(text1);
         
-        const data2 = await pdfParse(fs.readFileSync('../statement2.pdf'));
+        const text2 = await pdfParser.parseBuffer(fs.readFileSync('../statement2.pdf'));
         console.log("=== STATEMENT 2 ===");
-        console.log(data2.text);
+        console.log(text2);
     } catch(err) {
         console.error(err);
     }
