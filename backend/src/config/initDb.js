@@ -249,7 +249,7 @@ const createCryptoInvoicesTableQuery = `
     status VARCHAR(50) DEFAULT 'waiting',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
-\`;
+`;
 
 const createVerifiedLocalTransactionsTableQuery = `
   CREATE TABLE IF NOT EXISTS verified_local_transactions (
@@ -259,7 +259,7 @@ const createVerifiedLocalTransactionsTableQuery = `
     amount NUMERIC(10,2) NOT NULL,
     verified_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
-\`;
+`;
 
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
