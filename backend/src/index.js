@@ -41,13 +41,25 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173'
 ];
+
+const isValidOrigin = (origin) => {
+  // Allow requests with no origin (like mobile apps or curl requests)
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  
+  // Allow any HTTPS subdomain of getkoara.com
+  const subdomainRegex = /^https:\/\/([a-zA-Z0-9-]+\.)+getkoara\.com$/;
+  if (subdomainRegex.test(origin)) return true;
+
+  return false;
+};
+
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (isValidOrigin(origin)) {
       callback(null, true);
     } else {
+      console.warn(`Blocked Origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
