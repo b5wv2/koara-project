@@ -47,7 +47,7 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 text-sm" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="text-slate-500">&copy; 2026 Koara · Multi-tenant commerce</div>
+          <div className="text-slate-500">&copy; 2026 Koara · Multi-tenant commerce · All rights reserved.</div>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
             <span className="text-slate-600">v0.1</span>
             <div className="px-3 py-1.5 rounded-full flex items-center gap-2 font-medium text-xs text-white" style={{ background: 'linear-gradient(135deg, #2563EB 11%, #7C3AED 79%)', boxShadow: '0 0 15px -3px rgba(124, 58, 237, 0.3)' }}>
