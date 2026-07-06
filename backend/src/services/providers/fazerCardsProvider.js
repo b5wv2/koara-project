@@ -1,4 +1,4 @@
-
+const { normalizeProviderStatus } = require('../../utils/statusMapper');
 
 class FazerCardsProvider {
   constructor() {
@@ -56,7 +56,7 @@ class FazerCardsProvider {
       return {
         success: true,
         provider_order_id: responseData.order_id || responseData.id || `MOCK-${Date.now()}`,
-        status: responseData.status || 'processing',
+        status: normalizeProviderStatus(responseData.status || 'processing'),
         raw_response: responseData
       };
     } catch (error) {

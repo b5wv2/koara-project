@@ -188,7 +188,7 @@ class TopupOrderService {
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query("UPDATE topup_orders SET status = 'failed', provider_response = $1 WHERE id = $2", [JSON.stringify({ error: errorMsg }), orderId]);
+      await client.query("UPDATE topup_orders SET status = 'rejected', provider_response = $1 WHERE id = $2", [JSON.stringify({ error: errorMsg }), orderId]);
       const refundRes = await client.query('UPDATE stores SET balance = balance + $1 WHERE id = $2 RETURNING balance', [amount, storeId]);
       const newBalance = refundRes.rows[0].balance;
 

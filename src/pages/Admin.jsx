@@ -782,11 +782,7 @@ const AdminDashboard = () => {
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="font-semibold text-sm text-white" dir="ltr">${parseFloat(order.total_amount || 0).toFixed(2)}</span>
-                            <StatusBadge status={
-                              order.status === 'pending' ? 'pending'
-                              : order.status === 'approved' ? 'approved'
-                              : 'rejected'
-                            } />
+                            <StatusBadge status={order.status} />
                           </div>
                         </div>
                         {order.status === 'pending' && (

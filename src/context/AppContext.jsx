@@ -410,7 +410,7 @@ export const AppProvider = ({ children }) => {
       });
       const data = await response.json();
       if (response.ok && (data.success || data.order)) {
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: isTopup && status === 'approved' ? 'processing' : status } : o));
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: data.status || status } : o));
         return { success: true };
       }
       return { success: false, message: data.error || 'Update failed' };
