@@ -904,7 +904,7 @@ const AdminDashboard = () => {
             {role === 'merchant' && activeTab === 'topups' && (
               <div className="dash-card overflow-hidden">
                 <SectionHeader
-                  title="Direct Top-ups (FazerCards)"
+                  title="Direct Top-ups"
                   description="Enable direct game top-ups for your customers. Prices listed under Cost are charged to your wallet."
                 />
                 <div className="overflow-x-auto">

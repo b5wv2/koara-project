@@ -112,8 +112,8 @@ const LandingPage = () => {
         <section className="max-w-7xl mx-auto px-4 sm:px-8 pb-20 sm:pb-28 relative z-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              ['10K+', 'Active Merchants'],
-              ['$2.4M', 'Monthly Volume'],
+              ['800+', 'Active Merchants'],
+              ['$2.1k', 'Monthly Volume'],
               ['99.9%', 'Uptime SLA'],
               ['<1s', 'Delivery Speed']
             ].map(([value, label]) => (
@@ -268,9 +268,15 @@ const LandingPage = () => {
                 >
                   Get started free <ArrowRight size={18} className="rtl:rotate-180" />
                 </button>
-                <button className="btn-secondary px-8 py-4 text-sm">
+                <button
+                  className="btn-secondary px-8 py-4 text-sm"
+                  onClick={() => {
+                    window.location.href = "mailto:support@getkoara.com";
+                  }}
+                >
                   Talk to sales
                 </button>
+                
               </div>
             </div>
           </div>
