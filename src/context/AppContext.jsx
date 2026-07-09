@@ -34,6 +34,17 @@ export const AppProvider = ({ children }) => {
             storeName: data.store ? data.store.store_name : null
           });
           setStore(data.store);
+          if (data.store) {
+            try {
+              const subRes = await fetch(`${API_BASE_URL}/api/subscription`, { credentials: 'include' });
+              if (subRes.ok) {
+                const subData = await subRes.json();
+                setSubscription(subData);
+              }
+            } catch (e) {
+              console.error('Failed to fetch subscription', e);
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to restore session:', err);
@@ -689,13 +700,19 @@ export const AppProvider = ({ children }) => {
 
   const isPlusActive = subscription.plan === 'plus' && subscription.status === 'active';
 
-  const upgradeSubscription = () => {
-    setSubscription({
-      plan: 'plus',
-      status: 'active',
-      starts_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-    });
+  const upgradeSubscription = async () => {};
+
+  const fetchSubscription = async () => {
+    if (!store) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/subscription`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setSubscription(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch subscription', e);
+    }
   };
 
   return (
@@ -714,7 +731,7 @@ export const AppProvider = ({ children }) => {
       platformProducts, setPlatformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct,
       providers, setProviders, fetchProviders, fetchProviderMappings, addProviderMapping,
       merchantPlatformProducts, setMerchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct,
-      subscription, setSubscription, isPlusActive, upgradeSubscription
+      subscription, setSubscription, isPlusActive, upgradeSubscription, fetchSubscription
     }}>
       {children}
     </AppContext.Provider>

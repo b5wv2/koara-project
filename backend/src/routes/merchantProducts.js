@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const subscriptionService = require('../services/subscriptionService');
 const multer = require('multer');
 const path = require('path');
 
@@ -69,6 +70,13 @@ router.put('/:productId', async (req, res) => {
   if (!store_id) return res.status(400).json({ error: 'store_id is required' });
 
   try {
+    if (custom_title || custom_description || custom_image_url) {
+      const sub = await subscriptionService.ensureSubscription(store_id);
+      if (sub.plan !== 'plus' || sub.status !== 'active') {
+        return res.status(403).json({ error: 'Premium feature locked. Upgrade to Koara Plus required.' });
+      }
+    }
+
     // Default selling_price to 0 for new rows if not provided (NOT NULL constraint)
     const priceValue = selling_price !== null && selling_price !== undefined ? selling_price : 0;
     const enabledValue = is_enabled !== null && is_enabled !== undefined ? is_enabled : true;

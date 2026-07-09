@@ -261,6 +261,33 @@ const createVerifiedLocalTransactionsTableQuery = `
   );
 `;
 
+const createSubscriptionsTableQuery = `
+  CREATE TABLE IF NOT EXISTS subscriptions (
+    id SERIAL PRIMARY KEY,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE UNIQUE,
+    plan VARCHAR(50) NOT NULL DEFAULT 'basic',
+    status VARCHAR(50) NOT NULL DEFAULT 'active',
+    starts_at TIMESTAMP WITH TIME ZONE,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    payment_method VARCHAR(50),
+    last_payment_amount NUMERIC(10, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
+const createSubscriptionAuditLogsTableQuery = `
+  CREATE TABLE IF NOT EXISTS subscription_audit_logs (
+    id SERIAL PRIMARY KEY,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    event VARCHAR(50) NOT NULL,
+    payment_method VARCHAR(50),
+    transaction_id VARCHAR(255),
+    amount NUMERIC(10, 2),
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
   const client = await db.pool.connect();
@@ -373,6 +400,10 @@ const initializeDatabase = async () => {
 
     // Create verified_local_transactions table
     await client.query(createVerifiedLocalTransactionsTableQuery);
+
+    // Create subscriptions and audit logs tables
+    await client.query(createSubscriptionsTableQuery);
+    await client.query(createSubscriptionAuditLogsTableQuery);
 
     // --- Order System Enhancements ---
     await client.query(`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`);

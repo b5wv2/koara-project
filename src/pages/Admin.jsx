@@ -137,6 +137,10 @@ const AdminDashboard = () => {
 
   // Subscription
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradeMethod, setUpgradeMethod] = useState('wallet');
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [upgradeError, setUpgradeError] = useState('');
+  const [billingHistory, setBillingHistory] = useState([]);
 
   if (!user) return <Navigate to="/" />;
 
@@ -201,8 +205,14 @@ const AdminDashboard = () => {
           .catch(console.error)
           .finally(() => setTopupsLoading(false));
       }
-      if (activeTab === 'dashboard') {
+      if (activeTab === 'orders') {
         fetchMerchantOrders(storeId).catch(console.error);
+      }
+      if (activeTab === 'subscription') {
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subscription/history`, { credentials: 'include' })
+          .then(res => res.json())
+          .then(data => setBillingHistory(data))
+          .catch(console.error);
       }
     }
   }, [activeTab, role, storeId]);
@@ -354,6 +364,41 @@ const AdminDashboard = () => {
   const navItems = role === 'admin' ? adminNavItems : merchantNavItems;
 
   // ── Main Render ──
+  const handleUpgrade = async () => {
+    setIsUpgrading(true);
+    setUpgradeError('');
+    try {
+      if (upgradeMethod === 'wallet') {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subscription/upgrade/wallet`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok) {
+          fetchSubscription();
+          setUpgradeModalOpen(false);
+        } else {
+          setUpgradeError(data.error || 'Upgrade failed');
+        }
+      } else if (upgradeMethod === 'crypto') {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subscription/upgrade/crypto-invoice`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok && data.invoice_url) {
+          window.location.href = data.invoice_url;
+        } else {
+          setUpgradeError(data.error || 'Failed to create crypto invoice');
+        }
+      }
+    } catch (e) {
+      setUpgradeError('Network error');
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex" style={{ background: '#020617' }}>
 
@@ -1341,7 +1386,22 @@ const AdminDashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr><td colSpan="4"><div className="koara-empty-state"><FileText size={32} /><span>No billing history available.</span></div></td></tr>
+                        {billingHistory.length === 0 ? (
+                          <tr><td colSpan="4"><div className="koara-empty-state"><FileText size={32} /><span>No billing history available.</span></div></td></tr>
+                        ) : (
+                          billingHistory.map((item) => (
+                            <tr key={item.id}>
+                              <td>{new Date(item.timestamp).toLocaleDateString()}</td>
+                              <td>{item.transaction_id || '-'}</td>
+                              <td className="font-semibold text-white">${parseFloat(item.amount).toFixed(2)}</td>
+                              <td>
+                                <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${item.event === 'activated' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                                  {item.event}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -1394,15 +1454,40 @@ const AdminDashboard = () => {
             </div>
           </div>
           
+          <div className="flex gap-4 mb-4">
+            <button 
+              onClick={() => setUpgradeMethod('wallet')}
+              className={`flex-1 p-4 rounded-xl border-2 transition-all ${upgradeMethod === 'wallet' ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 hover:border-slate-600 bg-slate-800'}`}
+            >
+              <div className="font-bold text-white mb-1">Pay with Wallet</div>
+              <div className="text-xs text-slate-400">Deduct $4.99 from balance</div>
+            </button>
+            <button 
+              onClick={() => setUpgradeMethod('crypto')}
+              className={`flex-1 p-4 rounded-xl border-2 transition-all ${upgradeMethod === 'crypto' ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 hover:border-slate-600 bg-slate-800'}`}
+            >
+              <div className="font-bold text-white mb-1">Pay with Crypto</div>
+              <div className="text-xs text-slate-400">Via NOWPayments</div>
+            </button>
+          </div>
+
+          {upgradeError && (
+            <div className="p-3 bg-red-500/20 border border-red-500/30 text-red-400 text-sm rounded-lg text-center">
+              {upgradeError}
+            </div>
+          )}
+
           <button 
-            onClick={() => {
-              upgradeSubscription();
-              setUpgradeModalOpen(false);
-            }} 
-            className="w-full py-4 rounded-xl font-bold text-white transition-all hover:scale-[1.02]" 
+            onClick={handleUpgrade} 
+            disabled={isUpgrading}
+            className="w-full py-4 rounded-xl font-bold text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex justify-center items-center gap-2" 
             style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', boxShadow: '0 4px 15px rgba(37,99,235,0.3)' }}
           >
-            Upgrade Now
+            {isUpgrading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              upgradeMethod === 'crypto' ? 'Proceed to Payment' : 'Upgrade Now'
+            )}
           </button>
         </div>
       </Modal>

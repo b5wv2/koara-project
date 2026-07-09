@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const orderService = require('../services/orderService');
+const { requireKoaraPlus } = require('../middleware/subscriptionCheck');
 
 // --- Categories ---
 
@@ -114,7 +115,8 @@ router.delete('/products/:id', async (req, res) => {
 
 // --- Promos ---
 
-router.post('/promos', async (req, res) => {
+// [PREMIUM FEATURE] - Create Promo Code
+router.post('/promos', requireKoaraPlus, async (req, res) => {
   const { store_id, code, type, value, active } = req.body;
   if (!store_id || !code || !type || value === undefined) return res.status(400).json({ error: 'Missing required fields' });
 
@@ -130,7 +132,7 @@ router.post('/promos', async (req, res) => {
   }
 });
 
-router.put('/promos/:id', async (req, res) => {
+router.put('/promos/:id', requireKoaraPlus, async (req, res) => {
   const { id } = req.params;
   const { store_id, code, type, value, active } = req.body;
   
@@ -151,7 +153,8 @@ router.put('/promos/:id', async (req, res) => {
   }
 });
 
-router.delete('/promos/:id', async (req, res) => {
+// [PREMIUM FEATURE] - Delete Promo Code
+router.delete('/promos/:id', requireKoaraPlus, async (req, res) => {
   const { id } = req.params;
   const { store_id } = req.body; 
   try {

@@ -127,6 +127,74 @@ router.get('/stores', async (req, res) => {
   }
 });
 
+// --- Subscriptions ---
+
+router.get('/subscriptions', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT sub.*, s.store_name, s.subdomain 
+      FROM subscriptions sub
+      JOIN stores s ON s.id = sub.store_id
+      ORDER BY sub.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching admin subscriptions:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/stores/:id/subscription/action', async (req, res) => {
+  const { id } = req.params;
+  const { action, days } = req.body; // action: 'activate', 'cancel', 'extend'
+  try {
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const storeId = id;
+      
+      let resSub;
+      if (action === 'activate') {
+        resSub = await client.query(`
+          INSERT INTO subscriptions (store_id, plan, status, starts_at, expires_at, payment_method, last_payment_amount)
+          VALUES ($1, 'plus', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', 'admin', 0)
+          ON CONFLICT (store_id) 
+          DO UPDATE SET plan = 'plus', status = 'active', starts_at = CURRENT_TIMESTAMP, expires_at = CURRENT_TIMESTAMP + INTERVAL '30 days', payment_method = 'admin', updated_at = CURRENT_TIMESTAMP
+          RETURNING *
+        `, [storeId]);
+      } else if (action === 'cancel') {
+        resSub = await client.query(`
+          UPDATE subscriptions SET plan = 'basic', status = 'cancelled', expires_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+          WHERE store_id = $1 RETURNING *
+        `, [storeId]);
+      } else if (action === 'extend' && days) {
+        resSub = await client.query(`
+          UPDATE subscriptions SET expires_at = expires_at + ($2 || ' days')::interval, updated_at = CURRENT_TIMESTAMP
+          WHERE store_id = $1 RETURNING *
+        `, [storeId, days]);
+      } else {
+        throw new Error('Invalid action or parameters');
+      }
+
+      await client.query(`
+        INSERT INTO subscription_audit_logs (store_id, event, payment_method, amount)
+        VALUES ($1, $2, 'admin', 0)
+      `, [storeId, `admin_${action}`]);
+
+      await client.query('COMMIT');
+      res.json({ success: true, subscription: resSub.rows[0] });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Error in admin subscription action:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
 // POST /api/admin/stores/:id/add-credit
 router.post('/stores/:id/add-credit', async (req, res) => {
   const storeId = req.params.id;
