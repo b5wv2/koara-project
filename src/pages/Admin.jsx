@@ -140,6 +140,7 @@ const AdminDashboard = () => {
   const [upgradeMethod, setUpgradeMethod] = useState('wallet');
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState('');
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [billingHistory, setBillingHistory] = useState([]);
 
   if (!user) return <Navigate to="/" />;
@@ -374,11 +375,13 @@ const AdminDashboard = () => {
           credentials: 'include'
         });
         const data = await res.json();
-        if (res.ok) {
+        if (data.success) {
           fetchSubscription();
           setUpgradeModalOpen(false);
+          setUpgradeSuccess(true);
+          setTimeout(() => setUpgradeSuccess(false), 5000);
         } else {
-          setUpgradeError(data.error || 'Upgrade failed');
+          setUpgradeError(data.message || 'Upgrade failed');
         }
       } else if (upgradeMethod === 'crypto') {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subscription/upgrade/crypto-invoice`, {
@@ -393,7 +396,7 @@ const AdminDashboard = () => {
         }
       }
     } catch (e) {
-      setUpgradeError('Network error');
+      setUpgradeError(e.message || 'Network error');
     } finally {
       setIsUpgrading(false);
     }
@@ -1319,6 +1322,12 @@ const AdminDashboard = () => {
             {/* ══ MERCHANT: Subscription ══ */}
             {role === 'merchant' && activeTab === 'subscription' && (
               <div className="max-w-4xl space-y-6">
+                {upgradeSuccess && (
+                  <div className="koara-success-msg flex items-center gap-2 mb-4 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400">
+                    <Check size={20} />
+                    Koara Plus has been activated successfully.
+                  </div>
+                )}
                 <div className="dash-card p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
                   {/* Decorative background for Plus */}
                   {isPlusActive && (

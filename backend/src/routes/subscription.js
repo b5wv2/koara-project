@@ -136,13 +136,13 @@ router.get('/history', async (req, res) => {
 router.post('/upgrade/wallet', async (req, res) => {
   try {
     const sub = await subscriptionService.upgradeWithWallet(req.merchantStoreId);
-    res.json({ success: true, subscription: sub });
+    res.json({ success: true, message: 'Koara Plus activated successfully.', subscription: sub });
   } catch (err) {
     console.error('Wallet upgrade error:', err);
     if (err.message === 'Insufficient wallet balance') {
-      return res.status(400).json({ error: err.message });
+      return res.status(400).json({ success: false, message: err.message });
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, message: 'Internal server error: ' + err.message });
   }
 });
 
