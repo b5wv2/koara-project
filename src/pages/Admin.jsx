@@ -99,7 +99,7 @@ const PremiumLockOverlay = ({ isPlusActive, onUpgrade, children, compact = false
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription } = useAppContext();
+  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -379,7 +379,6 @@ const AdminDashboard = () => {
           fetchSubscription();
           setUpgradeModalOpen(false);
           setUpgradeSuccess(true);
-          setTimeout(() => setUpgradeSuccess(false), 5000);
         } else {
           setUpgradeError(data.message || 'Upgrade failed');
         }
@@ -1322,12 +1321,6 @@ const AdminDashboard = () => {
             {/* ══ MERCHANT: Subscription ══ */}
             {role === 'merchant' && activeTab === 'subscription' && (
               <div className="max-w-4xl space-y-6">
-                {upgradeSuccess && (
-                  <div className="koara-success-msg flex items-center gap-2 mb-4 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400">
-                    <Check size={20} />
-                    Koara Plus has been activated successfully.
-                  </div>
-                )}
                 <div className="dash-card p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
                   {/* Decorative background for Plus */}
                   {isPlusActive && (
@@ -1462,27 +1455,43 @@ const AdminDashboard = () => {
               <div className="text-xs text-slate-400">/ month</div>
             </div>
           </div>
-          
-          <div className="flex gap-4 mb-4">
-            <button 
+
+          <div className="space-y-3">
+            <div 
               onClick={() => setUpgradeMethod('wallet')}
-              className={`flex-1 p-4 rounded-xl border-2 transition-all ${upgradeMethod === 'wallet' ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 hover:border-slate-600 bg-slate-800'}`}
+              className={`p-4 rounded-xl border cursor-pointer transition-all ${upgradeMethod === 'wallet' ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'}`}
             >
-              <div className="font-bold text-white mb-1">Pay with Wallet</div>
-              <div className="text-xs text-slate-400">Deduct $4.99 from balance</div>
-            </button>
-            <button 
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                  <CreditCard size={20} />
+                </div>
+                <div>
+                  <div className="font-semibold text-white">Pay via Wallet Balance</div>
+                  <div className="text-xs text-slate-400">Instant activation. $4.99 will be deducted.</div>
+                </div>
+              </div>
+            </div>
+
+            <div 
               onClick={() => setUpgradeMethod('crypto')}
-              className={`flex-1 p-4 rounded-xl border-2 transition-all ${upgradeMethod === 'crypto' ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 hover:border-slate-600 bg-slate-800'}`}
+              className={`p-4 rounded-xl border cursor-pointer transition-all ${upgradeMethod === 'crypto' ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'}`}
             >
-              <div className="font-bold text-white mb-1">Pay with Crypto</div>
-              <div className="text-xs text-slate-400">Via NOWPayments</div>
-            </button>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+                  <span className="font-bold">₿</span>
+                </div>
+                <div>
+                  <div className="font-semibold text-white">Pay via Crypto</div>
+                  <div className="text-xs text-slate-400">Powered by NOWPayments</div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {upgradeError && (
-            <div className="p-3 bg-red-500/20 border border-red-500/30 text-red-400 text-sm rounded-lg text-center">
-              {upgradeError}
+            <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm flex gap-2">
+              <ShieldCheck size={16} className="shrink-0 mt-0.5" />
+              <span>{upgradeError}</span>
             </div>
           )}
 
