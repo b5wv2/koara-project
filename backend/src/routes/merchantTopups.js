@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
   if (!store_id) return res.status(400).json({ error: 'store_id is required' });
 
   try {
-    const catalog = topupCatalogService.getCatalog();
+    const catalogs = topupCatalogService.getCatalogs();
     
     // Fetch merchant's topup products
     const merchantProductsRes = await db.query(`
@@ -27,18 +27,22 @@ router.get('/', async (req, res) => {
       };
     });
 
-    const mergedOffers = catalog.offers.map(offer => {
-      const mData = merchantMap[offer.offer_id] || {};
-      return {
-        ...offer,
-        provider: 'FazerCards', // Static for now based on requirement
-        category_id: catalog.category_id,
-        selling_price: mData.selling_price || '',
-        is_enabled: mData.is_enabled || false
-      };
+    const mergedOffers = [];
+    catalogs.forEach(catalog => {
+      catalog.offers.forEach(offer => {
+        const mData = merchantMap[offer.offer_id] || {};
+        mergedOffers.push({
+          ...offer,
+          provider: 'FazerCards', // Static for now based on requirement
+          category_id: catalog.category_id,
+          category_name: catalog.name,
+          selling_price: mData.selling_price || '',
+          is_enabled: mData.is_enabled || false
+        });
+      });
     });
 
-    res.json({ success: true, topups: mergedOffers, category_name: catalog.name });
+    res.json({ success: true, topups: mergedOffers });
   } catch (err) {
     console.error('Error fetching merchant topups:', err);
     res.status(500).json({ error: 'Internal server error' });

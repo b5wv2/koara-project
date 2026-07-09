@@ -50,7 +50,7 @@ class TopupOrderService {
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending', $13
         )
       `, [
-        localOrderId, storeId, 'free_fire_mena', offerId, JSON.stringify(dynamicFields),
+        localOrderId, storeId, offer.category_id, offerId, JSON.stringify(dynamicFields),
         customerInfo.name, customerInfo.email, customerInfo.whatsapp, 
         costPrice, adminCostPrice, sellingPrice, merchantProfit, receiptUrl
       ]);

@@ -1,25 +1,106 @@
+import json
+import time
 import requests
 
-# الرابط الأساسي بدون البيانات
-url = "https://prod-cashi-services.alsoug.com/cashi_terminal/api/v2/mycashi/download-transactions-statement"
+API_KEY = "fc_0d5677b205b34f11c4b81ea7"
 
-# التوكن والبيانات المشفّرة التي استخرجتها
-data_param = "ukMqOVQPgFurnRKVIxWSZjlqGfLMKHFV2QmHkUAW9Hwj4QwJIj2bYeg2IQNMS07EKSI2kqs7XAjp558OzuJ4ZSRQqPPTMjPkBaiZ9XRQyFh8JX1CFap0CpsgAzM9PgWjqNC_UmEo4fNQmM_rgBFSvx3pkAzZIyDAMi6BRTv8tcxL0txZ-p7AN_BN"
+BASE_URL = "https://api.fzr.cards/api/v2"
 
-payload = {'data': data_param}
-
-# إضافة User-Agent لكي يظن السيرفر أن الطلب قادم من متصفح طبيعي وليس بوت
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+HEADERS = {
+    "X-API-Key": API_KEY
 }
 
-print("جاري محاولة تحميل كشف الحساب...")
-response = requests.get(url, params=payload, headers=headers)
+all_categories = []
+all_offers = []
 
-if response.status_code == 200:
-    with open("statement.pdf", "wb") as file:
-        file.write(response.content)
-    print("مبروك! تم تحميل ملف الـ PDF بنجاح وحفظه باسم statement.pdf")
-else:
-    print(f"فشل التحميل. السيرفر رد بكود: {response.status_code}")
-    print("قد يكون التوكن قد انتهت صلاحيته ويحتاج لتجديد من التطبيق.")
+print("📥 Downloading categories...")
+
+cursor = None
+
+while True:
+    params = {
+        "limit": 100
+    }
+
+    if cursor:
+        params["cursor"] = cursor
+
+    response = requests.get(
+        f"{BASE_URL}/topups",
+        headers=HEADERS,
+        params=params,
+        timeout=30
+    )
+
+    print("Categories Status:", response.status_code)
+
+    if response.status_code != 200:
+        print(response.text)
+        exit()
+
+    data = response.json()
+
+    items = data.get("items", [])
+    meta = data.get("meta", {})
+
+    all_categories.extend(items)
+
+    if not meta.get("has_more"):
+        break
+
+    cursor = meta.get("next_cursor")
+
+print(f"✅ Categories found: {len(all_categories)}")
+
+print()
+
+for index, category in enumerate(all_categories, start=1):
+
+    category_id = category["category_id"]
+    category_name = category.get("name", "")
+
+    print(f"[{index}/{len(all_categories)}] {category_name}")
+
+    response = requests.get(
+        f"{BASE_URL}/topups/offers",
+        headers=HEADERS,
+        params={
+            "category_id": category_id
+        },
+        timeout=30
+    )
+
+    if response.status_code == 200:
+
+        offers = response.json()
+
+        all_offers.append({
+            "category_id": category_id,
+            "category_name": category_name,
+            "data": offers
+        })
+
+    else:
+
+        print(f"❌ Failed ({response.status_code})")
+        print(response.text)
+
+    time.sleep(0.2)
+
+with open(
+    "all_topup_offers.json",
+    "w",
+    encoding="utf-8"
+) as f:
+    json.dump(
+        all_offers,
+        f,
+        indent=4,
+        ensure_ascii=False
+    )
+
+print()
+print("=" * 40)
+print("✅ Finished")
+print(f"Categories: {len(all_categories)}")
+print(f"Saved: all_topup_offers.json")

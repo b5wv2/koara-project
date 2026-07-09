@@ -1,0 +1,131 @@
+{
+    "ok": true,
+    "kind": "topup",
+    "category_id": "pubg_mobile_auto",
+    "name": "PUBG Mobile (Auto)",
+    "offers": [
+        {
+            "offer_id": "60_uc",
+            "name": "60 UC",
+            "price_usd": "0.8805"
+        },
+        {
+            "offer_id": "325_uc",
+            "name": "325 UC",
+            "price_usd": "4.4157"
+        },
+        {
+            "offer_id": "660_uc",
+            "name": "660 UC",
+            "price_usd": "8.9000"
+        },
+        {
+            "offer_id": "1800_uc",
+            "name": "1800 UC",
+            "price_usd": "22.2500"
+        },
+        {
+            "offer_id": "3850_uc",
+            "name": "3850 UC",
+            "price_usd": "44.5000"
+        },
+        {
+            "offer_id": "8100_uc",
+            "name": "8100 UC",
+            "price_usd": "88.3139"
+        },
+        {
+            "offer_id": "first_purchase_pack",
+            "name": "First Purchase Pack",
+            "price_usd": "0.8415"
+        },
+        {
+            "offer_id": "prime_1_month",
+            "name": "Prime (1 Month)",
+            "price_usd": "0.8415"
+        },
+        {
+            "offer_id": "weekly_deal_pack_1",
+            "name": "Weekly Deal Pack 1",
+            "price_usd": "0.8493"
+        },
+        {
+            "offer_id": "upgradable_firearm_materials_pack",
+            "name": "Upgradable Firearm Materials Pack",
+            "price_usd": "2.5244"
+        },
+        {
+            "offer_id": "weekly_mythic_emblem_value_pack",
+            "name": "Weekly Mythic Emblem Value Pack",
+            "price_usd": "2.5556"
+        },
+        {
+            "offer_id": "prime_3_months",
+            "name": "Prime (3 Months)",
+            "price_usd": "2.5244"
+        },
+        {
+            "offer_id": "weekly_deal_pack_2",
+            "name": "Weekly Deal Pack 2",
+            "price_usd": "2.5556"
+        },
+        {
+            "offer_id": "mythic_emblem_pack",
+            "name": "Mythic Emblem Pack",
+            "price_usd": "4.2152"
+        },
+        {
+            "offer_id": "prime_6_months",
+            "name": "Prime (6 Months)",
+            "price_usd": "5.0566"
+        },
+        {
+            "offer_id": "elite_pass_lv1_50",
+            "name": "Elite Pass LV1-50",
+            "price_usd": "5.1268"
+        },
+        {
+            "offer_id": "prime_plus_1_month",
+            "name": "Prime Plus (1 Month)",
+            "price_usd": "8.4225"
+        },
+        {
+            "offer_id": "prime_12_months",
+            "name": "Prime (12 Months)",
+            "price_usd": "10.1133"
+        },
+        {
+            "offer_id": "elite_pass_lv1_100",
+            "name": "Elite Pass LV1-100",
+            "price_usd": "10.2535"
+        },
+        {
+            "offer_id": "elite_pass_plus_lv1_100",
+            "name": "Elite Pass Plus LV1-100",
+            "price_usd": "25.6494"
+        },
+        {
+            "offer_id": "prime_plus_3_months",
+            "name": "Prime Plus (3 Months)",
+            "price_usd": "25.2754"
+        },
+        {
+            "offer_id": "prime_plus_6_months",
+            "name": "Prime Plus (6 Months)",
+            "price_usd": "50.5507"
+        },
+        {
+            "offer_id": "prime_plus_12_months",
+            "name": "Prime Plus (12 Months)",
+            "price_usd": "101.0937"
+        }
+    ],
+    "fields": [
+        {
+            "key": "player_id",
+            "label": "Player ID",
+            "type": "text"
+        }
+    ],
+    "note": "Region: Global\nAutomatic PUBG Mobile top-up.\nUC is delivered directly to your account automatically after the order is placed."
+}

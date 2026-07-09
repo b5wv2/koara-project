@@ -35,8 +35,7 @@ router.get('/catalog/:storeId', async (req, res) => {
   const { storeId } = req.params;
 
   try {
-    const catalog = topupCatalogService.getCatalog();
-    const dynamicFields = topupCatalogService.getDynamicFields();
+    const catalogs = topupCatalogService.getCatalogs();
 
     const merchantProductsRes = await db.query(`
       SELECT offer_id, selling_price 
@@ -49,23 +48,33 @@ router.get('/catalog/:storeId', async (req, res) => {
       merchantMap[row.offer_id] = row.selling_price;
     });
 
-    const activeOffers = catalog.offers
-      .filter(offer => merchantMap[offer.offer_id] !== undefined)
-      .map(offer => ({
-        offer_id: offer.offer_id,
-        name: offer.name,
-        selling_price: merchantMap[offer.offer_id]
-      }));
+    const activeCatalogs = [];
+
+    catalogs.forEach(catalog => {
+      const activeOffers = catalog.offers
+        .filter(offer => merchantMap[offer.offer_id] !== undefined)
+        .map(offer => ({
+          offer_id: offer.offer_id,
+          name: offer.name,
+          selling_price: merchantMap[offer.offer_id]
+        }));
+
+      if (activeOffers.length > 0) {
+        activeCatalogs.push({
+          category: {
+            id: catalog.category_id,
+            name: catalog.name,
+            note: catalog.note
+          },
+          fields: catalog.fields || [],
+          offers: activeOffers
+        });
+      }
+    });
 
     res.json({ 
       success: true, 
-      category: {
-        id: catalog.category_id,
-        name: catalog.name,
-        note: catalog.note
-      },
-      fields: dynamicFields,
-      offers: activeOffers 
+      catalogs: activeCatalogs 
     });
   } catch (err) {
     console.error('Error fetching storefront topups catalog:', err);

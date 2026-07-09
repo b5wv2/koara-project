@@ -3,40 +3,52 @@ const path = require('path');
 
 class TopupCatalogService {
   constructor() {
-    this.catalogData = null;
+    this.catalogs = [];
     this.offersMap = new Map();
-    this.loadCatalog();
+    this.loadCatalogs();
   }
 
-  loadCatalog() {
+  loadCatalogs() {
     try {
-      // Load the single source of truth JSON file from the data directory
-      const jsonPath = path.join(__dirname, '../data/free_fire_mena_offers.json');
-      const data = fs.readFileSync(jsonPath, 'utf8');
-      this.catalogData = JSON.parse(data);
+      const dataDir = path.join(__dirname, '../data');
+      const files = fs.readdirSync(dataDir);
+      
+      this.catalogs = [];
+      this.offersMap.clear();
 
-      this.catalogData.offers.forEach(offer => {
-        this.offersMap.set(offer.offer_id, offer);
+      files.forEach(file => {
+        if (file.endsWith('_offers.json')) {
+          const jsonPath = path.join(dataDir, file);
+          const data = fs.readFileSync(jsonPath, 'utf8');
+          const catalogData = JSON.parse(data);
+          
+          this.catalogs.push(catalogData);
+
+          catalogData.offers.forEach(offer => {
+            // Attach category_id so we know where it came from
+            const enrichedOffer = {
+              ...offer,
+              category_id: catalogData.category_id
+            };
+            this.offersMap.set(offer.offer_id, enrichedOffer);
+          });
+          
+          console.log(`Loaded ${catalogData.offers.length} offers from ${catalogData.name} catalog.`);
+        }
       });
-      console.log(`Loaded ${this.catalogData.offers.length} offers from Free Fire MENA catalog.`);
     } catch (err) {
-      console.error('Failed to load Topup Catalog JSON:', err.message);
+      console.error('Failed to load Topup Catalogs:', err.message);
     }
   }
 
-  getCatalog() {
-    if (!this.catalogData) this.loadCatalog();
-    return this.catalogData;
+  getCatalogs() {
+    if (this.catalogs.length === 0) this.loadCatalogs();
+    return this.catalogs;
   }
 
   getOfferDetails(offerId) {
-    if (!this.catalogData) this.loadCatalog();
+    if (this.catalogs.length === 0) this.loadCatalogs();
     return this.offersMap.get(offerId);
-  }
-
-  getDynamicFields() {
-    if (!this.catalogData) this.loadCatalog();
-    return this.catalogData.fields || [];
   }
 }
 

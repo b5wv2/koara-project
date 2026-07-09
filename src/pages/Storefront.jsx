@@ -12,7 +12,7 @@ const Storefront = ({ store }) => {
   const storeId = store.id;
 
   const [catalog, setCatalog] = useState({ categories: [], products: [], promos: [], platform_products: [] });
-  const [topupsData, setTopupsData] = useState({ category: null, fields: [], offers: [] });
+  const [topupsCatalogs, setTopupsCatalogs] = useState([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [catalogError, setCatalogError] = useState(null);
 
@@ -44,11 +44,7 @@ const Storefront = ({ store }) => {
         if (topupsRes && topupsRes.ok) {
           const tData = await topupsRes.json();
           if (tData.success) {
-            setTopupsData({
-              category: tData.category,
-              fields: tData.fields || [],
-              offers: tData.offers || []
-            });
+            setTopupsCatalogs(tData.catalogs || []);
           }
         }
       } catch (err) {
@@ -133,8 +129,8 @@ const Storefront = ({ store }) => {
   const platformCategories = [...new Set(platformProducts.map(p => p.category))];
 
   const activeCategoryProducts = selectedCategoryId
-    ? (selectedCategoryId === topupsData.category?.id
-        ? topupsData.offers.map(o => ({ ...o, id: o.offer_id, category: topupsData.category.id, isTopup: true }))
+    ? (topupsCatalogs.some(c => c.category.id === selectedCategoryId)
+        ? topupsCatalogs.find(c => c.category.id === selectedCategoryId).offers.map(o => ({ ...o, id: o.offer_id, category: selectedCategoryId, isTopup: true }))
         : typeof selectedCategoryId === 'string'
           ? platformProducts.filter(p => p.category === selectedCategoryId)
           : storeProducts.filter(p => p.category_id === selectedCategoryId || p.categoryId === selectedCategoryId))
@@ -464,17 +460,19 @@ const Storefront = ({ store }) => {
                 );
               })}
 
-              {topupsData.category && topupsData.offers.length > 0 && (
-                <CategoryCard
-                  key={`topups-${topupsData.category.id}`}
-                  onClick={() => setSelectedCategoryId(topupsData.category.id)}
-                  color={'#8b5cf6'}
-                  logoSrc={null}
-                  iconText={'T'}
-                  name={topupsData.category.name}
-                  productCount={topupsData.offers.length}
-                />
-              )}
+              {topupsCatalogs.map(catalog => (
+                catalog.offers.length > 0 && (
+                  <CategoryCard
+                    key={`topups-${catalog.category.id}`}
+                    onClick={() => setSelectedCategoryId(catalog.category.id)}
+                    color={'#8b5cf6'}
+                    logoSrc={null}
+                    iconText={catalog.category.name.charAt(0)}
+                    name={catalog.category.name}
+                    productCount={catalog.offers.length}
+                  />
+                )
+              ))}
             </div>
           </div>
         ) : (
@@ -623,24 +621,27 @@ const Storefront = ({ store }) => {
               </div>
 
               {/* Dynamic Top-up Fields */}
-              {selectedProduct.isTopup && topupsData.fields && topupsData.fields.length > 0 && (
-                <div className="space-y-3 mt-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>Top-up Details</h4>
-                  {topupsData.fields.map(field => (
-                    <div key={field.key}>
-                      <label className="koara-label">{field.label}</label>
-                      <input 
-                        required 
-                        type={field.type === 'text' ? 'text' : field.type} 
-                        placeholder={field.label} 
-                        className="koara-input" 
-                        value={topupFormFields[field.key] || ''} 
-                        onChange={e => setTopupFormFields(prev => ({...prev, [field.key]: e.target.value}))} 
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              {selectedProduct.isTopup && (() => {
+                 const currentCatalog = topupsCatalogs.find(c => c.category.id === selectedProduct.category);
+                 return currentCatalog && currentCatalog.fields && currentCatalog.fields.length > 0 && (
+                   <div className="space-y-3 mt-4">
+                     <h4 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>Top-up Details</h4>
+                     {currentCatalog.fields.map(field => (
+                       <div key={field.key}>
+                         <label className="koara-label">{field.label}</label>
+                         <input 
+                           required 
+                           type={field.type === 'text' ? 'text' : field.type} 
+                           placeholder={field.label} 
+                           className="koara-input" 
+                           value={topupFormFields[field.key] || ''} 
+                           onChange={e => setTopupFormFields(prev => ({...prev, [field.key]: e.target.value}))} 
+                         />
+                       </div>
+                     ))}
+                   </div>
+                 );
+              })()}
 
               {/* Payment Details */}
               <div>
