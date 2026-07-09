@@ -4,6 +4,25 @@ const db = require('../config/db');
 const orderService = require('../services/orderService');
 const { requireKoaraPlus } = require('../middleware/subscriptionCheck');
 
+// --- Middleware to resolve store ---
+const resolveMerchantStore = async (req, res, next) => {
+  if (req.merchantStoreId) return next();
+  if (!req.user || req.user.role !== 'merchant') {
+    return res.status(403).json({ error: 'Unauthorized: Merchant access required' });
+  }
+  try {
+    const result = await db.query('SELECT id FROM stores WHERE owner_id = $1', [req.user.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Merchant store not found' });
+    }
+    req.merchantStoreId = result.rows[0].id;
+    next();
+  } catch (err) {
+    console.error('Error resolving merchant store:', err);
+    res.status(500).json({ error: 'Internal server error resolving store' });
+  }
+};
+
 // --- Categories ---
 
 // POST /api/merchant/categories
@@ -116,11 +135,9 @@ router.delete('/products/:id', async (req, res) => {
 // --- Promotions ---
 
 // [PREMIUM FEATURE] - Get Promos
-router.get('/promotions', requireKoaraPlus, async (req, res) => {
+router.get('/promotions', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
   try {
-    const { store_id } = req.query;
-    if (!store_id) return res.status(400).json({ error: 'store_id query parameter is required' });
-
+    const store_id = req.merchantStoreId;
     const result = await db.query(
       `SELECT * FROM promos WHERE store_id = $1 ORDER BY created_at DESC`,
       [store_id]
@@ -133,10 +150,11 @@ router.get('/promotions', requireKoaraPlus, async (req, res) => {
 });
 
 // [PREMIUM FEATURE] - Create Promo
-router.post('/promotions', requireKoaraPlus, async (req, res) => {
-  const { store_id, code, discount_type, value, status, usage_limit, expires_at } = req.body;
+router.post('/promotions', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
+  const store_id = req.merchantStoreId;
+  const { code, discount_type, value, status, usage_limit, expires_at } = req.body;
   
-  if (!store_id || !code || !discount_type || value === undefined) {
+  if (!code || !discount_type || value === undefined) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -157,9 +175,10 @@ router.post('/promotions', requireKoaraPlus, async (req, res) => {
 });
 
 // [PREMIUM FEATURE] - Update Promo
-router.put('/promotions/:id', requireKoaraPlus, async (req, res) => {
+router.put('/promotions/:id', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
   const { id } = req.params;
-  const { store_id, code, discount_type, value, status, usage_limit, expires_at } = req.body;
+  const store_id = req.merchantStoreId;
+  const { code, discount_type, value, status, usage_limit, expires_at } = req.body;
   
   try {
     const result = await db.query(
@@ -186,9 +205,9 @@ router.put('/promotions/:id', requireKoaraPlus, async (req, res) => {
 });
 
 // [PREMIUM FEATURE] - Delete Promo
-router.delete('/promotions/:id', requireKoaraPlus, async (req, res) => {
+router.delete('/promotions/:id', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
   const { id } = req.params;
-  const { store_id } = req.body; 
+  const store_id = req.merchantStoreId; 
   try {
     const result = await db.query('DELETE FROM promos WHERE id = $1 AND store_id = $2 RETURNING id', [id, store_id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Promotion not found or access denied' });
