@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2 } from 'lucide-react';
+import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check } from 'lucide-react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
@@ -67,10 +67,39 @@ const Toggle = ({ on, onChange }) => (
   </button>
 );
 
+const PremiumLockOverlay = ({ isPlusActive, onUpgrade, children, compact = false }) => {
+  if (isPlusActive) {
+    return <div className="relative h-full">
+      <div className="absolute top-2 right-2 z-10 pointer-events-none">
+        <div className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm">
+          <Crown size={10} /> PLUS
+        </div>
+      </div>
+      {children}
+    </div>;
+  }
+  return (
+    <div className="relative rounded-xl overflow-hidden group h-full">
+      <div className="opacity-40 pointer-events-none blur-[1px] select-none h-full">
+        {children}
+      </div>
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 text-center" style={{ background: 'rgba(2, 6, 23, 0.6)', backdropFilter: 'blur(3px)' }}>
+        <div className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm mb-3">
+          <Crown size={10} /> PLUS
+        </div>
+        {!compact && <div className="text-sm font-semibold text-white mb-1">Upgrade to Koara Plus to unlock this feature.</div>}
+        <button onClick={onUpgrade} className="dash-btn py-1.5 px-4 rounded-lg text-xs font-bold text-white shadow-lg mt-2 transition-transform hover:scale-105" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)' }}>
+          Upgrade
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct } = useAppContext();
+  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -105,6 +134,9 @@ const AdminDashboard = () => {
   const [merchantTopups, setMerchantTopups] = useState([]);
   const [topupsLoading, setTopupsLoading] = useState(false);
   const [editingTopupPrice, setEditingTopupPrice] = useState({});
+
+  // Subscription
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   if (!user) return <Navigate to="/" />;
 
@@ -316,6 +348,7 @@ const AdminDashboard = () => {
     { key: 'promotions', icon: Tag, label: 'Promotions' },
     { key: 'settings', icon: Settings, label: 'Store Settings' },
     { key: 'payouts', icon: CreditCard, label: 'Payment Details' },
+    { key: 'subscription', icon: Crown, label: 'Subscription' },
   ];
 
   const navItems = role === 'admin' ? adminNavItems : merchantNavItems;
@@ -759,6 +792,24 @@ const AdminDashboard = () => {
                       <div className="text-4xl font-extrabold text-white">{orders.filter(o => o.store_id === storeId && o.status === 'pending').length}</div>
                     </div>
                   </div>
+
+                  {/* Monthly Reports (Premium Feature) */}
+                  <div className="lg:col-span-3">
+                    <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}>
+                      <div className="dash-card p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                            <FileText size={24} style={{ color: '#60A5FA' }} />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-white">Automatic Monthly Reports</h3>
+                            <p className="text-sm" style={{ color: '#94A3B8' }}>AI-generated insights on your top products, sales trends, and profit margins.</p>
+                          </div>
+                        </div>
+                        <button className="dash-btn dash-btn-primary shrink-0" disabled>Download Latest Report</button>
+                      </div>
+                    </PremiumLockOverlay>
+                  </div>
                 </div>
 
                 {/* Orders Queue */}
@@ -856,20 +907,22 @@ const AdminDashboard = () => {
                               />
                             </td>
                             <td className="text-right">
-                              <button
-                                onClick={() => {
-                                  setCustomizingProduct({
-                                    ...product,
-                                    custom_title: product.custom_title || '',
-                                    custom_description: product.custom_description || '',
-                                    custom_image_url: product.custom_image_url || '',
-                                    previewImage: product.custom_image_url || product.image_url || ''
-                                  });
-                                }}
-                                className="dash-btn dash-btn-secondary"
-                              >
-                                <Edit2 size={14} className="mr-1 inline" /> Customize
-                              </button>
+                              <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)} compact>
+                                <button
+                                  onClick={() => {
+                                    setCustomizingProduct({
+                                      ...product,
+                                      custom_title: product.custom_title || '',
+                                      custom_description: product.custom_description || '',
+                                      custom_image_url: product.custom_image_url || '',
+                                      previewImage: product.custom_image_url || product.image_url || ''
+                                    });
+                                  }}
+                                  className="dash-btn dash-btn-secondary"
+                                >
+                                  <Edit2 size={14} className="mr-1 inline" /> Customize
+                                </button>
+                              </PremiumLockOverlay>
                             </td>
                             <td className="text-right">
                               <button
@@ -1012,37 +1065,39 @@ const AdminDashboard = () => {
                   title="Marketing & Promos"
                   description="Create discount codes for your customers."
                   action={
-                    <button className="dash-btn dash-btn-primary hidden sm:inline-flex">+ New Code</button>
+                    <button className="dash-btn dash-btn-primary hidden sm:inline-flex" onClick={() => !isPlusActive && setUpgradeModalOpen(true)}>+ New Code</button>
                   }
                 />
-                <div className="overflow-x-auto">
-                  <table className="koara-table">
-                    <thead>
-                      <tr>
-                        <th>Status</th>
-                        <th>Promo Code</th>
-                        <th>Discount Type</th>
-                        <th>Value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {promos.filter(p => p.storeId === storeId).length === 0 ? (
-                        <tr><td colSpan="4"><div className="koara-empty-state"><Tag size={32} /><span>No promo codes yet.</span></div></td></tr>
-                      ) : promos.filter(p => p.storeId === storeId).map(promo => (
-                        <tr key={promo.id}>
-                          <td>
-                            <Toggle on={promo.active} onChange={() => handleTogglePromo(promo.id)} />
-                          </td>
-                          <td className="font-mono font-bold text-white">{promo.code}</td>
-                          <td className="capitalize" style={{ color: '#94A3B8' }}>{promo.type}</td>
-                          <td className="font-bold" style={{ color: '#60A5FA' }} dir="ltr">
-                            {promo.type === 'percentage' ? `${promo.value}%` : `$${promo.value.toFixed(2)}`}
-                          </td>
+                <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}>
+                  <div className="overflow-x-auto">
+                    <table className="koara-table">
+                      <thead>
+                        <tr>
+                          <th>Status</th>
+                          <th>Promo Code</th>
+                          <th>Discount Type</th>
+                          <th>Value</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {promos.filter(p => p.storeId === storeId).length === 0 ? (
+                          <tr><td colSpan="4"><div className="koara-empty-state"><Tag size={32} /><span>No promo codes yet.</span></div></td></tr>
+                        ) : promos.filter(p => p.storeId === storeId).map(promo => (
+                          <tr key={promo.id}>
+                            <td>
+                              <Toggle on={promo.active} onChange={() => handleTogglePromo(promo.id)} />
+                            </td>
+                            <td className="font-mono font-bold text-white">{promo.code}</td>
+                            <td className="capitalize" style={{ color: '#94A3B8' }}>{promo.type}</td>
+                            <td className="font-bold" style={{ color: '#60A5FA' }} dir="ltr">
+                              {promo.type === 'percentage' ? `${promo.value}%` : `$${promo.value.toFixed(2)}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </PremiumLockOverlay>
               </div>
             )}
 
@@ -1100,6 +1155,42 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
+
+                  <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
+                  {/* Koara Branding */}
+                  <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}>
+                    <div>
+                      <label className="koara-label text-sm mb-3 block">Remove Koara Branding</label>
+                      <p className="text-xs mb-4" style={{ color: '#475569' }}>Remove all "Powered by Koara" watermarks from your storefront.</p>
+                      <Toggle on={true} onChange={() => {}} />
+                    </div>
+                  </PremiumLockOverlay>
+
+                  <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
+                  {/* Custom Domain */}
+                  <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}>
+                    <div>
+                      <label className="koara-label text-sm mb-3 block">Custom Domain</label>
+                      <p className="text-xs mb-4" style={{ color: '#475569' }}>Connect your own domain name (e.g. store.com) instead of using the koara subdomain.</p>
+                      <div className="flex gap-3">
+                        <input type="text" placeholder="www.yourstore.com" className="koara-input" disabled />
+                        <button className="dash-btn dash-btn-primary" disabled>Connect</button>
+                      </div>
+                    </div>
+                  </PremiumLockOverlay>
+
+                  <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
+                  {/* Email Branding */}
+                  <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}>
+                    <div>
+                      <label className="koara-label text-sm mb-3 block">Email Branding</label>
+                      <p className="text-xs mb-4" style={{ color: '#475569' }}>Customize the receipt emails sent to your customers.</p>
+                      <button className="dash-btn dash-btn-secondary" disabled>Edit Email Template</button>
+                    </div>
+                  </PremiumLockOverlay>
 
                   <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
@@ -1180,11 +1271,141 @@ const AdminDashboard = () => {
               </div>
             )}
 
+            {/* ══ MERCHANT: Subscription ══ */}
+            {role === 'merchant' && activeTab === 'subscription' && (
+              <div className="max-w-4xl space-y-6">
+                <div className="dash-card p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                  {/* Decorative background for Plus */}
+                  {isPlusActive && (
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at top right, rgba(59,130,246,0.1), transparent 50%)' }}></div>
+                  )}
+                  
+                  <div className="relative z-10 flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-2xl font-extrabold text-white">
+                        {isPlusActive ? 'Koara Plus' : 'Koara Basic'}
+                      </h3>
+                      {isPlusActive && (
+                        <div className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2 py-1 rounded text-xs font-bold uppercase shadow-sm">
+                          <Crown size={12} /> Active
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm" style={{ color: '#94A3B8' }}>
+                      {isPlusActive 
+                        ? 'You are enjoying all premium features and customizations.' 
+                        : 'You are currently on the free basic plan with limited features.'}
+                    </p>
+                    
+                    {isPlusActive && subscription.expires_at && (
+                      <div className="mt-6 flex flex-wrap gap-6">
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#475569' }}>Started</div>
+                          <div className="text-sm text-white">{new Date(subscription.starts_at).toLocaleDateString()}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#475569' }}>Renews</div>
+                          <div className="text-sm text-white">{new Date(subscription.expires_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="relative z-10 shrink-0 w-full md:w-auto">
+                    {isPlusActive ? (
+                      <div className="flex flex-col gap-3">
+                        <button className="dash-btn dash-btn-secondary w-full md:w-auto justify-center py-3 px-8 rounded-xl font-semibold">
+                          Manage Billing
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        <button onClick={() => setUpgradeModalOpen(true)} className="dash-btn w-full md:w-auto justify-center py-3 px-8 rounded-xl font-bold text-white transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', boxShadow: '0 4px 15px rgba(37,99,235,0.3)' }}>
+                          Upgrade to Plus
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="dash-card overflow-hidden">
+                  <SectionHeader title="Billing History" description="View past subscription invoices." />
+                  <div className="overflow-x-auto">
+                    <table className="koara-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Invoice</th>
+                          <th>Amount</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td colSpan="4"><div className="koara-empty-state"><FileText size={32} /><span>No billing history available.</span></div></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
 
       {/* ══ MODALS ══ */}
+
+      {/* Upgrade to Plus Modal */}
+      <Modal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} title="Upgrade to Koara Plus">
+        <div className="space-y-6">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/20">
+              <Crown size={32} className="text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">Unlock Premium Features</h3>
+            <p className="text-sm text-slate-400">Take your store to the next level with Koara Plus.</p>
+          </div>
+          
+          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 space-y-4">
+            {[
+              'Remove ALL Koara branding',
+              'Connect your own custom domain',
+              'Automatic monthly reports',
+              'Full storefront customization',
+              'Full email branding customization',
+              'Discount codes & promotional campaigns'
+            ].map((feature, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="mt-0.5 shrink-0 bg-blue-500/20 w-5 h-5 rounded-full flex items-center justify-center">
+                  <Check size={12} className="text-blue-400" />
+                </div>
+                <span className="text-sm font-medium text-slate-200">{feature}</span>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+            <div>
+              <div className="text-sm font-bold text-white">Koara Plus</div>
+              <div className="text-xs text-blue-400">Monthly Subscription</div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-extrabold text-white">$4.99</div>
+              <div className="text-xs text-slate-400">/ month</div>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => {
+              upgradeSubscription();
+              setUpgradeModalOpen(false);
+            }} 
+            className="w-full py-4 rounded-xl font-bold text-white transition-all hover:scale-[1.02]" 
+            style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', boxShadow: '0 4px 15px rgba(37,99,235,0.3)' }}
+          >
+            Upgrade Now
+          </button>
+        </div>
+      </Modal>
 
       {/* Balance Modal */}
       <Modal

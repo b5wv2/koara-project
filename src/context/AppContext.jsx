@@ -8,6 +8,12 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null); // { role: 'admin' | 'merchant', email, storeName }
   const [store, setStore] = useState(null);
+  const [subscription, setSubscription] = useState({
+    plan: 'basic', // 'basic' | 'plus'
+    status: 'active', // 'active' | 'expired' | 'none'
+    starts_at: null,
+    expires_at: null
+  });
   const [language, setLanguage] = useState('en');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
@@ -681,6 +687,17 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const isPlusActive = subscription.plan === 'plus' && subscription.status === 'active';
+
+  const upgradeSubscription = () => {
+    setSubscription({
+      plan: 'plus',
+      status: 'active',
+      starts_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    });
+  };
+
   return (
     <AppContext.Provider value={{
       user, store, isAuthLoading, login, googleLogin, googleRegister, logout,
@@ -696,7 +713,8 @@ export const AppProvider = ({ children }) => {
       ledger, setLedger,
       platformProducts, setPlatformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct,
       providers, setProviders, fetchProviders, fetchProviderMappings, addProviderMapping,
-      merchantPlatformProducts, setMerchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct
+      merchantPlatformProducts, setMerchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct,
+      subscription, setSubscription, isPlusActive, upgradeSubscription
     }}>
       {children}
     </AppContext.Provider>

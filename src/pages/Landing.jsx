@@ -22,6 +22,7 @@ const FeatureCard = ({ icon: Icon, title, description }) => (
 );
 
 const LandingPage = () => {
+  const pricingRef = React.useRef(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingInitialData, setOnboardingInitialData] = useState(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -92,7 +93,7 @@ const LandingPage = () => {
 
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <button
-                  onClick={() => setIsOnboardingOpen(true)}
+                  onClick={() => pricingRef.current?.scrollIntoView({ behavior: 'smooth' })}
                   className="btn-primary px-8 py-4 text-base flex items-center justify-center gap-2"
                 >
                   {t('start_store_free')} <ArrowRight size={18} className="rtl:rotate-180" />
@@ -240,6 +241,100 @@ const LandingPage = () => {
                   <div className="text-xs font-medium" style={{ color: '#94A3B8' }}>{label}</div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            PRICING / SUBSCRIPTION SECTION
+        ═══════════════════════════════════════════════════════════════ */}
+        <section ref={pricingRef} className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow">
+          <div className="mb-16 text-center">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] mb-4 inline-flex items-center gap-2" style={{ color: '#60A5FA' }}>
+              <Zap size={14} />
+              SIMPLE PRICING
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-6">Choose Your Plan</h2>
+            <p className="text-lg sm:text-xl max-w-2xl mx-auto" style={{ color: '#94A3B8' }}>
+              Start for free, upgrade when you need more power and customization.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Koara Basic */}
+            <div className="glass-card p-10 flex flex-col relative group">
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold text-white mb-2">Koara Basic</h3>
+                <div className="text-4xl font-extrabold text-white mb-4">FREE</div>
+                <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-2" style={{ background: 'rgba(59,130,246,0.1)', color: '#60A5FA', border: '1px solid rgba(59,130,246,0.2)' }}>
+                  Free for a limited time.
+                </div>
+                <p className="text-xs mt-2" style={{ color: '#64748B' }}>This plan will become paid in the future.</p>
+              </div>
+              
+              <div className="flex-1 space-y-4 mb-8">
+                {[
+                  'Default storefront theme',
+                  'Default email template',
+                  'Free Koara subdomain',
+                  'Order management',
+                  'Basic merchant dashboard'
+                ].map((feature, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <ShieldCheck size={18} style={{ color: '#60A5FA' }} />
+                    <span className="text-sm text-slate-300">{feature}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <button onClick={() => setIsOnboardingOpen(true)} className="dash-btn w-full justify-center py-4 rounded-xl font-semibold" style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}>
+                Get Started Free
+              </button>
+            </div>
+
+            {/* Koara Plus */}
+            <div className="glass-card p-10 flex flex-col relative transform md:-translate-y-4 shadow-2xl" style={{ border: '1px solid rgba(59,130,246,0.4)', background: 'rgba(15,23,42,0.8)' }}>
+              {/* Most Popular Badge */}
+              <div className="absolute top-0 right-8 transform -translate-y-1/2">
+                <div className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', color: 'white', boxShadow: '0 4px 15px rgba(37,99,235,0.4)' }}>
+                  Most Popular
+                </div>
+              </div>
+              
+              <div className="absolute inset-0 pointer-events-none rounded-2xl" style={{ background: 'radial-gradient(circle at top right, rgba(59,130,246,0.15), transparent 70%)' }}></div>
+
+              <div className="mb-8 relative z-10">
+                <h3 className="text-2xl font-bold text-white mb-2">Koara Plus</h3>
+                <div className="flex items-end gap-2 mb-6">
+                  <div className="text-4xl font-extrabold text-white">$4.99</div>
+                  <div className="text-sm font-medium pb-1" style={{ color: '#94A3B8' }}>/ month</div>
+                </div>
+              </div>
+              
+              <div className="flex-1 space-y-4 mb-8 relative z-10">
+                {[
+                  'Remove ALL Koara branding',
+                  'Connect your own custom domain',
+                  'Automatic monthly reports',
+                  'Full storefront customization',
+                  'Full email branding customization',
+                  'Discount codes & promotional campaigns',
+                  'Early access to new features'
+                ].map((feature, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="mt-0.5 shrink-0">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.2)' }}>
+                        <div className="w-2 h-2 rounded-full" style={{ background: '#60A5FA' }}></div>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-white">{feature}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <button onClick={() => setIsOnboardingOpen(true)} className="dash-btn w-full justify-center py-4 rounded-xl font-bold text-white relative z-10 transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', boxShadow: '0 4px 15px rgba(37,99,235,0.3)' }}>
+                Upgrade to Plus
+              </button>
             </div>
           </div>
         </section>
