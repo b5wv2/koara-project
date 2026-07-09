@@ -135,6 +135,11 @@ const AdminDashboard = () => {
   const [topupsLoading, setTopupsLoading] = useState(false);
   const [editingTopupPrice, setEditingTopupPrice] = useState({});
 
+  // Promotions
+  const [promotions, setPromotions] = useState([]);
+  const [promotionsLoading, setPromotionsLoading] = useState(false);
+  const [promoModal, setPromoModal] = useState({ isOpen: false, promoId: null, code: '', discount_type: 'percentage', value: '', usage_limit: '', status: 'active' });
+
   // Subscription
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeMethod, setUpgradeMethod] = useState('wallet');
@@ -215,8 +220,26 @@ const AdminDashboard = () => {
           .then(data => setBillingHistory(data))
           .catch(console.error);
       }
+      if (activeTab === 'promotions' && isPlusActive) {
+        fetchMerchantPromotions();
+      }
     }
-  }, [activeTab, role, storeId]);
+  }, [activeTab, role, storeId, isPlusActive]);
+
+  const fetchMerchantPromotions = async () => {
+    setPromotionsLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/merchant/promotions`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.success) {
+        setPromotions(data.promotions);
+      }
+    } catch (err) {
+      console.error('Failed to fetch promotions', err);
+    } finally {
+      setPromotionsLoading(false);
+    }
+  };
 
   const handleSavePaymentSettings = (e) => {
     e.preventDefault();
@@ -242,8 +265,81 @@ const AdminDashboard = () => {
     setProducts(products.map(p => p.id === id ? { ...p, [field]: value } : p));
   };
 
-  const handleTogglePromo = (id) => {
-    setPromos(promos.map(p => p.id === id ? { ...p, active: !p.active } : p));
+  const handleTogglePromo = async (id) => {
+    const promo = promotions.find(p => p.id === id);
+    if (!promo) return;
+    
+    const newStatus = promo.status === 'active' ? 'inactive' : 'active';
+    setPromotions(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p));
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/merchant/promotions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        // revert
+        setPromotions(prev => prev.map(p => p.id === id ? { ...p, status: promo.status } : p));
+        alert('Failed to update promo status');
+      }
+    } catch (err) {
+      setPromotions(prev => prev.map(p => p.id === id ? { ...p, status: promo.status } : p));
+    }
+  };
+
+  const handleSavePromo = async (e) => {
+    e.preventDefault();
+    try {
+      const url = promoModal.promoId 
+        ? `${API_BASE_URL}/api/merchant/promotions/${promoModal.promoId}`
+        : `${API_BASE_URL}/api/merchant/promotions`;
+      
+      const method = promoModal.promoId ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          code: promoModal.code,
+          discount_type: promoModal.discount_type,
+          value: parseFloat(promoModal.value),
+          usage_limit: promoModal.usage_limit ? parseInt(promoModal.usage_limit, 10) : null,
+          status: promoModal.status
+        })
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        setPromoModal({ isOpen: false, promoId: null, code: '', discount_type: 'percentage', value: '', usage_limit: '', status: 'active' });
+        fetchMerchantPromotions();
+      } else {
+        alert(data.error || 'Failed to save promo');
+      }
+    } catch (err) {
+      alert('Network error while saving promo');
+    }
+  };
+
+  const handleDeletePromo = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this promo code?')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/merchant/promotions/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchMerchantPromotions();
+      } else {
+        alert(data.error || 'Failed to delete promo');
+      }
+    } catch (err) {
+      alert('Network error while deleting promo');
+    }
   };
 
   const handleProcessOrder = async (id, action, isTopup = false) => {
@@ -1112,7 +1208,11 @@ const AdminDashboard = () => {
                   title="Marketing & Promos"
                   description="Create discount codes for your customers."
                   action={
-                    <button className="dash-btn dash-btn-primary hidden sm:inline-flex" onClick={() => !isPlusActive && setUpgradeModalOpen(true)}>+ New Code</button>
+                    isPlusActive && (
+                      <button className="dash-btn dash-btn-primary hidden sm:inline-flex" onClick={() => setPromoModal({ isOpen: true, promoId: null, code: '', discount_type: 'percentage', value: '', usage_limit: '', status: 'active' })}>
+                        + New Code
+                      </button>
+                    )
                   }
                 />
                 <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}>
@@ -1122,22 +1222,39 @@ const AdminDashboard = () => {
                         <tr>
                           <th>Status</th>
                           <th>Promo Code</th>
-                          <th>Discount Type</th>
+                          <th>Type</th>
                           <th>Value</th>
+                          <th>Usage</th>
+                          <th className="text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {promos.filter(p => p.storeId === storeId).length === 0 ? (
-                          <tr><td colSpan="4"><div className="koara-empty-state"><Tag size={32} /><span>No promo codes yet.</span></div></td></tr>
-                        ) : promos.filter(p => p.storeId === storeId).map(promo => (
+                        {promotionsLoading ? (
+                           <tr><td colSpan="6"><div className="koara-empty-state"><div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /><span>Loading promos...</span></div></td></tr>
+                        ) : promotions.length === 0 ? (
+                          <tr><td colSpan="6"><div className="koara-empty-state"><Tag size={32} /><span>No promo codes yet.</span></div></td></tr>
+                        ) : promotions.map(promo => (
                           <tr key={promo.id}>
                             <td>
-                              <Toggle on={promo.active} onChange={() => handleTogglePromo(promo.id)} />
+                              <Toggle on={promo.status === 'active'} onChange={() => handleTogglePromo(promo.id)} />
                             </td>
                             <td className="font-mono font-bold text-white">{promo.code}</td>
-                            <td className="capitalize" style={{ color: '#94A3B8' }}>{promo.type}</td>
+                            <td className="capitalize" style={{ color: '#94A3B8' }}>{promo.discount_type}</td>
                             <td className="font-bold" style={{ color: '#60A5FA' }} dir="ltr">
-                              {promo.type === 'percentage' ? `${promo.value}%` : `$${promo.value.toFixed(2)}`}
+                              {promo.discount_type === 'percentage' ? `${parseFloat(promo.value)}%` : `$${parseFloat(promo.value).toFixed(2)}`}
+                            </td>
+                            <td className="text-sm" style={{ color: '#94A3B8' }}>
+                              {promo.used_count} {promo.usage_limit ? `/ ${promo.usage_limit}` : 'uses'}
+                            </td>
+                            <td className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <button onClick={() => setPromoModal({ isOpen: true, promoId: promo.id, code: promo.code, discount_type: promo.discount_type, value: promo.value, usage_limit: promo.usage_limit || '', status: promo.status })} className="dash-btn dash-btn-secondary">
+                                  Edit
+                                </button>
+                                <button onClick={() => handleDeletePromo(promo.id)} className="dash-btn dash-btn-danger">
+                                  <Trash2 size={13} /> Delete
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -1863,6 +1980,44 @@ const AdminDashboard = () => {
           </div>
         </Modal>
       )}
+
+      {/* Promo Modal */}
+      <Modal isOpen={promoModal.isOpen} onClose={() => setPromoModal({ isOpen: false, promoId: null, code: '', discount_type: 'percentage', value: '', usage_limit: '', status: 'active' })} title={promoModal.promoId ? 'Edit Promo Code' : 'Create Promo Code'}>
+        <form onSubmit={handleSavePromo} className="space-y-4">
+          <div>
+            <label className="koara-label">Promo Code</label>
+            <input required type="text" value={promoModal.code} onChange={(e) => setPromoModal({ ...promoModal, code: e.target.value.toUpperCase() })} className="koara-input font-mono" placeholder="e.g. SUMMER10" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="koara-label">Discount Type</label>
+              <select value={promoModal.discount_type} onChange={(e) => setPromoModal({ ...promoModal, discount_type: e.target.value })} className="koara-select">
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed Amount ($)</option>
+              </select>
+            </div>
+            <div>
+              <label className="koara-label">Discount Value</label>
+              <input required type="number" step="0.01" min="0.01" value={promoModal.value} onChange={(e) => setPromoModal({ ...promoModal, value: e.target.value })} className="koara-input" dir="ltr" placeholder="0.00" />
+            </div>
+          </div>
+          <div>
+            <label className="koara-label">Usage Limit (Optional)</label>
+            <input type="number" min="1" value={promoModal.usage_limit} onChange={(e) => setPromoModal({ ...promoModal, usage_limit: e.target.value })} className="koara-input" placeholder="e.g. 100" />
+            <p className="text-xs mt-1" style={{ color: '#64748B' }}>Leave blank for unlimited uses.</p>
+          </div>
+          <div className="flex items-center gap-3 pt-2">
+            <label className="koara-label m-0">Active:</label>
+            <Toggle
+              on={promoModal.status === 'active'}
+              onChange={() => setPromoModal({ ...promoModal, status: promoModal.status === 'active' ? 'inactive' : 'active' })}
+            />
+          </div>
+          <button type="submit" className="dash-btn dash-btn-primary w-full justify-center py-2.5 rounded-xl text-sm font-semibold">
+            {promoModal.promoId ? 'Save Changes' : 'Create Code'}
+          </button>
+        </form>
+      </Modal>
 
       {/* Catalog: Create Product Modal */}
       <Modal isOpen={catalogCreateModal} onClose={() => setCatalogCreateModal(false)} title="Create Platform Product">

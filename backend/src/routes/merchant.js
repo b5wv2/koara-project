@@ -113,55 +113,88 @@ router.delete('/products/:id', async (req, res) => {
   }
 });
 
-// --- Promos ---
+// --- Promotions ---
 
-// [PREMIUM FEATURE] - Create Promo Code
-router.post('/promos', requireKoaraPlus, async (req, res) => {
-  const { store_id, code, type, value, active } = req.body;
-  if (!store_id || !code || !type || value === undefined) return res.status(400).json({ error: 'Missing required fields' });
-
+// [PREMIUM FEATURE] - Get Promos
+router.get('/promotions', requireKoaraPlus, async (req, res) => {
   try {
+    const store_id = req.merchantStoreId;
     const result = await db.query(
-      `INSERT INTO promos (store_id, code, type, value, active) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [store_id, code, type, value, active !== undefined ? active : true]
+      `SELECT * FROM promos WHERE store_id = $1 ORDER BY created_at DESC`,
+      [store_id]
     );
-    res.status(201).json({ success: true, promo: result.rows[0] });
+    res.json({ success: true, promotions: result.rows });
   } catch (err) {
+    console.error('Error fetching promotions:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.put('/promos/:id', requireKoaraPlus, async (req, res) => {
+// [PREMIUM FEATURE] - Create Promo
+router.post('/promotions', requireKoaraPlus, async (req, res) => {
+  const store_id = req.merchantStoreId;
+  const { code, discount_type, value, status, usage_limit, expires_at } = req.body;
+  
+  if (!code || !discount_type || value === undefined) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const result = await db.query(
+      `INSERT INTO promos (store_id, code, discount_type, value, status, usage_limit, expires_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [store_id, code, discount_type, value, status || 'active', usage_limit || null, expires_at || null]
+    );
+    res.status(201).json({ success: true, promotion: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(400).json({ error: 'Promo code already exists for this store' });
+    }
+    console.error('Error creating promotion:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// [PREMIUM FEATURE] - Update Promo
+router.put('/promotions/:id', requireKoaraPlus, async (req, res) => {
   const { id } = req.params;
-  const { store_id, code, type, value, active } = req.body;
+  const store_id = req.merchantStoreId;
+  const { code, discount_type, value, status, usage_limit, expires_at } = req.body;
   
   try {
     const result = await db.query(
       `UPDATE promos 
        SET code = COALESCE($1, code), 
-           type = COALESCE($2, type), 
+           discount_type = COALESCE($2, discount_type), 
            value = COALESCE($3, value), 
-           active = COALESCE($4, active)
-       WHERE id = $5 AND store_id = $6 RETURNING *`,
-      [code, type, value, active, id, store_id]
+           status = COALESCE($4, status),
+           usage_limit = $5,
+           expires_at = $6,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7 AND store_id = $8 RETURNING *`,
+      [code, discount_type, value, status, usage_limit || null, expires_at || null, id, store_id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Promo not found or access denied' });
-    res.json({ success: true, promo: result.rows[0] });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Promotion not found or access denied' });
+    res.json({ success: true, promotion: result.rows[0] });
   } catch (err) {
+    if (err.code === '23505') {
+      return res.status(400).json({ error: 'Promo code already exists for this store' });
+    }
+    console.error('Error updating promotion:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// [PREMIUM FEATURE] - Delete Promo Code
-router.delete('/promos/:id', requireKoaraPlus, async (req, res) => {
+// [PREMIUM FEATURE] - Delete Promo
+router.delete('/promotions/:id', requireKoaraPlus, async (req, res) => {
   const { id } = req.params;
-  const { store_id } = req.body; 
+  const store_id = req.merchantStoreId; 
   try {
     const result = await db.query('DELETE FROM promos WHERE id = $1 AND store_id = $2 RETURNING id', [id, store_id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Promo not found or access denied' });
-    res.json({ success: true, message: 'Promo deleted' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Promotion not found or access denied' });
+    res.json({ success: true, message: 'Promotion deleted' });
   } catch (err) {
+    console.error('Error deleting promotion:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

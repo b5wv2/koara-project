@@ -157,10 +157,10 @@ const Storefront = ({ store }) => {
       : (selectedProduct.salePrice !== null && selectedProduct.salePrice !== undefined ? selectedProduct.salePrice : selectedProduct.price);
 
     if (appliedPromo) {
-      if (appliedPromo.type === 'percentage') {
-        basePrice = basePrice * (1 - appliedPromo.value / 100);
-      } else if (appliedPromo.type === 'fixed') {
-        basePrice = Math.max(0, basePrice - appliedPromo.value);
+      if (appliedPromo.discount_type === 'percentage') {
+        basePrice = basePrice * (1 - parseFloat(appliedPromo.value) / 100);
+      } else if (appliedPromo.discount_type === 'fixed') {
+        basePrice = Math.max(0, basePrice - parseFloat(appliedPromo.value));
       }
     }
     return basePrice.toFixed(2);
@@ -197,6 +197,7 @@ const Storefront = ({ store }) => {
         formData.append('whatsapp', whatsapp);
         formData.append('fields', JSON.stringify(topupFormFields));
         formData.append('receipt', receiptFile);
+        if (appliedPromo) formData.append('promoCode', appliedPromo.code);
 
         const response = await fetch(`${API_BASE_URL}/api/store/topups/order/${storeId}`, {
           method: 'POST',
@@ -226,7 +227,7 @@ const Storefront = ({ store }) => {
       formData.append('whatsapp', whatsapp);
       formData.append('platformProductId', selectedProduct.id);
       formData.append('receipt', receiptFile);
-      // quantity could be added here if implemented in UI
+      if (appliedPromo) formData.append('promoCode', appliedPromo.code);
 
       const response = await fetch(`${API_BASE_URL}/api/store/${storeId}/orders`, {
         method: 'POST',
@@ -591,7 +592,7 @@ const Storefront = ({ store }) => {
                   <div className="flex justify-between items-center text-sm" style={{ color: '#60A5FA' }}>
                     <span className="flex items-center gap-1"><Tag size={12} /> {appliedPromo.code}</span>
                     <span className="font-medium" dir="ltr">
-                      -{appliedPromo.type === 'percentage' ? `${appliedPromo.value}%` : `$${appliedPromo.value.toFixed(2)}`}
+                      -{appliedPromo.discount_type === 'percentage' ? `${parseFloat(appliedPromo.value)}%` : `$${parseFloat(appliedPromo.value).toFixed(2)}`}
                     </span>
                   </div>
                 )}

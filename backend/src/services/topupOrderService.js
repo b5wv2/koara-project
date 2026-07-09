@@ -4,7 +4,7 @@ const fazerCardsProvider = require('./providers/fazerCardsProvider');
 const emailService = require('./emailService');
 
 class TopupOrderService {
-  async createPendingOrder({ storeId, offerId, dynamicFields, customerInfo, receiptUrl }) {
+  async createPendingOrder({ storeId, offerId, dynamicFields, customerInfo, receiptUrl, promoCode = null }) {
     const client = await db.pool.connect();
     let localOrderId = null;
     
@@ -36,23 +36,67 @@ class TopupOrderService {
       // Default to costPrice if admin_cost_price is null
       const adminCostPrice = productRes.rows[0].admin_cost_price !== null ? parseFloat(productRes.rows[0].admin_cost_price) : costPrice;
 
-      // 3. Generate local order ID with KOA- prefix
+      // 3. Process Promo Code
+      let discountAmount = 0;
+      let appliedPromoCode = null;
+
+      if (promoCode) {
+        const promoRes = await client.query(`
+          SELECT * FROM promos 
+          WHERE store_id = $1 AND code = $2 AND status = 'active' FOR UPDATE
+        `, [storeId, promoCode]);
+
+        if (promoRes.rows.length === 0) {
+          throw new Error('Invalid or inactive promo code.');
+        }
+
+        const promo = promoRes.rows[0];
+
+        if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+          throw new Error('Promo code has expired.');
+        }
+
+        if (promo.usage_limit !== null && promo.used_count >= promo.usage_limit) {
+          throw new Error('Promo code usage limit exceeded.');
+        }
+
+        if (promo.discount_type === 'percentage') {
+          discountAmount = sellingPrice * (parseFloat(promo.value) / 100);
+        } else if (promo.discount_type === 'fixed') {
+          discountAmount = parseFloat(promo.value);
+        }
+        
+        if (discountAmount > sellingPrice) {
+          discountAmount = sellingPrice;
+        }
+
+        appliedPromoCode = promo.code;
+
+        await client.query(`
+          UPDATE promos 
+          SET used_count = used_count + 1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $1
+        `, [promo.id]);
+      }
+
+      // 4. Generate local order ID with KOA- prefix
       const seqRes = await client.query("SELECT nextval('order_number_seq')");
       localOrderId = `KOA-${String(seqRes.rows[0].nextval).padStart(8, '0')}`;
 
-      // 4. Create order in pending status
-      const merchantProfit = sellingPrice - adminCostPrice;
+      // 5. Create order in pending status
+      const totalSellingPrice = sellingPrice - discountAmount;
+      const merchantProfit = totalSellingPrice - adminCostPrice;
       await client.query(`
         INSERT INTO topup_orders (
           local_order_id, store_id, category_id, offer_id, dynamic_fields, 
-          customer_name, customer_email, whatsapp, cost_price, admin_cost_price, selling_price, merchant_profit, status, receipt_url
+          customer_name, customer_email, whatsapp, cost_price, admin_cost_price, selling_price, merchant_profit, status, receipt_url, promo_code, discount_amount
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending', $13
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending', $13, $14, $15
         )
       `, [
         localOrderId, storeId, offer.category_id, offerId, JSON.stringify(dynamicFields),
         customerInfo.name, customerInfo.email, customerInfo.whatsapp, 
-        costPrice, adminCostPrice, sellingPrice, merchantProfit, receiptUrl
+        costPrice, adminCostPrice, sellingPrice, merchantProfit, receiptUrl, appliedPromoCode, discountAmount
       ]);
 
       await client.query('COMMIT');

@@ -12,7 +12,8 @@ class OrderService {
     whatsapp,
     platformProductId,
     quantity = 1,
-    receiptUrl
+    receiptUrl,
+    promoCode = null
   }) {
     const client = await db.pool.connect();
     
@@ -45,17 +46,61 @@ class OrderService {
 
       const product = productRes.rows[0];
       const sellingPrice = parseFloat(product.selling_price);
-      const totalAmount = sellingPrice * quantity;
+      let totalAmount = sellingPrice * quantity;
       
+      // 3. Process Promo Code
+      let discountAmount = 0;
+      let appliedPromoCode = null;
+
+      if (promoCode) {
+        const promoRes = await client.query(`
+          SELECT * FROM promos 
+          WHERE store_id = $1 AND code = $2 AND status = 'active' FOR UPDATE
+        `, [storeId, promoCode]);
+
+        if (promoRes.rows.length === 0) {
+          throw new Error('Invalid or inactive promo code.');
+        }
+
+        const promo = promoRes.rows[0];
+
+        if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+          throw new Error('Promo code has expired.');
+        }
+
+        if (promo.usage_limit !== null && promo.used_count >= promo.usage_limit) {
+          throw new Error('Promo code usage limit exceeded.');
+        }
+
+        if (promo.discount_type === 'percentage') {
+          discountAmount = totalAmount * (parseFloat(promo.value) / 100);
+        } else if (promo.discount_type === 'fixed') {
+          discountAmount = parseFloat(promo.value);
+        }
+        
+        if (discountAmount > totalAmount) {
+          discountAmount = totalAmount;
+        }
+
+        appliedPromoCode = promo.code;
+        totalAmount -= discountAmount;
+
+        await client.query(`
+          UPDATE promos 
+          SET used_count = used_count + 1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $1
+        `, [promo.id]);
+      }
+
       // We assume USD for now based on legacy logic, but we could fetch from store settings
       const currencyCode = 'USD';
 
-      // 3. Generate sequential order number
+      // 4. Generate sequential order number
       const seqRes = await client.query("SELECT nextval('order_number_seq')");
       const seqNum = seqRes.rows[0].nextval;
       const orderNumber = `KOA-${String(seqNum).padStart(8, '0')}`;
 
-      // 4. Insert order
+      // 5. Insert order
       const insertRes = await client.query(`
         INSERT INTO orders (
           store_id, 
@@ -72,9 +117,11 @@ class OrderService {
           amount,
           total_amount,
           receipt_url,
-          status
+          status,
+          promo_code,
+          discount_amount
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending'
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16
         ) RETURNING *
       `, [
         storeId,
@@ -88,9 +135,11 @@ class OrderService {
         sellingPrice,
         currencyCode,
         quantity,
-        totalAmount, // amount is the legacy column, we set it to total_amount for backward compat
+        totalAmount, // amount is the legacy column
         totalAmount,
-        receiptUrl
+        receiptUrl,
+        appliedPromoCode,
+        discountAmount
       ]);
 
       await client.query('COMMIT');

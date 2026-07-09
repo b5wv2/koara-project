@@ -140,7 +140,7 @@ router.get('/:storeId/catalog', async (req, res) => {
 
     try {
       const promosResult = await db.query(
-        `SELECT * FROM promos WHERE store_id = $1 AND active = true ORDER BY id ASC`, 
+        `SELECT code, discount_type, value FROM promos WHERE store_id = $1 AND status = 'active' ORDER BY id ASC`, 
         [storeId]
       );
       promosRows = promosResult.rows;
@@ -182,7 +182,7 @@ router.get('/:storeId/catalog', async (req, res) => {
 // POST /api/store/:storeId/orders
 router.post('/:storeId/orders', upload.single('receipt'), async (req, res) => {
   const { storeId } = req.params;
-  const { customerName, customerEmail, whatsapp, platformProductId, quantity } = req.body;
+  const { customerName, customerEmail, whatsapp, platformProductId, quantity, promoCode } = req.body;
 
   if (!customerName || !customerEmail || !whatsapp || !platformProductId) {
     return res.status(400).json({ error: 'Missing required fields for order' });
@@ -202,7 +202,8 @@ router.post('/:storeId/orders', upload.single('receipt'), async (req, res) => {
       whatsapp,
       platformProductId,
       quantity: quantity || 1,
-      receiptUrl
+      receiptUrl,
+      promoCode
     });
 
     res.status(201).json({ success: true, order });

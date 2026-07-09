@@ -85,7 +85,7 @@ router.get('/catalog/:storeId', async (req, res) => {
 // POST /api/store/:storeId/topups/order
 router.post('/order/:storeId', upload.single('receipt'), async (req, res) => {
   const { storeId } = req.params;
-  let { offerId, fields, customerName, customerEmail, whatsapp } = req.body;
+  let { offerId, fields, customerName, customerEmail, whatsapp, promoCode } = req.body;
 
   if (!offerId || !fields || !customerName || !customerEmail || !whatsapp) {
     return res.status(400).json({ error: 'Missing required order fields.' });
@@ -112,7 +112,8 @@ router.post('/order/:storeId', upload.single('receipt'), async (req, res) => {
       offerId,
       dynamicFields: fields,
       customerInfo: { name: customerName, email: customerEmail, whatsapp },
-      receiptUrl
+      receiptUrl,
+      promoCode
     });
 
     res.status(201).json({ success: true, order: result });

@@ -125,10 +125,15 @@ const createPromosTableQuery = `
     id SERIAL PRIMARY KEY,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
     code VARCHAR(50) NOT NULL,
-    type VARCHAR(20) CHECK (type IN ('percentage','fixed')),
+    discount_type VARCHAR(20) CHECK (discount_type IN ('percentage','fixed')),
     value NUMERIC(10,2) NOT NULL,
-    active BOOLEAN DEFAULT TRUE,
+    status VARCHAR(20) DEFAULT 'active',
+    usage_limit INTEGER DEFAULT NULL,
+    used_count INTEGER DEFAULT 0,
+    starts_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(store_id, code)
   );
 `;
@@ -142,6 +147,8 @@ const createOrdersTableQuery = `
     customer_email VARCHAR(255),
     whatsapp VARCHAR(50),
     amount NUMERIC(10,2) NOT NULL,
+    promo_code VARCHAR(50) DEFAULT NULL,
+    discount_amount NUMERIC(10,2) DEFAULT 0,
     status VARCHAR(50) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
@@ -475,10 +482,12 @@ const initializeDatabase = async () => {
       
       // Seed promos
       await client.query(`
-        INSERT INTO promos (store_id, code, type, value, active) VALUES
-        ($1, 'ALFA10', 'percentage', 10.00, true),
-        ($1, 'MINUS1', 'fixed', 1.00, false)
-      `, [newStoreId]);
+        INSERT INTO promos (store_id, code, discount_type, value, status) VALUES
+        (1, 'WELCOME10', 'percentage', 10.00, 'active'),
+        (1, 'SUMMER5', 'fixed', 5.00, 'active'),
+        (2, 'FIRST100', 'percentage', 15.00, 'active')
+      ON CONFLICT (store_id, code) DO NOTHING;
+      `);
     }
 
     // --- Seed platform-level product architecture ---
