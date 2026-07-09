@@ -7,6 +7,8 @@ const requireKoaraPlus = async (req, res, next) => {
     // Let's rely on req.merchantStoreId if it exists, otherwise check req.store?.id or req.user.storeId
     let targetStoreId = null;
     if (req.merchantStoreId) targetStoreId = req.merchantStoreId;
+    else if (req.body?.store_id) targetStoreId = req.body.store_id;
+    else if (req.query?.store_id) targetStoreId = req.query.store_id;
     else if (req.store && req.store.id) targetStoreId = req.store.id;
     else if (req.user && req.user.role === 'merchant') {
       // Find their store id
