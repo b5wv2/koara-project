@@ -3,7 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const db = require('../config/db');
 const subscriptionService = require('../services/subscriptionService');
-const { ensureAuthenticated, ensureMerchant } = require('../middleware/auth');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // POST /api/subscription/webhook/crypto
 // NO AUTH MIDDLEWARE HERE - IT'S A WEBHOOK
@@ -90,8 +90,25 @@ router.post('/webhook/crypto', async (req, res) => {
 });
 
 // All routes below require merchant auth
-router.use(ensureAuthenticated);
-router.use(ensureMerchant);
+router.use(authMiddleware);
+
+// Ensure user is a merchant and resolve store_id
+router.use(async (req, res, next) => {
+  if (req.user && req.user.role === 'merchant') {
+    try {
+      const storeRes = await db.query('SELECT id FROM stores WHERE owner_id = $1', [req.user.id]);
+      if (storeRes.rows.length === 0) {
+        return res.status(403).json({ error: 'Store not found' });
+      }
+      req.merchantStoreId = storeRes.rows[0].id;
+      next();
+    } catch (err) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  } else {
+    res.status(403).json({ error: 'Merchant access required' });
+  }
+});
 
 // GET /api/subscription
 router.get('/', async (req, res) => {
