@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const notificationService = require('../services/notificationService');
-const authMiddleware = require('../middleware/authMiddleware');
-const adminMiddleware = require('../middleware/adminMiddleware');
 
 
 
@@ -422,17 +420,7 @@ router.get('/withdrawals', async (req, res) => {
   }
 });
 // POST /api/admin/withdrawals/:id/approve
-router.post('/withdrawals/:id/approve', (req, res, next) => {
-  console.log("========== WITHDRAWAL DEBUG ==========");
-  console.log("Route:", req.originalUrl);
-  console.log("Method:", req.method);
-  console.log("Cookies:", req.cookies);
-  console.log("User:", req.user);
-  console.log("Role:", req.user?.role);
-  console.log("Body:", req.body);
-  console.log("======================================");
-  next();
-}, authMiddleware, adminMiddleware, async (req, res) => {
+router.post('/withdrawals/:id/approve', async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });
   }
@@ -461,17 +449,7 @@ router.post('/withdrawals/:id/approve', (req, res, next) => {
 });
 
 // POST /api/admin/withdrawals/:id/reject
-router.post('/withdrawals/:id/reject', (req, res, next) => {
-  console.log("========== WITHDRAWAL DEBUG ==========");
-  console.log("Route:", req.originalUrl);
-  console.log("Method:", req.method);
-  console.log("Cookies:", req.cookies);
-  console.log("User:", req.user);
-  console.log("Role:", req.user?.role);
-  console.log("Body:", req.body);
-  console.log("======================================");
-  next();
-}, authMiddleware, adminMiddleware, async (req, res) => {
+router.post('/withdrawals/:id/reject', async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });
   }

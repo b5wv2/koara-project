@@ -74,12 +74,12 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Register API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/admin', authMiddleware, adminMiddleware, adminRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/merchant/products', authMiddleware, merchantProductRoutes);
 app.use('/api/merchant/topups', authMiddleware, merchantTopupsRoutes);
 app.use('/api/merchant', authMiddleware, merchantRoutes);
-app.use('/api/admin/catalog', catalogRoutes);
+app.use('/api/admin/catalog', authMiddleware, adminMiddleware, catalogRoutes);
 app.use('/api/store/topups', storeTopupsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/payments/local', localPaymentRoutes);
