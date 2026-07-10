@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check } from 'lucide-react';
+import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote } from 'lucide-react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
@@ -101,7 +101,7 @@ const PremiumLockOverlay = ({ isPlusActive, onUpgrade, children, compact = false
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription } = useAppContext();
+  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -137,6 +137,11 @@ const AdminDashboard = () => {
   const [merchantTopups, setMerchantTopups] = useState([]);
   const [topupsLoading, setTopupsLoading] = useState(false);
   const [editingTopupPrice, setEditingTopupPrice] = useState({});
+
+  // Withdrawals
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(false);
+  const [withdrawalProcessingId, setWithdrawalProcessingId] = useState(null);
+  const [withdrawalsSearch, setWithdrawalsSearch] = useState('');
 
   // Promotions
   const [promotions, setPromotions] = useState([]);
@@ -196,6 +201,12 @@ const AdminDashboard = () => {
         if (activeTab === 'catalog') {
           fetchPlatformProducts().catch(console.error);
           fetchProviders().catch(console.error);
+        }
+        if (activeTab === 'withdrawals') {
+          setWithdrawalsLoading(true);
+          fetchAdminWithdrawals()
+            .catch(console.error)
+            .finally(() => setWithdrawalsLoading(false));
         }
       };
       loadDashboardData();
@@ -448,6 +459,7 @@ const AdminDashboard = () => {
     { key: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { key: 'merchants', icon: Users, label: 'Store Management' },
     { key: 'ledger', icon: Database, label: 'Global Ledger' },
+    { key: 'withdrawals', icon: Banknote, label: 'Withdrawals' },
     { key: 'kyc', icon: ShieldCheck, label: 'KYC Requests' },
     { key: 'catalog', icon: Package, label: 'Product Catalog' },
   ];
@@ -463,6 +475,33 @@ const AdminDashboard = () => {
   ];
 
   const navItems = role === 'admin' ? adminNavItems : merchantNavItems;
+
+  const handleAdminWithdrawalApprove = async (id) => {
+    if (!window.confirm('Are you sure you want to approve this withdrawal? Ensure you have sent the funds manually.')) return;
+    setWithdrawalProcessingId(id);
+    const res = await approveWithdrawal(id);
+    if (!res.success) alert(res.message || 'Failed to approve withdrawal');
+    setWithdrawalProcessingId(null);
+  };
+
+  const handleAdminWithdrawalReject = async (id) => {
+    if (!window.confirm('Are you sure you want to reject this withdrawal? Funds will be refunded to the merchant wallet.')) return;
+    setWithdrawalProcessingId(id);
+    const res = await rejectWithdrawal(id);
+    if (!res.success) alert(res.message || 'Failed to reject withdrawal');
+    setWithdrawalProcessingId(null);
+  };
+
+  const filteredAdminWithdrawals = adminWithdrawals?.filter(w => {
+    if (!withdrawalsSearch) return true;
+    const q = withdrawalsSearch.toLowerCase();
+    return (
+      w.store_name?.toLowerCase().includes(q) ||
+      w.bank_name?.toLowerCase().includes(q) ||
+      w.bank_holder_name?.toLowerCase().includes(q) ||
+      w.account_number?.toLowerCase().includes(q)
+    );
+  }) || [];
 
   // ── Main Render ──
   const handleUpgrade = async () => {
@@ -802,6 +841,87 @@ const AdminDashboard = () => {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {/* ══ ADMIN: Withdrawals ══ */}
+            {role === 'admin' && activeTab === 'withdrawals' && (
+              <div className="space-y-6">
+                <div className="dash-card p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <Banknote className="text-blue-400" />
+                      Manual Withdrawals
+                    </h2>
+                    <p className="text-sm text-slate-400 mt-1">Review and process merchant withdrawal requests.</p>
+                  </div>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-64">
+                      <input 
+                        type="text" 
+                        placeholder="Search store, bank..." 
+                        value={withdrawalsSearch}
+                        onChange={(e) => setWithdrawalsSearch(e.target.value)}
+                        className="koara-input text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dash-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="koara-table">
+                      <thead>
+                        <tr>
+                          <th>Request ID</th>
+                          <th>Store</th>
+                          <th>Bank Details</th>
+                          <th className="text-right">Amount</th>
+                          <th className="text-center">Status</th>
+                          <th className="text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {withdrawalsLoading && adminWithdrawals.length === 0 ? (
+                          <tr><td colSpan="6"><div className="koara-empty-state"><Activity size={32} /><span>Loading withdrawals...</span></div></td></tr>
+                        ) : filteredAdminWithdrawals.length === 0 ? (
+                          <tr><td colSpan="6"><div className="koara-empty-state"><Banknote size={32} /><span>No withdrawal requests found.</span></div></td></tr>
+                        ) : filteredAdminWithdrawals.map(w => (
+                          <tr key={w.id}>
+                            <td className="cell-mono text-xs" style={{ color: '#64748B' }}>#{w.id}</td>
+                            <td>
+                              <div className="font-semibold text-white">{w.store_name}</div>
+                              <div className="text-xs text-slate-400">{new Date(w.created_at).toLocaleString()}</div>
+                            </td>
+                            <td>
+                              <div className="font-medium text-white">{w.bank_name}</div>
+                              <div className="text-xs text-slate-400">{w.bank_holder_name}</div>
+                              <div className="text-xs text-slate-500 font-mono mt-0.5">{w.account_number}</div>
+                            </td>
+                            <td className="text-right font-mono font-semibold text-white" dir="ltr">
+                              ${parseFloat(w.amount).toFixed(2)}
+                            </td>
+                            <td className="text-center">
+                              {w.status === 'pending' && <span className="koara-badge koara-badge-pending">Pending</span>}
+                              {w.status === 'approved' && <span className="koara-badge koara-badge-approved">Approved</span>}
+                              {w.status === 'rejected' && <span className="koara-badge koara-badge-rejected">Rejected</span>}
+                            </td>
+                            <td className="text-right">
+                              {w.status === 'pending' ? (
+                                <div className="flex items-center justify-end gap-2">
+                                  <button onClick={() => handleAdminWithdrawalApprove(w.id)} disabled={withdrawalProcessingId !== null} className="dash-btn dash-btn-primary py-1.5 px-3 text-xs">Approve</button>
+                                  <button onClick={() => handleAdminWithdrawalReject(w.id)} disabled={withdrawalProcessingId !== null} className="dash-btn dash-btn-secondary py-1.5 px-3 text-xs" style={{ color: '#f87171', background: 'rgba(248,113,113,0.1)' }}>Reject</button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-slate-500">{new Date(w.processed_at).toLocaleDateString()}</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
