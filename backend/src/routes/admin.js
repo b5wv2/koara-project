@@ -1,9 +1,19 @@
+console.log("========== DEBUG ==========");
+console.log(req.user);
+console.log("===========================");
+
+
+
+
+
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const notificationService = require('../services/notificationService');
 const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
+
+
 
 // GET /api/admin/kyc/pending
 router.get('/kyc/pending', async (req, res) => {
