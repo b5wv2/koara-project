@@ -8,6 +8,7 @@ import PaymentProviderModal from '../components/PaymentProviderModal';
 import CryptoPaymentModal from '../components/CryptoPaymentModal';
 import LocalBankTransferModal from '../components/LocalBankTransferModal';
 import SubscriptionPaymentModal from '../components/SubscriptionPaymentModal';
+import MerchantWithdrawalModal from '../components/modals/MerchantWithdrawalModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
 
@@ -115,6 +116,7 @@ const AdminDashboard = () => {
   const [providerModal, setProviderModal] = useState({ isOpen: false, amount: 0 });
   const [cryptoModal, setCryptoModal] = useState({ isOpen: false, amount: 0 });
   const [localBankModal, setLocalBankModal] = useState({ isOpen: false, amount: 0 });
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
   const [selectedKyc, setSelectedKyc] = useState(null);
   const [rejectKycModal, setRejectKycModal] = useState({ isOpen: false, storeId: null });
   const [rejectReason, setRejectReason] = useState('');
@@ -909,7 +911,7 @@ const AdminDashboard = () => {
                         <button onClick={() => setMerchantActionModal({ isOpen: true, type: 'add' })} className="dash-btn dash-btn-secondary justify-center py-2.5 rounded-xl text-xs font-semibold">
                           Add Funds
                         </button>
-                        <button onClick={() => setMerchantActionModal({ isOpen: true, type: 'withdraw' })} className="dash-btn dash-btn-primary justify-center py-2.5 rounded-xl text-xs font-semibold">
+                        <button onClick={() => setShowWithdrawalModal(true)} className="dash-btn dash-btn-primary justify-center py-2.5 rounded-xl text-xs font-semibold">
                           Withdraw
                         </button>
                       </div>
@@ -2155,6 +2157,11 @@ const AdminDashboard = () => {
           fetchSubscription();
           setUpgradeSuccess(true);
         }}
+      />
+      
+      <MerchantWithdrawalModal 
+        isOpen={showWithdrawalModal} 
+        onClose={() => setShowWithdrawalModal(false)} 
       />
 
     </div>
