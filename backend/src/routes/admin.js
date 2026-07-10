@@ -421,9 +421,18 @@ router.get('/withdrawals', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 // POST /api/admin/withdrawals/:id/approve
-router.post('/withdrawals/:id/approve', authMiddleware, adminMiddleware, async (req, res) => {
+router.post('/withdrawals/:id/approve', (req, res, next) => {
+  console.log("========== WITHDRAWAL DEBUG ==========");
+  console.log("Route:", req.originalUrl);
+  console.log("Method:", req.method);
+  console.log("Cookies:", req.cookies);
+  console.log("User:", req.user);
+  console.log("Role:", req.user?.role);
+  console.log("Body:", req.body);
+  console.log("======================================");
+  next();
+}, authMiddleware, adminMiddleware, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });
   }
@@ -452,7 +461,17 @@ router.post('/withdrawals/:id/approve', authMiddleware, adminMiddleware, async (
 });
 
 // POST /api/admin/withdrawals/:id/reject
-router.post('/withdrawals/:id/reject', authMiddleware, adminMiddleware, async (req, res) => {
+router.post('/withdrawals/:id/reject', (req, res, next) => {
+  console.log("========== WITHDRAWAL DEBUG ==========");
+  console.log("Route:", req.originalUrl);
+  console.log("Method:", req.method);
+  console.log("Cookies:", req.cookies);
+  console.log("User:", req.user);
+  console.log("Role:", req.user?.role);
+  console.log("Body:", req.body);
+  console.log("======================================");
+  next();
+}, authMiddleware, adminMiddleware, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });
   }
