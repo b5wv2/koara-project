@@ -152,6 +152,11 @@ router.post('/upgrade/crypto-invoice', async (req, res) => {
     const store_id = req.merchantStoreId;
     const amount = 4.99; // Fixed price for Koara Plus
     const orderId = `SUB-${store_id}-${Date.now()}`;
+    const pay_currency = req.body.pay_currency;
+
+    if (!pay_currency) {
+      return res.status(400).json({ error: 'pay_currency is required' });
+    }
     
     const invoiceData = {
       price_amount: amount,
@@ -162,7 +167,8 @@ router.post('/upgrade/crypto-invoice', async (req, res) => {
       cancel_url: 'https://www.getkoara.com/merchant/dashboard'
     };
 
-    const response = await fetch('https://api.nowpayments.io/v1/invoice', {
+    // 1. Create Invoice
+    const invoiceResponse = await fetch('https://api.nowpayments.io/v1/invoice', {
       method: 'POST',
       headers: {
         'x-api-key': process.env.NOWPAYMENTS_API_KEY,
@@ -171,21 +177,49 @@ router.post('/upgrade/crypto-invoice', async (req, res) => {
       body: JSON.stringify(invoiceData)
     });
 
-    const data = await response.json();
+    const invoiceJson = await invoiceResponse.json();
 
-    if (!response.ok) {
-      console.error('NOWPayments error:', data);
+    if (!invoiceResponse.ok) {
+      console.error('NOWPayments invoice error:', invoiceJson);
       return res.status(500).json({ error: 'Failed to create crypto invoice' });
+    }
+
+    // 2. Create Payment for Invoice to get address natively
+    const paymentResponse = await fetch('https://api.nowpayments.io/v1/invoice-payment', {
+      method: 'POST',
+      headers: {
+        'x-api-key': process.env.NOWPAYMENTS_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        iid: invoiceJson.id,
+        pay_currency: pay_currency
+      })
+    });
+
+    const paymentJson = await paymentResponse.json();
+
+    if (!paymentResponse.ok) {
+      console.error('NOWPayments payment error:', paymentJson);
+      return res.status(500).json({ error: 'Failed to generate payment address' });
     }
 
     // Insert into crypto_invoices
     await db.query(
       `INSERT INTO crypto_invoices (store_id, invoice_id, amount, currency, status) 
        VALUES ($1, $2, $3, $4, $5)`,
-      [store_id, data.id, amount, 'usd', 'waiting']
+      [store_id, invoiceJson.id, amount, 'usd', 'waiting']
     );
 
-    res.json({ success: true, invoice_url: data.invoice_url, invoice_id: data.id });
+    res.json({ 
+      success: true, 
+      invoice_id: invoiceJson.id,
+      invoice_url: invoiceJson.invoice_url,
+      payment_id: paymentJson.payment_id,
+      pay_address: paymentJson.pay_address,
+      pay_amount: paymentJson.pay_amount,
+      pay_currency: paymentJson.pay_currency
+    });
   } catch (err) {
     console.error('Error creating NOWPayments invoice for subscription:', err);
     res.status(500).json({ error: 'Internal server error' });

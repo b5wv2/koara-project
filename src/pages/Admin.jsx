@@ -7,6 +7,7 @@ import KoaraLogo from '../assets/koara-logo.svg';
 import PaymentProviderModal from '../components/PaymentProviderModal';
 import CryptoPaymentModal from '../components/CryptoPaymentModal';
 import LocalBankTransferModal from '../components/LocalBankTransferModal';
+import SubscriptionPaymentModal from '../components/SubscriptionPaymentModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
 
@@ -142,6 +143,7 @@ const AdminDashboard = () => {
 
   // Subscription
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [subscriptionPaymentOpen, setSubscriptionPaymentOpen] = useState(false);
   const [upgradeMethod, setUpgradeMethod] = useState('wallet');
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState('');
@@ -479,16 +481,8 @@ const AdminDashboard = () => {
           setUpgradeError(data.message || 'Upgrade failed');
         }
       } else if (upgradeMethod === 'crypto') {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subscription/upgrade/crypto-invoice`, {
-          method: 'POST',
-          credentials: 'include'
-        });
-        const data = await res.json();
-        if (res.ok && data.invoice_url) {
-          window.location.href = data.invoice_url;
-        } else {
-          setUpgradeError(data.error || 'Failed to create crypto invoice');
-        }
+        setUpgradeModalOpen(false);
+        setSubscriptionPaymentOpen(true);
       }
     } catch (e) {
       setUpgradeError(e.message || 'Network error');
@@ -2164,6 +2158,16 @@ const AdminDashboard = () => {
           </div>
         </div>
       </Modal>
+
+      <SubscriptionPaymentModal 
+        isOpen={subscriptionPaymentOpen}
+        onClose={() => setSubscriptionPaymentOpen(false)}
+        onSuccess={() => {
+          setSubscriptionPaymentOpen(false);
+          fetchSubscription();
+          setUpgradeSuccess(true);
+        }}
+      />
 
     </div>
   );
