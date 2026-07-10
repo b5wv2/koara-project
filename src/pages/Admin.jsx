@@ -205,7 +205,7 @@ const AdminDashboard = () => {
       }
       if (activeTab === 'topups') {
         setTopupsLoading(true);
-        fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`)
+        fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' })
           .then(r => r.json())
           .then(data => { if(data.success) setMerchantTopups(data.topups); })
           .catch(console.error)
@@ -1130,6 +1130,7 @@ const AdminDashboard = () => {
                                   try {
                                     await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, {
                                       method: 'PUT',
+                                      credentials: 'include',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({
                                         store_id: storeId,
@@ -1139,7 +1140,7 @@ const AdminDashboard = () => {
                                     });
                                     // Reload
                                     setTopupsLoading(true);
-                                    const res = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`);
+                                    const res = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
                                     const data = await res.json();
                                     if (data.success) setMerchantTopups(data.topups);
                                     setTopupsLoading(false);
@@ -1169,6 +1170,7 @@ const AdminDashboard = () => {
                                   try {
                                     await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, {
                                       method: 'PUT',
+                                      credentials: 'include',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({
                                         store_id: storeId,
@@ -1179,7 +1181,7 @@ const AdminDashboard = () => {
                                     setEditingTopupPrice(prev => { const n = { ...prev }; delete n[topup.offer_id]; return n; });
                                     // Reload
                                     setTopupsLoading(true);
-                                    const res = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`);
+                                    const res = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
                                     const data = await res.json();
                                     if (data.success) setMerchantTopups(data.topups);
                                     setTopupsLoading(false);

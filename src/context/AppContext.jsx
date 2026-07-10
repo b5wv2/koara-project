@@ -422,6 +422,7 @@ export const AppProvider = ({ children }) => {
 
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
