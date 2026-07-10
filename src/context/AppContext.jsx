@@ -66,6 +66,7 @@ export const AppProvider = ({ children }) => {
 
 
   const [merchants, setMerchants] = useState([]);
+  const [adminWithdrawals, setAdminWithdrawals] = useState([]);
 
   const [kycApplications, setKycApplications] = useState([
     { id: 99, storeName: 'Test Store', applicant: 'Awad Alkrim', status: 'pending', docUrl: 'https://via.placeholder.com/400x250?text=Mock+ID+Passport' }
@@ -508,6 +509,81 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // --- Withdrawals API functions ---
+
+  const fetchAdminWithdrawals = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/withdrawals`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setAdminWithdrawals(data.requests || []);
+        return data.requests || [];
+      }
+      return [];
+    } catch (err) {
+      console.error('Error fetching admin withdrawals:', err);
+      return [];
+    }
+  };
+
+  const approveWithdrawal = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/withdrawals/${id}/approve`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setAdminWithdrawals(prev => prev.map(w => w.id === id ? data.request : w));
+        return { success: true };
+      }
+      return { success: false, message: data.error };
+    } catch (err) {
+      return { success: false, message: 'Connection error' };
+    }
+  };
+
+  const rejectWithdrawal = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/withdrawals/${id}/reject`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setAdminWithdrawals(prev => prev.map(w => w.id === id ? data.request : w));
+        // Need to refetch stores or at least update the specific store balance if needed, but fetchAllStores typically handles it.
+        return { success: true };
+      }
+      return { success: false, message: data.error };
+    } catch (err) {
+      return { success: false, message: 'Connection error' };
+    }
+  };
+
+  const requestWithdrawal = async (amount) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/merchant/withdraw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ amount })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        // Update local store balance
+        setStore(prev => ({
+          ...prev,
+          balance: (parseFloat(prev.balance) - parseFloat(amount)).toFixed(2)
+        }));
+        return { success: true };
+      }
+      return { success: false, message: data.error };
+    } catch (err) {
+      return { success: false, message: 'Connection error' };
+    }
+  };
+
   // --- Platform Product Architecture API functions ---
 
   const fetchPlatformProducts = async () => {
@@ -722,6 +798,7 @@ export const AppProvider = ({ children }) => {
       language, setLanguage,
       t,
       merchants, setMerchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, toggleStoreActive, updateMerchantBanking,
+      adminWithdrawals, setAdminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, requestWithdrawal,
       kycApplications, setKycApplications,
       fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc,
       categories, setCategories, updateCategoryLogo, updateStoreLogo,

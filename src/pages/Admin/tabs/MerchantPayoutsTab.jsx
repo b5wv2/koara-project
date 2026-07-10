@@ -47,39 +47,27 @@ const MerchantPayoutsTab = () => {
         <CreditCard size={20} style={{ color: '#60A5FA' }} />
       </div>
 
-      <form onSubmit={handleSavePaymentSettings} className="max-w-xl space-y-5">
-        {saveSuccess && (
-          <div className="koara-success-msg">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
-            Changes saved successfully!
-          </div>
-        )}
-
+      <div className="max-w-xl space-y-5">
         <div className="space-y-4">
           <div>
             <label className="koara-label">Bank Name</label>
-            <input required type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. Chase Bank" className="koara-input" />
+            <input readOnly type="text" value={bankName} className="koara-input opacity-70 cursor-not-allowed" />
           </div>
           <div>
             <label className="koara-label">Account Name</label>
-            <input required type="text" value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} placeholder="e.g. Alfa Store LLC" className="koara-input" />
+            <input readOnly type="text" value={bankAccountName} className="koara-input opacity-70 cursor-not-allowed" />
           </div>
           <div>
             <label className="koara-label">Account Number</label>
-            <input required type="text" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} placeholder="e.g. 1234567890" className="koara-input font-mono" dir="ltr" />
+            <input readOnly type="text" value={bankAccountNumber} className="koara-input font-mono opacity-70 cursor-not-allowed" dir="ltr" />
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={isSavingBank}
-          className="dash-btn dash-btn-primary py-2.5 px-6 rounded-xl text-sm font-semibold"
-        >
-          {isSavingBank ? (
-            <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving...</>
-          ) : 'Save Changes'}
-        </button>
-      </form>
+        <div className="text-xs text-slate-400 mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
+          Your banking information is locked for security after verification. 
+          If you need to update these details, please contact administrator support.
+        </div>
+      </div>
     </div>
   );
 };

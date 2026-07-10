@@ -274,4 +274,65 @@ router.put('/orders/:id/status', async (req, res) => {
   }
 });
 
+// --- Withdrawals ---
+
+// POST /api/merchant/withdraw
+router.post('/withdraw', resolveMerchantStore, async (req, res) => {
+  const storeId = req.merchantStoreId;
+  const { amount } = req.body;
+  const merchantId = req.user.id;
+
+  if (!amount || isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: 'Valid amount greater than 0 is required' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Get store balance and bank details (Snapshot)
+    const storeRes = await client.query('SELECT balance, bank_name, account_name, account_no FROM stores WHERE id = $1 FOR UPDATE', [storeId]);
+    if (storeRes.rows.length === 0) {
+      throw new Error('Store not found');
+    }
+    
+    const store = storeRes.rows[0];
+
+    if (!store.bank_name || !store.account_name || !store.account_no) {
+       throw new Error('Bank information is incomplete. Please contact support to set up your bank account.');
+    }
+
+    if (parseFloat(store.balance) < parseFloat(amount)) {
+      throw new Error('Insufficient wallet balance');
+    }
+
+    // 2. Deduct balance immediately
+    await client.query('UPDATE stores SET balance = balance - $1 WHERE id = $2', [amount, storeId]);
+
+    // 3. Log wallet transaction
+    await client.query(
+      `INSERT INTO wallet_transactions (store_id, amount, transaction_type, reason)
+       VALUES ($1, $2, 'debit', 'Withdrawal Request')`,
+      [storeId, amount]
+    );
+
+    // 4. Create withdrawal request (Snapshotting bank info)
+    const withdrawRes = await client.query(
+      `INSERT INTO withdrawal_requests 
+       (store_id, merchant_id, amount, status, bank_holder_name, bank_name, account_number)
+       VALUES ($1, $2, $3, 'pending', $4, $5, $6) RETURNING *`,
+      [storeId, merchantId, amount, store.account_name, store.bank_name, store.account_no]
+    );
+
+    await client.query('COMMIT');
+    res.status(201).json({ success: true, request: withdrawRes.rows[0] });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error processing withdrawal:', err.message);
+    res.status(400).json({ error: err.message || 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;

@@ -15,6 +15,7 @@ import AdminDashboardTab from './tabs/AdminDashboardTab';
 import AdminKycTab from './tabs/AdminKycTab';
 import AdminMerchantsTab from './tabs/AdminMerchantsTab';
 import AdminLedgerTab from './tabs/AdminLedgerTab';
+import AdminWithdrawalsTab from './tabs/AdminWithdrawalsTab';
 import AdminCatalogTab from './tabs/AdminCatalogTab';
 
 // Merchant tabs
@@ -38,6 +39,7 @@ import KycDocumentModal from '../../components/modals/KycDocumentModal';
 import CatalogCreateModal from '../../components/modals/CatalogCreateModal';
 import CatalogEditModal from '../../components/modals/CatalogEditModal';
 import ProviderMappingsModal from '../../components/modals/ProviderMappingsModal';
+import MerchantWithdrawalModal from '../../components/modals/MerchantWithdrawalModal';
 
 // ── AdminPage ──────────────────────────────────────────────────────
 
@@ -58,6 +60,7 @@ const AdminPage = () => {
 
   // Modal state
   const [balanceModal, setBalanceModal] = useState({ isOpen: false, type: '', storeId: null, amount: 0, error: '' });
+  const [merchantWithdrawalModal, setMerchantWithdrawalModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, storeId: null, storeName: '' });
   const [merchantActionModal, setMerchantActionModal] = useState({ isOpen: false, type: '', amount: 0 });
   const [providerModal, setProviderModal] = useState({ isOpen: false, amount: 0 });
@@ -175,6 +178,7 @@ const AdminPage = () => {
       switch (activeTab) {
         case 'dashboard': return <AdminDashboardTab />;
         case 'kyc': return <AdminKycTab kycPendingLoading={kycPendingLoading} onApproveKyc={handleApproveKyc} onRejectKyc={(id) => setRejectKycModal({ isOpen: true, storeId: id })} onViewDocument={setSelectedKyc} />;
+        case 'withdrawals': return <AdminWithdrawalsTab />;
         case 'merchants': return <AdminMerchantsTab onAddBalance={(id) => setBalanceModal({ isOpen: true, type: 'add', storeId: id, amount: '' })} onDeductBalance={(id) => setBalanceModal({ isOpen: true, type: 'deduct', storeId: id, amount: '' })} onDeleteStore={(id, name) => setDeleteModal({ isOpen: true, storeId: id, storeName: name })} />;
         case 'ledger': return <AdminLedgerTab />;
         case 'catalog': return <AdminCatalogTab onCreateProduct={() => { setNewProduct({ name: '', category: '', description: '' }); setCatalogCreateModal(true); }} onEditProduct={(p) => setCatalogEditModal({ isOpen: true, product: { ...p } })} onDeactivateProduct={async (id) => { await deactivatePlatformProduct(id); }} onManageProviders={async (p) => { const mappings = await fetchProviderMappings(p.id); setCatalogProviderModal({ isOpen: true, productId: p.id, productName: p.name, mappings }); }} />;
@@ -182,7 +186,7 @@ const AdminPage = () => {
       }
     } else {
       switch (activeTab) {
-        case 'dashboard': return <MerchantDashboardTab onAddFunds={() => setMerchantActionModal({ isOpen: true, type: 'add' })} onWithdraw={() => setMerchantActionModal({ isOpen: true, type: 'withdraw' })} onInspectReceipt={setSelectedReceipt} />;
+        case 'dashboard': return <MerchantDashboardTab onAddFunds={() => setMerchantActionModal({ isOpen: true, type: 'add' })} onWithdraw={() => setMerchantWithdrawalModal(true)} onInspectReceipt={setSelectedReceipt} />;
         case 'products': return <MerchantProductsTab editingMerchantPrice={merchantDash.editingMerchantPrice} setEditingMerchantPrice={merchantDash.setEditingMerchantPrice} onCustomize={(p) => setCustomizingProduct({ ...p, custom_title: p.custom_title || '', custom_description: p.custom_description || '', custom_image_url: p.custom_image_url || '', previewImage: p.custom_image_url || p.image_url || '' })} />;
         case 'topups': return <MerchantTopupsTab merchantTopups={merchantDash.merchantTopups} topupsLoading={merchantDash.topupsLoading} editingTopupPrice={merchantDash.editingTopupPrice} setEditingTopupPrice={merchantDash.setEditingTopupPrice} reloadTopups={merchantDash.reloadTopups} />;
         case 'promotions': return <MerchantPromotionsTab />;
@@ -214,6 +218,7 @@ const AdminPage = () => {
       {/* ── Modals ── */}
       <BalanceModal balanceModal={balanceModal} setBalanceModal={setBalanceModal} onSubmit={handleAdminBalanceUpdate} />
       <MerchantActionModal merchantActionModal={merchantActionModal} setMerchantActionModal={setMerchantActionModal} onSubmit={handleMerchantAction} />
+      <MerchantWithdrawalModal isOpen={merchantWithdrawalModal} onClose={() => setMerchantWithdrawalModal(false)} />
       <PaymentProviderModal isOpen={providerModal.isOpen} onClose={() => setProviderModal({ isOpen: false, amount: 0 })} amount={providerModal.amount} onSelectProvider={(provider) => { if (provider === 'nowpayments') { const amount = providerModal.amount; setProviderModal({ isOpen: false, amount: 0 }); setCryptoModal({ isOpen: true, amount }); } }} />
       <CryptoPaymentModal isOpen={cryptoModal.isOpen} onClose={() => setCryptoModal({ isOpen: false, amount: 0 })} amount={cryptoModal.amount} storeId={storeId} />
       <CustomizeProductModal customizingProduct={customizingProduct} setCustomizingProduct={setCustomizingProduct} onSave={handleSaveCustomization} />

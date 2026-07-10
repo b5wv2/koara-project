@@ -396,4 +396,105 @@ router.delete('/stores/:id', async (req, res) => {
   }
 });
 
+// --- Withdrawals Management ---
+
+// GET /api/admin/withdrawals
+router.get('/withdrawals', async (req, res) => {
+  try {
+    const query = `
+      SELECT w.*, s.store_name, s.subdomain, u.email as merchant_email
+      FROM withdrawal_requests w
+      JOIN stores s ON w.store_id = s.id
+      JOIN users u ON w.merchant_id = u.id
+      ORDER BY 
+        CASE WHEN w.status = 'pending' THEN 1 ELSE 2 END,
+        w.created_at DESC
+    `;
+    const result = await db.query(query);
+    res.json({ success: true, requests: result.rows });
+  } catch (error) {
+    console.error('Error fetching withdrawals:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/withdrawals/:id/approve
+router.post('/withdrawals/:id/approve', async (req, res) => {
+  const { id } = req.params;
+  const adminId = req.user.id;
+
+  try {
+    const result = await db.query(
+      `UPDATE withdrawal_requests 
+       SET status = 'approved', processed_at = CURRENT_TIMESTAMP, processed_by = $1
+       WHERE id = $2 AND status = 'pending'
+       RETURNING *`,
+      [adminId, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Withdrawal request not found or already processed' });
+    }
+
+    res.json({ success: true, request: result.rows[0] });
+  } catch (error) {
+    console.error('Error approving withdrawal:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/withdrawals/:id/reject
+router.post('/withdrawals/:id/reject', async (req, res) => {
+  const { id } = req.params;
+  const adminId = req.user.id;
+  
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Get the pending request
+    const withdrawRes = await client.query(
+      `SELECT store_id, amount FROM withdrawal_requests WHERE id = $1 AND status = 'pending' FOR UPDATE`,
+      [id]
+    );
+
+    if (withdrawRes.rows.length === 0) {
+      throw new Error('Withdrawal request not found or already processed');
+    }
+
+    const { store_id, amount } = withdrawRes.rows[0];
+
+    // 2. Update status to rejected
+    const updateRes = await client.query(
+      `UPDATE withdrawal_requests 
+       SET status = 'rejected', processed_at = CURRENT_TIMESTAMP, processed_by = $1
+       WHERE id = $2
+       RETURNING *`,
+      [adminId, id]
+    );
+
+    // 3. Refund amount to store
+    await client.query(
+      `UPDATE stores SET balance = balance + $1 WHERE id = $2`,
+      [amount, store_id]
+    );
+
+    // 4. Log wallet transaction
+    await client.query(
+      `INSERT INTO wallet_transactions (store_id, amount, transaction_type, reason)
+       VALUES ($1, $2, 'credit', 'Withdrawal Request Rejected - Refund')`,
+      [store_id, amount]
+    );
+
+    await client.query('COMMIT');
+    res.json({ success: true, request: updateRes.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error rejecting withdrawal:', error.message);
+    res.status(400).json({ error: error.message || 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;
