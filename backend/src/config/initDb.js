@@ -503,11 +503,11 @@ const initializeDatabase = async () => {
       // Seed promos
       await client.query(`
         INSERT INTO promos (store_id, code, discount_type, value, status) VALUES
-        (1, 'WELCOME10', 'percentage', 10.00, 'active'),
-        (1, 'SUMMER5', 'fixed', 5.00, 'active'),
-        (2, 'FIRST100', 'percentage', 15.00, 'active')
+        ($1, 'WELCOME10', 'percentage', 10.00, 'active'),
+        ($1, 'SUMMER5', 'fixed', 5.00, 'active'),
+        ($1, 'FIRST100', 'percentage', 15.00, 'active')
       ON CONFLICT (store_id, code) DO NOTHING;
-      `);
+      `, [newStoreId]);
     }
 
     // --- Seed platform-level product architecture ---
