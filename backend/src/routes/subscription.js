@@ -158,6 +158,11 @@ router.post('/upgrade/crypto-invoice', async (req, res) => {
       return res.status(400).json({ error: 'pay_currency is required' });
     }
     
+    const nowPaymentsApiKey = process.env.NOWPAYMENTS_API_KEY;
+    if (!nowPaymentsApiKey) {
+      return res.status(500).json({ error: 'NOWPayments API key is not configured' });
+    }
+
     const invoiceData = {
       price_amount: amount,
       price_currency: 'usd',
@@ -171,7 +176,7 @@ router.post('/upgrade/crypto-invoice', async (req, res) => {
     const invoiceResponse = await fetch('https://api.nowpayments.io/v1/invoice', {
       method: 'POST',
       headers: {
-        'x-api-key': process.env.NOWPAYMENTS_API_KEY,
+        'x-api-key': nowPaymentsApiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(invoiceData)
@@ -188,7 +193,7 @@ router.post('/upgrade/crypto-invoice', async (req, res) => {
     const paymentResponse = await fetch('https://api.nowpayments.io/v1/invoice-payment', {
       method: 'POST',
       headers: {
-        'x-api-key': process.env.NOWPAYMENTS_API_KEY,
+        'x-api-key': nowPaymentsApiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
