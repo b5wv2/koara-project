@@ -117,7 +117,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
   const handleSendRegistrationCode = async () => {
     if (!email.trim() || !password) {
-      setErrorMsg('Please enter email and password.');
+      setErrorMsg(t('err_enter_email_pass'));
       return;
     }
     setLoading(true);
@@ -133,12 +133,12 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
         if (data.blocked_until) {
           setGlobalLockUntil(data.blocked_until);
         }
-        throw new Error(data.error || 'Failed to send code.');
+        throw new Error(data.error || t('err_failed_send_code'));
       }
 
       setStep(2);
       setCooldown(60);
-      setSuccessMsg('Verification code sent to your email.');
+      setSuccessMsg(t('success_verify_code_sent'));
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
@@ -149,7 +149,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
   const handleVerifyRegistrationCode = async (codeFromParam) => {
     const codeToVerify = typeof codeFromParam === 'string' ? codeFromParam : verificationCode;
     if (!codeToVerify || codeToVerify.length < 6) {
-      setErrorMsg('Please enter the 6-digit verification code.');
+      setErrorMsg(t('err_enter_6_digit'));
       return;
     }
     setLoading(true);
@@ -165,7 +165,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
         if (data.blocked_until) {
           setGlobalLockUntil(data.blocked_until);
         }
-        throw new Error(data.error || 'Invalid code.');
+        throw new Error(data.error || t('err_invalid_code'));
       }
 
       setSuccessMsg('');
@@ -193,11 +193,11 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
         if (data.blocked_until) {
           setGlobalLockUntil(data.blocked_until);
         }
-        throw new Error(data.error || 'Failed to resend code.');
+        throw new Error(data.error || t('err_failed_resend'));
       }
 
       setCooldown(60);
-      setSuccessMsg('A new verification code has been sent.');
+      setSuccessMsg(t('success_new_verify_code'));
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
@@ -209,20 +209,20 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
     setErrorMsg('');
     if (step === 3) {
       if (!firstName.trim() || !lastName.trim() || !storeName.trim() || !subdomain.trim()) {
-        setErrorMsg('All store profile fields and subdomain are required.');
+        setErrorMsg(t('err_req_store_fields'));
         return;
       }
       if (subdomainStatus === 'unavailable') {
-        setErrorMsg('The selected subdomain is not available.');
+        setErrorMsg(t('err_subdomain_unavailable'));
         return;
       }
       if (subdomainStatus === 'checking') {
-        setErrorMsg('Still checking subdomain availability, please wait.');
+        setErrorMsg(t('err_subdomain_checking'));
         return;
       }
     } else if (step === 4) {
       if (!bankName.trim() || !accountHolderName.trim() || !accountNumber.trim()) {
-        setErrorMsg('All bank information fields are required.');
+        setErrorMsg(t('err_req_bank_fields'));
         return;
       }
     }
@@ -247,7 +247,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
     if (cleanVal.length < 3) {
       setSubdomainStatus('');
-      setSubdomainError('Must be at least 3 characters.');
+      setSubdomainError(t('err_subdomain_length'));
       return;
     }
 
@@ -261,11 +261,11 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
         setSubdomainStatus('available');
       } else {
         setSubdomainStatus('unavailable');
-        setSubdomainError(data.error || 'Subdomain not available.');
+        setSubdomainError(data.error || t('err_subdomain_unavailable'));
       }
     } catch (err) {
       setSubdomainStatus('unavailable');
-      setSubdomainError('Failed to check availability.');
+      setSubdomainError(t('err_check_avail_failed'));
     }
   };
 
@@ -276,7 +276,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
     try {
       if (!kycDocument) {
-        throw new Error('Please upload a KYC document.');
+        throw new Error(t('err_req_kyc'));
       }
 
       const formData = new FormData();
@@ -298,13 +298,13 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to initialize store onboarding. Please check inputs.');
+        throw new Error(data.error || t('err_init_onboarding'));
       }
 
       setStep(6);
     } catch (err) {
       console.error('Onboarding submit error:', err.message);
-      setErrorMsg(err.message || 'Connection failed. Please ensure the backend server is running.');
+      setErrorMsg(err.message || t('err_conn_failed'));
     } finally {
       setLoading(false);
     }
@@ -330,10 +330,10 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
   };
 
   // Shared step label
-  const stepLabels = ['Account', 'Verify', 'Store', 'Banking', 'KYC'];
+  const stepLabels = [t('step_account'), t('step_verify'), t('step_store'), t('step_banking'), t('step_kyc')];
 
   return (
-    <Modal isOpen={isOpen} onClose={resetStateAndClose} title={t('create_store') || 'Open your store'}>
+    <Modal isOpen={isOpen} onClose={resetStateAndClose} title={t('onboarding_title')}>
       {/* Step indicator for steps 1-5 */}
       {step <= 5 && <StepIndicator current={step} total={5} />}
 
@@ -358,7 +358,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       {/* ── Step 1: Account ── */}
       {step === 1 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">Create a new merchant account to get started.</p>
+          <p className="text-sm text-slate-400 mb-2">{t('desc_create_merchant')}</p>
           <div className="space-y-3">
             <div>
               <label className="koara-label">{t('email_address')}</label>
@@ -384,7 +384,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
           </div>
           {globalLockUntil && (
             <div className="koara-error-msg text-center">
-              Verification locked. Try again in {lockCountdown}
+              {t('verification_locked')} {lockCountdown}
             </div>
           )}
           <button
@@ -393,9 +393,9 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-4"
           >
             {loading ? (
-              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Processing...</>
+              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('processing')}</>
             ) : (
-              <>Continue <ArrowRight size={14} /></>
+              <>{t('continue')} <ArrowRight size={14} /></>
             )}
           </button>
         </div>
@@ -405,10 +405,10 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       {step === 2 && (
         <div className="space-y-4">
           <p className="text-sm text-slate-400 mb-2">
-            Enter the 6-digit code sent to <span className="text-white font-medium">{email}</span>.
+            {t('desc_enter_6_digit_code')} <span className="text-white font-medium">{email}</span>.
           </p>
           <div>
-            <label className="koara-label text-center block mb-4">Verification Code</label>
+            <label className="koara-label text-center block mb-4">{t('verification_code')}</label>
             <OTPInput
               length={6}
               value={verificationCode}
@@ -418,7 +418,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
           </div>
           {globalLockUntil && (
             <div className="koara-error-msg text-center">
-              Verification locked. Try again in {lockCountdown}
+              {t('verification_locked')} {lockCountdown}
             </div>
           )}
           <button
@@ -427,8 +427,8 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-2"
           >
             {loading ? (
-              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Verifying...</>
-            ) : 'Verify Email'}
+              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('verifying')}</>
+            ) : t('step_verify')}
           </button>
           <div className="text-center">
             <button
@@ -437,7 +437,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
               disabled={cooldown > 0 || loading || !!globalLockUntil}
               className="text-sm text-koara-accent hover:underline disabled:text-slate-600 disabled:no-underline font-medium transition-colors"
             >
-              {cooldown > 0 ? `Resend available in ${cooldown}s` : 'Resend Code'}
+              {cooldown > 0 ? `${t('resend_available_in')} ${cooldown}s` : t('resend_code')}
             </button>
           </div>
         </div>
@@ -446,15 +446,15 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       {/* ── Step 3: Store Info ── */}
       {step === 3 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">Tell us about your store.</p>
+          <p className="text-sm text-slate-400 mb-2">{t('desc_tell_us_store')}</p>
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
-                <label className="koara-label">First Name</label>
+                <label className="koara-label">{t('first_name')}</label>
                 <input required type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" className="koara-input" />
               </div>
               <div className="flex-1">
-                <label className="koara-label">Last Name</label>
+                <label className="koara-label">{t('last_name')}</label>
                 <input required type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" className="koara-input" />
               </div>
             </div>
@@ -463,7 +463,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
               <input required type="text" value={storeName} onChange={(e) => handleStoreNameChange(e.target.value)} placeholder="Acme Digital" className="koara-input" />
             </div>
             <div>
-              <label className="koara-label">Store Subdomain</label>
+              <label className="koara-label">{t('store_subdomain')}</label>
               <div className="flex" dir="ltr">
                 <input
                   required type="text"
@@ -479,13 +479,13 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
                   .getkoara.com
                 </span>
               </div>
-              {subdomainStatus === 'checking' && <p className="text-xs text-slate-500 mt-1.5">Checking availability...</p>}
-              {subdomainStatus === 'available' && <p className="text-xs text-green-500 font-medium mt-1.5">✓ Subdomain is available</p>}
+              {subdomainStatus === 'checking' && <p className="text-xs text-slate-500 mt-1.5">{t('checking_availability')}</p>}
+              {subdomainStatus === 'available' && <p className="text-xs text-green-500 font-medium mt-1.5">{t('subdomain_available')}</p>}
               {subdomainStatus === 'unavailable' && <p className="text-xs text-red-400 font-medium mt-1.5">✗ {subdomainError}</p>}
             </div>
           </div>
           <button onClick={handleNext} className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-2">
-            Continue to Bank Info <ArrowRight size={14} />
+            {t('continue_to_bank_info')} <ArrowRight size={14} />
           </button>
         </div>
       )}
@@ -493,18 +493,18 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       {/* ── Step 4: Bank Info ── */}
       {step === 4 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">Enter your bank details to receive payouts.</p>
+          <p className="text-sm text-slate-400 mb-2">{t('desc_enter_bank')}</p>
           <div className="space-y-3">
             <div>
-              <label className="koara-label">Bank Name</label>
+              <label className="koara-label">{t('bank_name')}</label>
               <input required type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="Chase Bank" className="koara-input" />
             </div>
             <div>
-              <label className="koara-label">Account Holder Name</label>
+              <label className="koara-label">{t('account_holder_name')}</label>
               <input required type="text" value={accountHolderName} onChange={(e) => setAccountHolderName(e.target.value)} placeholder="John Doe" className="koara-input" />
             </div>
             <div>
-              <label className="koara-label">Account Number</label>
+              <label className="koara-label">{t('account_number')}</label>
               <input required type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="1234567890" className="koara-input" dir="ltr" />
             </div>
           </div>
@@ -513,10 +513,10 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
               onClick={() => { setErrorMsg(''); setStep(3); }}
               className="dash-btn dash-btn-secondary py-2.5 px-4 rounded-xl"
             >
-              <ArrowLeft size={14} /> Back
+              <ArrowLeft size={14} /> {t('back')}
             </button>
             <button onClick={handleNext} className="dash-btn dash-btn-primary flex-1 justify-center py-2.5 rounded-xl text-sm font-semibold">
-              Continue to KYC <ArrowRight size={14} />
+              {t('continue_to_kyc')} <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -525,19 +525,19 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       {/* ── Step 5: KYC Document ── */}
       {step === 5 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">Upload your National ID or Passport to verify your identity.</p>
+          <p className="text-sm text-slate-400 mb-2">{t('desc_upload_kyc')}</p>
 
           <label className="koara-upload-zone block">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 mx-auto" style={{ background: 'rgba(37,99,235,0.15)' }}>
               <UploadCloud size={22} className="text-koara-accent" />
             </div>
             <p className="text-sm font-semibold text-white mb-1">
-              {kycDocument ? kycDocument.name : 'Click to upload or drag & drop'}
+              {kycDocument ? kycDocument.name : t('click_to_upload')}
             </p>
-            <p className="text-xs text-slate-500">PNG, JPG or PDF (max. 5MB)</p>
+            <p className="text-xs text-slate-500">{t('max_5mb')}</p>
             {kycDocument && (
               <div className="mt-3 px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5" style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}>
-                <CheckCircle2 size={12} /> File selected
+                <CheckCircle2 size={12} /> {t('file_selected')}
               </div>
             )}
             <input type="file" accept=".png,.jpg,.jpeg,.pdf" className="hidden" onChange={(e) => setKycDocument(e.target.files[0])} />
@@ -545,7 +545,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
           <div className="flex gap-3">
             <button onClick={() => { setErrorMsg(''); setStep(4); }} className="dash-btn dash-btn-secondary py-2.5 px-4 rounded-xl">
-              <ArrowLeft size={14} /> Back
+              <ArrowLeft size={14} /> {t('back')}
             </button>
             <button
               onClick={handleSubmit}
@@ -553,8 +553,8 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
               className="dash-btn dash-btn-primary flex-1 justify-center py-2.5 rounded-xl text-sm font-semibold"
             >
               {loading ? (
-                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Submitting...</>
-              ) : 'Submit Application'}
+                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('submitting')}</>
+              ) : t('submit_application')}
             </button>
           </div>
         </div>
@@ -569,15 +569,15 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
               <CheckCircle2 size={36} className="text-green-400" />
             </div>
           </div>
-          <h4 className="text-xl font-bold text-white mb-2">Application Submitted</h4>
+          <h4 className="text-xl font-bold text-white mb-2">{t('application_submitted')}</h4>
           <p className="text-sm text-slate-400 mb-8 leading-relaxed max-w-xs mx-auto">
-            Your store is under review. Our team will verify your documents within 24 hours. You'll receive an email once approved.
+            {t('desc_under_review')}
           </p>
           <button
             onClick={() => { resetStateAndClose(); navigate('/'); }}
             className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl"
           >
-            Done
+            {t('done')}
           </button>
         </div>
       )}

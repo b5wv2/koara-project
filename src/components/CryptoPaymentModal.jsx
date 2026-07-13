@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Modal from './Modal';
 import { Loader2, ExternalLink, ShieldCheck, CheckCircle, AlertCircle, Check } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
 
 const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
   const [loading, setLoading] = useState(true);
@@ -9,6 +10,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
   const [error, setError] = useState('');
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const popupRef = useRef(null);
+  const { t } = useAppContext();
 
   const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -45,13 +47,13 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
           setLoading(false);
           openPaymentWindow(data.invoice_url);
         } else {
-          setError(data.error || 'Failed to generate invoice.');
+          setError(data.error || t('err_failed_gen_invoice'));
           setLoading(false);
         }
       })
       .catch(err => {
         if (!isMounted) return;
-        setError('Network error generating invoice.');
+        setError(t('err_net_gen_invoice'));
         setLoading(false);
       });
     }
@@ -78,7 +80,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
                 window.location.reload(); // Refresh wallet and transaction history
               }, 3000);
             } else if (data.status === 'failed' || data.status === 'refunded') {
-              setError(`Payment status: ${data.status}`);
+              setError(`${t('payment_status_is')} ${data.status}`);
               clearInterval(intervalId);
             }
           }
@@ -109,13 +111,13 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
   // Derived progress step for the indicator: 1 = generating invoice, 2 = awaiting payment, 3 = confirmed
   const step = paymentConfirmed ? 3 : invoiceUrl ? 2 : 1;
   const steps = [
-    { id: 1, label: 'Invoice' },
-    { id: 2, label: 'Payment' },
-    { id: 3, label: 'Confirmed' },
+    { id: 1, label: t('step_invoice') },
+    { id: 2, label: t('step_payment') },
+    { id: 3, label: t('step_confirmed') },
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={handleCancel} title="Crypto Checkout">
+    <Modal isOpen={isOpen} onClose={handleCancel} title={t('crypto_checkout')}>
       <div className="flex flex-col items-center p-4">
 
         <div className="mb-6 w-full flex flex-col items-center">
@@ -160,8 +162,8 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
         {loading && (
           <div className="flex flex-col items-center py-10">
             <Loader2 className="animate-spin mb-4" size={32} style={{ color: '#60A5FA' }} />
-            <p className="text-sm font-semibold text-white mb-1">Generating secure invoice</p>
-            <p className="text-xs" style={{ color: '#64748B' }}>This will only take a moment...</p>
+            <p className="text-sm font-semibold text-white mb-1">{t('gen_secure_invoice')}</p>
+            <p className="text-xs" style={{ color: '#64748B' }}>{t('take_a_moment')}</p>
           </div>
         )}
 
@@ -174,7 +176,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
               {error}
             </div>
             <button onClick={handleCancel} className="dash-btn dash-btn-secondary w-full justify-center py-2.5">
-              Close
+              {t('close')}
             </button>
           </div>
         )}
@@ -190,9 +192,9 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
                 <CheckCircle size={36} style={{ color: '#4ade80' }} />
               </div>
             </div>
-            <h2 className="text-xl font-bold text-white mb-1.5">Payment Confirmed</h2>
+            <h2 className="text-xl font-bold text-white mb-1.5">{t('payment_confirmed')}</h2>
             <p className="text-sm text-center max-w-[240px]" style={{ color: '#94A3B8' }}>
-              Your wallet has been updated successfully.
+              {t('wallet_updated_success')}
             </p>
           </div>
         )}
@@ -204,9 +206,9 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
             >
               <Loader2 className="animate-spin mb-4" size={30} style={{ color: '#60A5FA' }} />
-              <p className="text-sm text-white font-semibold mb-1.5">Payment window opened</p>
-              <p className="text-xs max-w-[260px]" style={{ color: '#94A3B8' }}>Please complete your payment in the popup window.</p>
-              <p className="text-[11px] mt-2" style={{ color: '#64748B' }}>Waiting for payment confirmation...</p>
+              <p className="text-sm text-white font-semibold mb-1.5">{t('payment_window_opened')}</p>
+              <p className="text-xs max-w-[260px]" style={{ color: '#94A3B8' }}>{t('complete_payment_popup')}</p>
+              <p className="text-[11px] mt-2" style={{ color: '#64748B' }}>{t('waiting_payment_confirm')}</p>
             </div>
 
             <div className="w-full space-y-2.5">
@@ -223,7 +225,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                <ExternalLink size={16} /> Open Payment Window Again
+                <ExternalLink size={16} /> {t('open_payment_again')}
               </button>
               <button
                 onClick={handleCancel}
@@ -232,13 +234,13 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = ''; }}
               >
-                Cancel Payment
+                {t('cancel_payment')}
               </button>
             </div>
 
             <div className="mt-6 flex items-center justify-center gap-2 text-xs" style={{ color: '#64748B' }}>
               <ShieldCheck size={14} style={{ color: '#4ade80' }} />
-              Secure transaction via NOWPayments
+              {t('secure_trans_nowpayments')}
             </div>
           </div>
         )}

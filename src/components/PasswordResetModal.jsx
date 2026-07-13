@@ -58,7 +58,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
   const handleRequestCode = async (e) => {
     e.preventDefault();
     if (!email) {
-      setErrorMsg('Please enter your email.');
+      setErrorMsg(t('err_enter_email'));
       return;
     }
 
@@ -78,12 +78,12 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
         if (data.blocked_until) {
           setGlobalLockUntil(data.blocked_until);
         }
-        throw new Error(data.error || 'Failed to request reset code.');
+        throw new Error(data.error || t('err_failed_request_code'));
       }
       
       setStep(2);
       setCooldown(60);
-      setSuccessMsg(data.message || 'Reset code sent to your email.');
+      setSuccessMsg(data.message || t('success_code_sent'));
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
@@ -110,11 +110,11 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
         if (data.blocked_until) {
           setGlobalLockUntil(data.blocked_until);
         }
-        throw new Error(data.error || 'Failed to resend code.');
+        throw new Error(data.error || t('err_failed_resend'));
       }
       
       setCooldown(60);
-      setSuccessMsg('A new code has been sent.');
+      setSuccessMsg(t('success_new_code'));
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
@@ -125,7 +125,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
   const handleVerifyCode = async (codeFromParam) => {
     const codeToVerify = typeof codeFromParam === 'string' ? codeFromParam : code;
     if (!codeToVerify || codeToVerify.length < 6) {
-      setErrorMsg('Please enter the 6-digit verification code.');
+      setErrorMsg(t('err_enter_6_digit'));
       return;
     }
 
@@ -145,7 +145,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
         if (data.blocked_until) {
           setGlobalLockUntil(data.blocked_until);
         }
-        throw new Error(data.error || 'Invalid or expired code.');
+        throw new Error(data.error || t('err_invalid_expired'));
       }
       
       setStep(3);
@@ -159,11 +159,11 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (password.length < 8) {
-      setErrorMsg('Password must be at least 8 characters.');
+      setErrorMsg(t('err_pass_length'));
       return;
     }
     if (password !== confirmPassword) {
-      setErrorMsg('Passwords do not match.');
+      setErrorMsg(t('err_pass_mismatch'));
       return;
     }
 
@@ -179,7 +179,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
       });
       const data = await response.json();
       
-      if (!response.ok) throw new Error(data.error || 'Failed to reset password.');
+      if (!response.ok) throw new Error(data.error || t('err_failed_reset'));
       
       setStep(4);
     } catch (err) {
@@ -201,7 +201,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => { resetState(); onClose(); }} title="Reset Password">
+    <Modal isOpen={isOpen} onClose={() => { resetState(); onClose(); }} title={t('reset_password_title')}>
       {errorMsg && (
         <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 mb-4">
           {errorMsg}
@@ -215,7 +215,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
 
       {step === 1 && (
         <form onSubmit={handleRequestCode} className="space-y-4">
-          <p className="text-sm text-slate-500 mb-2">Enter your email address to receive a 6-digit reset code.</p>
+          <p className="text-sm text-slate-500 mb-2">{t('enter_email_desc')}</p>
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">{t('email_address')}</label>
             <input 
@@ -229,20 +229,20 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
           </div>
           {globalLockUntil && (
             <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-lg mt-4 text-center">
-              Verification locked. Try again in {lockCountdown}
+              {t('verification_locked')} {lockCountdown}
             </div>
           )}
           <button disabled={loading || !!globalLockUntil} type="submit" className="w-full mt-4 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50">
-            {loading ? 'Sending...' : 'Send Verification Code'}
+            {loading ? t('sending') : t('send_verification_code')}
           </button>
         </form>
       )}
 
       {step === 2 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-500 mb-2">Enter the 6-digit code sent to <strong>{email}</strong>.</p>
+          <p className="text-sm text-slate-500 mb-2">{t('enter_code_sent_to')} <strong>{email}</strong>.</p>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-4 text-center">Verification Code</label>
+            <label className="block text-xs font-medium text-slate-700 mb-4 text-center">{t('verification_code')}</label>
             <OTPInput 
               length={6}
               value={code}
@@ -252,7 +252,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
           </div>
           {globalLockUntil && (
             <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-lg mt-4 text-center">
-              Verification locked. Try again in {lockCountdown}
+              {t('verification_locked')} {lockCountdown}
             </div>
           )}
           <button 
@@ -261,7 +261,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
             type="button" 
             className="w-full mt-6 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Verifying...' : 'Verify Code'}
+            {loading ? t('verifying') : t('verify_code')}
           </button>
           
           <div className="mt-4 text-center">
@@ -271,7 +271,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
               disabled={cooldown > 0 || loading || !!globalLockUntil}
               className="text-sm text-koara-blue hover:underline disabled:text-slate-400 disabled:no-underline font-medium"
             >
-              {cooldown > 0 ? `Resend available in ${cooldown}s` : 'Resend Code'}
+              {cooldown > 0 ? `${t('resend_available_in')} ${cooldown}s` : t('resend_code')}
             </button>
           </div>
         </div>
@@ -279,9 +279,9 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
 
       {step === 3 && (
         <form onSubmit={handleResetPassword} className="space-y-4">
-          <p className="text-sm text-slate-500 mb-2">Please enter your new password.</p>
+          <p className="text-sm text-slate-500 mb-2">{t('enter_new_password')}</p>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">New Password</label>
+            <label className="block text-xs font-medium text-slate-700 mb-1">{t('new_password')}</label>
             <input 
               type="password" 
               value={password}
@@ -293,7 +293,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Confirm Password</label>
+            <label className="block text-xs font-medium text-slate-700 mb-1">{t('confirm_password')}</label>
             <input 
               type="password" 
               value={confirmPassword}
@@ -305,7 +305,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
             />
           </div>
           <button disabled={loading} type="submit" className="w-full mt-4 bg-koara-blue text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
-            {loading ? 'Resetting...' : 'Reset Password'}
+            {loading ? t('resetting') : t('reset_password_btn')}
           </button>
         </form>
       )}
@@ -315,12 +315,12 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
           </div>
-          <h4 className="text-xl font-semibold mb-2 text-black">Password Reset Successfully</h4>
+          <h4 className="text-xl font-semibold mb-2 text-black">{t('password_reset_success')}</h4>
           <p className="text-sm text-slate-500 mb-8">
-            You can now log in with your new password.
+            {t('login_with_new')}
           </p>
           <button onClick={() => { resetState(); onClose(); }} className="w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors cursor-pointer">
-            Close
+            {t('close')}
           </button>
         </div>
       )}

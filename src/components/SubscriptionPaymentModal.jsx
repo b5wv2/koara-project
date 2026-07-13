@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { Loader2, ExternalLink, ShieldCheck, CheckCircle, AlertCircle, Check, Copy } from 'lucide-react';
 import QRCode from 'react-qr-code';
+import { useAppContext } from '../context/AppContext';
 
 const NETWORKS = [
   { id: 'usdttrc20', name: 'USDT (TRC20)', symbol: '₮' },
@@ -12,6 +13,7 @@ const NETWORKS = [
 const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
   const [step, setStep] = useState(1); // 1 = network, 2 = loading, 3 = payment, 4 = confirmed, 5 = expired
   const [selectedNetwork, setSelectedNetwork] = useState('');
+  const { t } = useAppContext();
   
   const [paymentData, setPaymentData] = useState(null);
   const [error, setError] = useState('');
@@ -52,12 +54,12 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
         setPaymentData(data);
         setStep(3); // Payment view
       } else {
-        setError(data.error || 'Failed to generate invoice.');
+        setError(data.error || t('err_failed_gen_invoice'));
         setStep(1); // Back to selection if error
       }
     } catch (err) {
       console.error('Error creating invoice:', err);
-      setError('Network error generating invoice.');
+      setError(t('err_net_gen_invoice'));
       setStep(1);
     }
   };
@@ -103,13 +105,13 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
   const currentNetwork = NETWORKS.find(n => n.id === selectedNetwork);
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Koara Plus Checkout">
+    <Modal isOpen={isOpen} onClose={handleClose} title={t('koara_plus_checkout')}>
       <div className="flex flex-col items-center p-4">
 
         {/* --- STEP 1: NETWORK SELECTION --- */}
         {step === 1 && (
           <div className="w-full">
-            <h3 className="text-lg font-bold text-white mb-4 text-center">Select Network</h3>
+            <h3 className="text-lg font-bold text-white mb-4 text-center">{t('select_network')}</h3>
             <div className="space-y-3 mb-6">
               {NETWORKS.map(net => (
                 <button
@@ -140,7 +142,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
               disabled={!selectedNetwork}
               className="dash-btn dash-btn-primary w-full justify-center py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Continue to Payment
+              {t('continue_to_payment')}
             </button>
           </div>
         )}
@@ -149,8 +151,8 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
         {step === 2 && (
           <div className="flex flex-col items-center py-10 w-full">
             <Loader2 className="animate-spin mb-4" size={32} style={{ color: '#60A5FA' }} />
-            <p className="text-sm font-semibold text-white mb-1">Generating secure invoice</p>
-            <p className="text-xs" style={{ color: '#64748B' }}>Connecting to {currentNetwork?.name}...</p>
+            <p className="text-sm font-semibold text-white mb-1">{t('gen_secure_invoice')}</p>
+            <p className="text-xs" style={{ color: '#64748B' }}>{t('connecting_to')} {currentNetwork?.name}...</p>
           </div>
         )}
 
@@ -160,7 +162,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
             
             <div className="mb-5 w-full max-w-[260px]">
               <div className="flex justify-between items-center mb-1.5">
-                 <span className="text-xs font-semibold text-slate-300">Awaiting Payment</span>
+                 <span className="text-xs font-semibold text-slate-300">{t('awaiting_payment')}</span>
                  <Loader2 size={12} className="animate-spin text-blue-400" />
               </div>
               <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
@@ -180,7 +182,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
 
             <div className="w-full space-y-4 mb-6">
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                <p className="text-xs text-slate-400 mb-1">Amount to send</p>
+                <p className="text-xs text-slate-400 mb-1">{t('amount_to_send')}</p>
                 <div className="flex justify-between items-center">
                   <div className="font-mono text-lg font-bold text-white">
                     {paymentData.pay_amount} <span className="text-sm text-slate-400">{paymentData.pay_currency?.toUpperCase()}</span>
@@ -192,7 +194,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                <p className="text-xs text-slate-400 mb-1">Payment Address ({currentNetwork?.name})</p>
+                <p className="text-xs text-slate-400 mb-1">{t('payment_address')} ({currentNetwork?.name})</p>
                 <div className="flex justify-between items-center gap-3">
                   <div className="font-mono text-xs text-slate-300 break-all leading-tight">
                     {paymentData.pay_address}
@@ -212,13 +214,13 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
                 className="w-full flex items-center justify-center gap-2 py-3 mb-4 rounded-xl text-sm font-semibold transition-colors"
                 style={{ background: 'rgba(255,255,255,0.05)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}
               >
-                <ExternalLink size={16} /> Open in NOWPayments (Fallback)
+                <ExternalLink size={16} /> {t('open_in_nowpayments')}
               </a>
             )}
 
             <div className="flex items-center justify-center gap-2 text-xs" style={{ color: '#64748B' }}>
               <ShieldCheck size={14} style={{ color: '#4ade80' }} />
-              Secure transaction via NOWPayments
+              {t('secure_trans_nowpayments')}
             </div>
           </div>
         )}
@@ -235,9 +237,9 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
                 <CheckCircle size={36} style={{ color: '#4ade80' }} />
               </div>
             </div>
-            <h2 className="text-xl font-bold text-white mb-1.5">Payment Confirmed</h2>
+            <h2 className="text-xl font-bold text-white mb-1.5">{t('payment_confirmed')}</h2>
             <p className="text-sm text-center max-w-[240px]" style={{ color: '#94A3B8' }}>
-              Your Koara Plus subscription has been activated successfully.
+              {t('sub_activated_success')}
             </p>
           </div>
         )}
@@ -248,23 +250,23 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
             <div className="w-16 h-16 rounded-full flex items-center justify-center mb-5" style={{ background: 'rgba(248,113,113,0.1)' }}>
                <AlertCircle size={32} className="text-red-400" />
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">Payment Expired</h2>
+            <h2 className="text-xl font-bold text-white mb-2">{t('payment_expired')}</h2>
             <p className="text-sm text-center max-w-[240px] text-slate-400 mb-6">
-              The time window to pay this invoice has closed.
+              {t('time_window_closed')}
             </p>
             <div className="w-full space-y-3">
               <button 
                 onClick={() => setStep(1)} 
                 className="dash-btn dash-btn-primary w-full justify-center py-3 rounded-xl"
               >
-                Create New Invoice
+                {t('create_new_invoice')}
               </button>
               <button 
                 onClick={handleClose} 
                 className="w-full py-3 rounded-xl text-sm font-semibold transition-colors"
                 style={{ background: 'rgba(255,255,255,0.05)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}
               >
-                Close
+                {t('close')}
               </button>
             </div>
           </div>

@@ -69,7 +69,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
     } catch (err) {
       setLoading(false);
       console.error(err);
-      setError('An unexpected error occurred during Google Login.');
+      setError(t('google_login_error'));
     }
   };
 
@@ -105,13 +105,13 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="koara-input pr-11"
+                className="koara-input pe-11"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -122,7 +122,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
                 onClick={(e) => { e.preventDefault(); onClose(); if (onForgot) onForgot(); }}
                 className="text-xs font-medium text-koara-accent hover:text-koara-blue-light transition-colors"
               >
-                Forgot Password?
+                {t('forgot_password')}
               </button>
             </div>
           </div>
@@ -136,7 +136,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
           {loading ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Signing in...
+              {t('signing_in')}
             </>
           ) : (
             <>
@@ -152,7 +152,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
             <div className="w-full border-t border-white/10"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-[#0b0c10] px-2 text-slate-400">Or continue with</span>
+            <span className="bg-[#0b0c10] px-2 text-slate-400">{t('continue_with')}</span>
           </div>
         </div>
 
@@ -170,7 +170,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
         */}
 
         <div className="pt-4 border-t border-white/6">
-          <p className="text-xs font-semibold text-slate-500 mb-2">Test Credentials</p>
+          <p className="text-xs font-semibold text-slate-500 mb-2">{t('test_credentials')}</p>
           <div className="space-y-1.5 text-xs font-mono text-slate-600" dir="ltr">
             <div className="flex items-center gap-2 p-2 rounded-lg bg-white/3 border border-white/5">
               <span className="text-koara-accent font-bold">Admin:</span>
