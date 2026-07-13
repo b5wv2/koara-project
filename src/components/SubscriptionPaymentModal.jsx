@@ -16,7 +16,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
   const [paymentData, setPaymentData] = useState(null);
   const [error, setError] = useState('');
   
-  const API_BASE_URL = import.meta.env.VITE_API_URL || `https://koara-project-production.up.railway.app`;
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   // Reset modal state when it opens
   useEffect(() => {

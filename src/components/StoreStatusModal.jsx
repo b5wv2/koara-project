@@ -3,7 +3,7 @@ import Modal from './Modal';
 import { UploadCloud, CheckCircle2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
   const { t } = useAppContext();

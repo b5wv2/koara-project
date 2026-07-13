@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import KoaraLogo from '../assets/koara-logo.svg';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || `https://koara-project-production.up.railway.app`;
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();

@@ -10,7 +10,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const popupRef = useRef(null);
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || `https://koara-project-production.up.railway.app`;
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   const openPaymentWindow = (url) => {
     if (popupRef.current && !popupRef.current.closed) {

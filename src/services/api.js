@@ -3,8 +3,7 @@
  * Single source of truth for the API base URL and shared fetch helper.
  */
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
+export const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Thin wrapper around fetch() that:

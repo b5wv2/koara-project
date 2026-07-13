@@ -1,8 +1,7 @@
 const reservedSubdomains = [
-  'www', 'api', 'admin', 'dashboard', 'app', 'portal', 
-  'auth', 'login', 'register', 'mail', 'support', 'help', 
-  'root', 'cdn', 'static', 'blog', 'docs', 'status', 
-  'billing', 'system', 'developer', 'developers'
+  'api', 'www', 'admin', 'dashboard', 'auth', 'mail', 
+  'smtp', 'cdn', 'assets', 'static', 'docs', 'support', 
+  'blog', 'status'
 ];
 
 /**

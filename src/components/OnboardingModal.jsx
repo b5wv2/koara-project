@@ -5,7 +5,7 @@ import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, Building2, User, Shie
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Step indicator component
 const StepIndicator = ({ current, total }) => (

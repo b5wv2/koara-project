@@ -3,7 +3,7 @@ import { UploadCloud, CheckCircle2, Package, X, Tag, ArrowLeft, ArrowRight, Load
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const Storefront = ({ store }) => {
   const { t, language, setLanguage, createOrder } = useAppContext();

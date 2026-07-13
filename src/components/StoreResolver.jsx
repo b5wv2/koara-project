@@ -4,7 +4,7 @@ import Storefront from '../pages/Storefront';
 import StoreNotFound from '../pages/StoreNotFound';
 import { getSubdomain } from '../lib/getSubdomain';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const StoreResolver = ({ children }) => {
   const subdomain = getSubdomain();

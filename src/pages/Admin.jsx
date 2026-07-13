@@ -11,7 +11,7 @@ import SubscriptionPaymentModal from '../components/SubscriptionPaymentModal';
 import MerchantWithdrawalModal from '../components/modals/MerchantWithdrawalModal';
 import MerchantCustomizationTab from '../components/MerchantCustomizationTab';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // ── Shared sub-components ──────────────────────────────────────────────
 
@@ -231,7 +231,7 @@ const AdminDashboard = () => {
         fetchMerchantOrders(storeId).catch(console.error);
       }
       if (activeTab === 'subscription') {
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subscription/history`, { credentials: 'include' })
+        fetch(`${import.meta.env.VITE_API_URL}/api/subscription/history`, { credentials: 'include' })
           .then(res => res.json())
           .then(data => setBillingHistory(data))
           .catch(console.error);
@@ -245,7 +245,7 @@ const AdminDashboard = () => {
   const fetchMerchantPromotions = async () => {
     setPromotionsLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/merchant/promotions`, { credentials: 'include' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/merchant/promotions`, { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
         setPromotions(data.promotions);
@@ -511,7 +511,7 @@ const AdminDashboard = () => {
     setUpgradeError('');
     try {
       if (upgradeMethod === 'wallet') {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subscription/upgrade/wallet`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/subscription/upgrade/wallet`, {
           method: 'POST',
           credentials: 'include'
         });
