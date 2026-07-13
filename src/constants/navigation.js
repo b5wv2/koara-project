@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Database, Package, ShieldCheck, Tag, Settings, CreditCard, Banknote } from 'lucide-react';
+import { LayoutDashboard, Users, Database, Package, ShieldCheck, Tag, Settings, CreditCard, Banknote, Palette } from 'lucide-react';
 
 /**
  * Navigation item definitions for Admin and Merchant dashboards.
@@ -17,6 +17,7 @@ export const MERCHANT_NAV_ITEMS = [
   { key: 'products', icon: Package, label: 'Gift Cards' },
   { key: 'topups', icon: Package, label: 'Direct Top-ups' },
   { key: 'promotions', icon: Tag, label: 'Promotions' },
+  { key: 'customization', icon: Palette, label: 'Store Customization' },
   { key: 'settings', icon: Settings, label: 'Store Settings' },
   { key: 'payouts', icon: CreditCard, label: 'Payment Details' },
 ];

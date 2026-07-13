@@ -9,6 +9,7 @@ import CryptoPaymentModal from '../components/CryptoPaymentModal';
 import LocalBankTransferModal from '../components/LocalBankTransferModal';
 import SubscriptionPaymentModal from '../components/SubscriptionPaymentModal';
 import MerchantWithdrawalModal from '../components/modals/MerchantWithdrawalModal';
+import MerchantCustomizationTab from '../components/MerchantCustomizationTab';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
 
@@ -1379,6 +1380,15 @@ const AdminDashboard = () => {
                       </tbody>
                     </table>
                   </div>
+                </PremiumLockOverlay>
+              </div>
+            )}
+
+            {/* ══ MERCHANT: Store Customization ══ */}
+            {role === 'merchant' && activeTab === 'customization' && (
+              <div className="h-full w-full">
+                <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}>
+                  <MerchantCustomizationTab />
                 </PremiumLockOverlay>
               </div>
             )}
