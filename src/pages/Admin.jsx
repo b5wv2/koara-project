@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote } from 'lucide-react';
+import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote, Palette } from 'lucide-react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
@@ -470,6 +470,7 @@ const AdminDashboard = () => {
     { key: 'products', icon: Package, label: 'Gift Cards' },
     { key: 'topups', icon: Package, label: 'Direct Top-ups' },
     { key: 'promotions', icon: Tag, label: 'Promotions' },
+    { key: 'customization', icon: Palette, label: 'Store Customization' },
     { key: 'settings', icon: Settings, label: 'Store Settings' },
     { key: 'payouts', icon: CreditCard, label: 'Payment Details' },
     { key: 'subscription', icon: Crown, label: 'Subscription' },
