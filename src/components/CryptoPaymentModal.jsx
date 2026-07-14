@@ -10,7 +10,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
   const [error, setError] = useState('');
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const popupRef = useRef(null);
-  const { t } = useAppContext();
+  const { t, syncWalletBalance } = useAppContext();
 
   const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -77,7 +77,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
               }
               setTimeout(() => {
                 onClose();
-                window.location.reload(); // Refresh wallet and transaction history
+                syncWalletBalance(storeId);
               }, 3000);
             } else if (data.status === 'failed' || data.status === 'refunded') {
               setError(`${t('payment_status_is')} ${data.status}`);
@@ -95,7 +95,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [isOpen, invoiceId, paymentConfirmed, error, API_BASE_URL, onClose]);
+  }, [isOpen, invoiceId, paymentConfirmed, error, API_BASE_URL, onClose, storeId, syncWalletBalance]);
 
   const handleCancel = () => {
     if (popupRef.current && !popupRef.current.closed) {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { translations } from '../translations';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -16,6 +16,63 @@ export const AppProvider = ({ children }) => {
   });
   const [language, setLanguage] = useState('en');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  // One request per wallet at a time keeps tab changes and mutation callbacks from
+  // creating duplicate balance reads.
+  const balanceSyncRequests = useRef(new Map());
+
+  const applySyncedBalance = useCallback((storeId, balance, storeDetails = null) => {
+    const normalizedBalance = parseFloat(balance) || 0;
+
+    setStore(current => {
+      if (!current || current.id !== storeId) return current;
+      return { ...current, ...(storeDetails || {}), balance: normalizedBalance };
+    });
+
+    setMerchants(current => current.map(merchant => (
+      merchant.id === storeId ? { ...merchant, balance: normalizedBalance } : merchant
+    )));
+
+    return normalizedBalance;
+  }, []);
+
+  /**
+   * Fetches the authoritative wallet balance and applies it to every shared
+   * balance representation. Calls for the same wallet share one in-flight request.
+   */
+  const syncWalletBalance = useCallback(async (targetStoreId) => {
+    const storeId = targetStoreId || user?.storeId;
+    if (!storeId) return null;
+
+    const requestKey = String(storeId);
+    const inFlight = balanceSyncRequests.current.get(requestKey);
+    if (inFlight) return inFlight;
+
+    const request = (async () => {
+      try {
+        if (user?.role === 'admin') {
+          const response = await fetch(`${API_BASE_URL}/api/admin/stores`, { credentials: 'include' });
+          if (!response.ok) return null;
+          const data = await response.json();
+          const syncedStore = (data.stores || data || []).find(item => String(item.id) === requestKey);
+          return syncedStore ? applySyncedBalance(syncedStore.id, syncedStore.balance, syncedStore) : null;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, { credentials: 'include' });
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (!data.store || String(data.store.id) !== requestKey) return null;
+        return applySyncedBalance(data.store.id, data.store.balance, data.store);
+      } catch (error) {
+        console.error('Failed to sync wallet balance:', error);
+        return null;
+      } finally {
+        balanceSyncRequests.current.delete(requestKey);
+      }
+    })();
+
+    balanceSyncRequests.current.set(requestKey, request);
+    return request;
+  }, [applySyncedBalance, user?.role, user?.storeId]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -59,6 +116,18 @@ export const AppProvider = ({ children }) => {
     const root = window.document.documentElement;
     root.dir = language === 'ar' ? 'rtl' : 'ltr';
   }, [language]);
+
+  // A browser tab can be inactive while a payment or admin action completes.
+  // Reconcile as soon as the user returns without reloading the application.
+  useEffect(() => {
+    if (!user?.storeId) return undefined;
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === 'visible') syncWalletBalance();
+    };
+    document.addEventListener('visibilitychange', refreshOnVisibility);
+    syncWalletBalance();
+    return () => document.removeEventListener('visibilitychange', refreshOnVisibility);
+  }, [syncWalletBalance, user?.storeId]);
 
   const t = (key) => {
     return translations[language][key] || key;
@@ -318,11 +387,8 @@ export const AppProvider = ({ children }) => {
       });
       const data = await response.json();
       if (response.ok) {
-        setMerchants(merchants.map(m => m.id === id ? { ...m, balance: parseFloat(data.balance) } : m));
-        // If logged in as the same store, update the store object
-        if (store && store.id === id) {
-          setStore(s => ({ ...s, balance: parseFloat(data.balance) }));
-        }
+        applySyncedBalance(id, data.balance);
+        await syncWalletBalance(id);
         return { success: true, balance: parseFloat(data.balance) };
       } else {
         return { success: false, message: data.error };
@@ -342,11 +408,8 @@ export const AppProvider = ({ children }) => {
       });
       const data = await response.json();
       if (response.ok) {
-        setMerchants(merchants.map(m => m.id === id ? { ...m, balance: parseFloat(data.balance) } : m));
-        // If logged in as the same store, update the store object
-        if (store && store.id === id) {
-          setStore(s => ({ ...s, balance: parseFloat(data.balance) }));
-        }
+        applySyncedBalance(id, data.balance);
+        await syncWalletBalance(id);
         return { success: true, balance: parseFloat(data.balance) };
       } else {
         return { success: false, message: data.error };
@@ -430,6 +493,7 @@ export const AppProvider = ({ children }) => {
       const data = await response.json();
       if (response.ok && (data.success || data.order)) {
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: data.status || status } : o));
+        await syncWalletBalance(storeId);
         return { success: true };
       }
       return { success: false, message: data.error || 'Update failed' };
@@ -535,6 +599,7 @@ export const AppProvider = ({ children }) => {
       const data = await response.json();
       if (response.ok) {
         setAdminWithdrawals(prev => prev.map(w => w.id === id ? data.request : w));
+        await syncWalletBalance(data.request?.store_id);
         return { success: true };
       }
       return { success: false, message: data.error };
@@ -552,7 +617,7 @@ export const AppProvider = ({ children }) => {
       const data = await response.json();
       if (response.ok) {
         setAdminWithdrawals(prev => prev.map(w => w.id === id ? data.request : w));
-        // Need to refetch stores or at least update the specific store balance if needed, but fetchAllStores typically handles it.
+        await syncWalletBalance(data.request?.store_id);
         return { success: true };
       }
       return { success: false, message: data.error };
@@ -571,11 +636,7 @@ export const AppProvider = ({ children }) => {
       });
       const data = await response.json();
       if (response.ok) {
-        // Update local store balance
-        setStore(prev => ({
-          ...prev,
-          balance: (parseFloat(prev.balance) - parseFloat(amount)).toFixed(2)
-        }));
+        await syncWalletBalance();
         return { success: true };
       }
       return { success: false, message: data.error };
@@ -809,7 +870,8 @@ export const AppProvider = ({ children }) => {
       platformProducts, setPlatformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct,
       providers, setProviders, fetchProviders, fetchProviderMappings, addProviderMapping,
       merchantPlatformProducts, setMerchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct,
-      subscription, setSubscription, isPlusActive, upgradeSubscription, fetchSubscription
+      subscription, setSubscription, isPlusActive, upgradeSubscription, fetchSubscription,
+      syncWalletBalance
     }}>
       {children}
     </AppContext.Provider>

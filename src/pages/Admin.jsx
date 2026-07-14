@@ -102,7 +102,7 @@ const PremiumLockOverlay = ({ isPlusActive, onUpgrade, children, compact = false
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal } = useAppContext();
+  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -216,6 +216,7 @@ const AdminDashboard = () => {
 
   React.useEffect(() => {
     if (role === 'merchant' && storeId) {
+      syncWalletBalance(storeId);
       if (activeTab === 'products') {
         fetchMerchantPlatformProducts(storeId).catch(console.error);
       }
@@ -240,7 +241,7 @@ const AdminDashboard = () => {
         fetchMerchantPromotions();
       }
     }
-  }, [activeTab, role, storeId, isPlusActive]);
+  }, [activeTab, role, storeId, isPlusActive, syncWalletBalance]);
 
   const fetchMerchantPromotions = async () => {
     setPromotionsLoading(true);
@@ -362,6 +363,7 @@ const AdminDashboard = () => {
     const res = await updateOrderStatus(id, storeId, action, isTopup);
     if (res.success) {
       setSelectedReceipt(null);
+      syncWalletBalance(storeId);
     } else {
       alert(res.message);
     }
@@ -517,6 +519,7 @@ const AdminDashboard = () => {
         });
         const data = await res.json();
         if (data.success) {
+          await syncWalletBalance(storeId);
           fetchSubscription();
           setUpgradeModalOpen(false);
           setUpgradeSuccess(true);
@@ -1027,7 +1030,7 @@ const AdminDashboard = () => {
                       <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: 'linear-gradient(90deg,#2563EB,#60A5FA)' }} />
                       <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#475569' }}>Live Wallet Balance</div>
                       <div className="text-4xl font-extrabold text-white tracking-tight mb-6" dir="ltr">
-                        ${merchants.find(m => m.id === storeId)?.balance.toFixed(2) || '0.00'}
+                        ${parseFloat(store?.balance || 0).toFixed(2)}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <button onClick={() => setMerchantActionModal({ isOpen: true, type: 'add' })} className="dash-btn dash-btn-secondary justify-center py-2.5 rounded-xl text-xs font-semibold">
@@ -1817,6 +1820,7 @@ const AdminDashboard = () => {
         onSuccess={() => {
           setLocalBankModal({ isOpen: false, amount: 0 });
           alert('Local bank transfer successful!');
+          syncWalletBalance(storeId);
           if (activeTab === 'dashboard') {
             fetchMerchantOrders(storeId).catch(console.error);
             // Re-fetch to update balance if needed. Since we don't have a direct fetchBalance method,
@@ -2286,6 +2290,7 @@ const AdminDashboard = () => {
         onSuccess={() => {
           setSubscriptionPaymentOpen(false);
           fetchSubscription();
+          syncWalletBalance(storeId);
           setUpgradeSuccess(true);
         }}
       />
