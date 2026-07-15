@@ -173,9 +173,9 @@ class TopupOrderService {
       if (providerRes.success) {
         await db.query(`
           UPDATE topup_orders 
-          SET provider_order_id = $1, provider_response = $2, status = $3
-          WHERE id = $4
-        `, [providerRes.provider_order_id, JSON.stringify(providerRes.raw_response), providerRes.status, orderId]);
+          SET provider_order_id = $1, provider_response = $2, status = $3, provider_name = $4, provider_status = $5, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $6
+        `, [providerRes.provider_order_id, JSON.stringify(providerRes.raw_response), providerRes.status, 'FazerCards', providerRes.status, orderId]);
 
         return { success: true, orderId: localOrderId, status: providerRes.status };
       } else {

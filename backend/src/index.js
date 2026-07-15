@@ -33,6 +33,7 @@ const subscriptionRoutes = require('./routes/subscription');
 const topupSyncService = require('./services/topupSyncService');
 const authMiddleware = require('./middleware/authMiddleware');
 const adminMiddleware = require('./middleware/adminMiddleware');
+const webhookRoutes = require('./routes/webhooks');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -68,6 +69,10 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// Mount webhooks route before express.json() to allow parsing raw bodies for signature verification
+app.use('/api/webhooks', webhookRoutes);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

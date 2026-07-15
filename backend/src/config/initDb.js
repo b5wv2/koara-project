@@ -243,6 +243,8 @@ const createTopupOrdersTableQuery = `
     local_order_id VARCHAR(255) UNIQUE NOT NULL,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
     provider_order_id VARCHAR(255),
+    provider_name VARCHAR(255),
+    provider_status VARCHAR(50),
     category_id VARCHAR(255),
     offer_id VARCHAR(255),
     player_id VARCHAR(255),
@@ -258,7 +260,22 @@ const createTopupOrdersTableQuery = `
     status VARCHAR(50) DEFAULT 'pending',
     receipt_url TEXT,
     last_sync_time TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
+const createWebhookLogsTableQuery = `
+  CREATE TABLE IF NOT EXISTS webhook_logs (
+    id SERIAL PRIMARY KEY,
+    provider VARCHAR(50) NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    provider_order_id VARCHAR(255),
+    signature_valid BOOLEAN,
+    raw_payload JSONB,
+    processing_result TEXT,
+    received_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 `;
 
@@ -432,6 +449,9 @@ const initializeDatabase = async () => {
     await client.query(createSubscriptionsTableQuery);
     await client.query(createSubscriptionAuditLogsTableQuery);
 
+    // Create webhook_logs table
+    await client.query(createWebhookLogsTableQuery);
+
     // --- Order System Enhancements ---
     await client.query(`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`);
     
@@ -448,7 +468,18 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS total_amount NUMERIC(10,2),
       ADD COLUMN IF NOT EXISTS provider_id INTEGER REFERENCES providers(id),
       ADD COLUMN IF NOT EXISTS provider_order_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS provider_name VARCHAR(255),
       ADD COLUMN IF NOT EXISTS provider_status VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE,
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+    `);
+
+    // Safely migrate existing topup_orders again with the new columns
+    await client.query(`
+      ALTER TABLE topup_orders 
+      ADD COLUMN IF NOT EXISTS provider_name VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS provider_status VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE,
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
     `);
 
