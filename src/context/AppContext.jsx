@@ -460,7 +460,9 @@ export const AppProvider = ({ children }) => {
   const fetchMerchantOrders = async (storeId) => {
     try {
       console.log('[DEBUG-FRONTEND] Fetching merchant orders for storeId:', storeId);
-      const response = await fetch(`${API_BASE_URL}/api/merchant/orders?store_id=${storeId}`);
+      const response = await fetch(`${API_BASE_URL}/api/merchant/orders?store_id=${storeId}`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const data = await response.json();
         console.log('[DEBUG-FRONTEND] Received response for merchant orders:', data);
@@ -758,7 +760,9 @@ export const AppProvider = ({ children }) => {
 
   const fetchMerchantPlatformProducts = async (storeId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/merchant/products?store_id=${storeId}`);
+      const response = await fetch(`${API_BASE_URL}/api/merchant/products?store_id=${storeId}`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const data = await response.json();
         setMerchantPlatformProducts(data.products || []);
@@ -775,6 +779,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/merchant/products/${productId}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ store_id: storeId, ...updates })
       });

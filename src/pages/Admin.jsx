@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote, Palette } from 'lucide-react';
+import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote, Palette, Loader2 } from 'lucide-react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
@@ -102,7 +102,7 @@ const PremiumLockOverlay = ({ isPlusActive, onUpgrade, children, compact = false
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance } = useAppContext();
+  const { user, isAuthLoading, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -157,6 +157,19 @@ const AdminDashboard = () => {
   const [upgradeError, setUpgradeError] = useState('');
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [billingHistory, setBillingHistory] = useState([]);
+
+  // Wait for the session check (/api/auth/me) to finish before deciding the user
+  // is logged out. Without this, `user` is still null on the very first render
+  // after a hard refresh (the cookie hasn't been verified yet), and this used to
+  // redirect a perfectly-logged-in merchant straight back to "/".
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 text-koara-blue animate-spin mb-3" />
+        <p className="text-slate-500 text-sm font-medium tracking-wide">Restoring your session...</p>
+      </div>
+    );
+  }
 
   if (!user) return <Navigate to="/" />;
 
@@ -574,7 +587,7 @@ const AdminDashboard = () => {
           {navItems.map(({ key, icon: Icon, label }) => (
             <button
               key={key}
-              onClick={() => { setActiveTab(key); setIsSidebarOpen(false); }}
+              onClick={() => { setActiveTab(key); setIsSidebarOpen(false); syncWalletBalance(); }}
               className={`koara-sidebar-nav-item ${activeTab === key ? 'active' : ''}`}
             >
               <Icon size={16} />
