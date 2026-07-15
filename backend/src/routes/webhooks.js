@@ -117,7 +117,7 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
         await db.query(`
           UPDATE topup_orders 
           SET status = $1, provider_status = $2, updated_at = CURRENT_TIMESTAMP, 
-              completed_at = CASE WHEN $1 = 'completed' THEN CURRENT_TIMESTAMP ELSE completed_at END
+              completed_at = CASE WHEN CAST($1 AS VARCHAR) = 'completed' THEN CURRENT_TIMESTAMP ELSE completed_at END
           WHERE id = $3
         `, [newStatus, eventType, order.id]);
 
