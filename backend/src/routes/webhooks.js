@@ -7,7 +7,9 @@ const db = require('../config/db');
 router.post('/fazercards', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     const rawBody = req.body;
-    const signature = req.headers['x-fazercards-signature'];
+    const headerWebhookSignature = req.headers['x-webhook-signature'];
+    const headerFazerCardsSignature = req.headers['x-fazercards-signature'];
+    const signatureRaw = headerWebhookSignature || headerFazerCardsSignature;
     const secret = process.env.WEBHOOK_SECRET;
 
     if (!secret) {
@@ -15,9 +17,20 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    if (!signature) {
-      console.error('[WEBHOOK] Missing X-FazerCards-Signature header.');
+    if (!signatureRaw) {
+      console.error('[WEBHOOK] Missing signature header.');
       return res.status(401).json({ error: 'Missing signature' });
+    }
+
+    if (headerWebhookSignature) {
+      console.log('[WEBHOOK] Received signature via X-Webhook-Signature header');
+    } else if (headerFazerCardsSignature) {
+      console.log('[WEBHOOK] Received signature via X-FazerCards-Signature header');
+    }
+
+    let signature = signatureRaw;
+    if (signature.startsWith('sha256=')) {
+      signature = signature.substring(7);
     }
 
     // Compute HMAC SHA256 signature
