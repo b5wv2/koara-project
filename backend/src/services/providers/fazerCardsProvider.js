@@ -74,8 +74,9 @@ class FazerCardsProvider {
     }
 
     const baseUrl = this.apiUrl.endsWith('/') ? this.apiUrl.slice(0, -1) : this.apiUrl;
-    const urlPath = baseUrl.endsWith('/api/v2') ? `/topups/orders?page=${page}&limit=${limit}` : `/api/v2/topups/orders?page=${page}&limit=${limit}`;
-    const url = `${baseUrl}${urlPath}`;
+    const cleanBaseUrl = baseUrl.replace(/\/api\/v2$/, '');
+    const urlPath = cleanBaseUrl.endsWith('/api/v1') ? `/orders?page=${page}&limit=${limit}` : `/api/v1/orders?page=${page}&limit=${limit}`;
+    const url = `${cleanBaseUrl}${urlPath}`;
 
     const headers = {
       'Accept': 'application/json',

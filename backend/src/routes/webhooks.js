@@ -7,6 +7,8 @@ const db = require('../config/db');
 router.post('/fazercards', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     const rawBody = req.body;
+    console.log('[WEBHOOK] All Request Headers:', req.headers);
+
     const headerWebhookSignature = req.headers['x-webhook-signature'];
     const headerFazerCardsSignature = req.headers['x-fazercards-signature'];
     const signatureRaw = headerWebhookSignature || headerFazerCardsSignature;
@@ -18,7 +20,7 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
     }
 
     if (!signatureRaw) {
-      console.error('[WEBHOOK] Missing signature header.');
+      console.error('[WEBHOOK] Missing signature header. Expected X-Webhook-Signature or X-FazerCards-Signature.');
       return res.status(401).json({ error: 'Missing signature' });
     }
 
@@ -54,8 +56,10 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
       return res.status(400).json({ error: 'Invalid JSON payload' });
     }
 
-    const eventType = payload.type;
-    const providerOrderId = payload.order?.id;
+    console.log('[WEBHOOK] Raw Payload:', JSON.stringify(payload, null, 2));
+
+    const eventType = payload.event_type || payload.event || payload.type || 'unknown_event';
+    const providerOrderId = payload.order?.id || payload.id;
     const reason = payload.reason || '';
 
     console.log(`\n--- Webhook Received: FazerCards ---`);
