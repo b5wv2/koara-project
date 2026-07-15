@@ -162,19 +162,8 @@ const AdminDashboard = () => {
   // is logged out. Without this, `user` is still null on the very first render
   // after a hard refresh (the cookie hasn't been verified yet), and this used to
   // redirect a perfectly-logged-in merchant straight back to "/".
-  if (isAuthLoading) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
-        <Loader2 className="w-8 h-8 text-koara-blue animate-spin mb-3" />
-        <p className="text-slate-500 text-sm font-medium tracking-wide">Restoring your session...</p>
-      </div>
-    );
-  }
-
-  if (!user) return <Navigate to="/" />;
-
-  const role = user.role;
-  const storeId = user.storeId;
+  const role = user?.role;
+  const storeId = user?.storeId;
   const merchantObj = merchants.find(m => m.id === storeId) || {};
 
   const [bankName, setBankName] = useState('');
@@ -241,7 +230,7 @@ const AdminDashboard = () => {
           .catch(console.error)
           .finally(() => setTopupsLoading(false));
       }
-      if (activeTab === 'orders') {
+      if (activeTab === 'dashboard' || activeTab === 'orders') {
         fetchMerchantOrders(storeId).catch(console.error);
       }
       if (activeTab === 'subscription') {
@@ -443,6 +432,21 @@ const AdminDashboard = () => {
       alert('Failed to reject application.');
     }
   };
+
+  // Wait for the session check (/api/auth/me) to finish before deciding the user
+  // is logged out. Without this, `user` is still null on the very first render
+  // after a hard refresh (the cookie hasn't been verified yet), and this used to
+  // redirect a perfectly-logged-in merchant straight back to "/".
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 text-koara-blue animate-spin mb-3" />
+        <p className="text-slate-500 text-sm font-medium tracking-wide">Restoring your session...</p>
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/" />;
 
   // ── Suspended State ──
   if (role === 'merchant' && store?.status === 'suspended') {

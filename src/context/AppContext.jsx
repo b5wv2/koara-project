@@ -360,7 +360,8 @@ export const AppProvider = ({ children }) => {
   const deleteStore = async (id) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/stores/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       });
       if (response.ok) {
         setMerchants(prev => prev.filter(m => m.id !== id));
@@ -382,6 +383,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/stores/${id}/add-credit`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount, reason })
       });
@@ -403,6 +405,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/stores/${id}/deduct`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount, reason })
       });
@@ -422,7 +425,7 @@ export const AppProvider = ({ children }) => {
 
   const fetchTransactions = async (storeId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/stores/${storeId}/transactions`);
+      const response = await fetch(`${API_BASE_URL}/api/admin/stores/${storeId}/transactions`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         return data.transactions || [];
@@ -436,7 +439,7 @@ export const AppProvider = ({ children }) => {
 
   const fetchGlobalTransactions = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/transactions`);
+      const response = await fetch(`${API_BASE_URL}/api/admin/transactions`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setLedger((data.transactions || []).map(t => ({
@@ -524,6 +527,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/stores/${storeId}/status`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
@@ -551,7 +555,7 @@ export const AppProvider = ({ children }) => {
 
   const fetchAllStoresAdmin = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/stores`);
+      const response = await fetch(`${API_BASE_URL}/api/admin/stores`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         const liveStores = (data.stores || data || []).map(store => ({
@@ -654,7 +658,7 @@ export const AppProvider = ({ children }) => {
 
   const fetchPlatformProducts = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/products`);
+      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/products`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setPlatformProducts(data.products || []);
@@ -671,6 +675,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/catalog/products`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productData)
       });
@@ -689,6 +694,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/catalog/products/${id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productData)
       });
@@ -705,7 +711,7 @@ export const AppProvider = ({ children }) => {
 
   const deactivatePlatformProduct = async (id) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/products/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/products/${id}`, { method: 'DELETE', credentials: 'include' });
       if (response.ok) {
         setPlatformProducts(prev => prev.map(p => p.id === id ? { ...p, is_active: false } : p));
         return { success: true };
@@ -718,7 +724,7 @@ export const AppProvider = ({ children }) => {
 
   const fetchProviders = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/providers`);
+      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/providers`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setProviders(data.providers || []);
@@ -733,7 +739,7 @@ export const AppProvider = ({ children }) => {
 
   const fetchProviderMappings = async (productId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/products/${productId}/providers`);
+      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/products/${productId}/providers`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         return data.mappings || [];
@@ -748,6 +754,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/catalog/products/${productId}/providers`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mappingData)
       });
@@ -798,7 +805,7 @@ export const AppProvider = ({ children }) => {
 
   const fetchPendingKyc = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/kyc/pending`);
+      const response = await fetch(`${API_BASE_URL}/api/admin/kyc/pending`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         return data.pending || [];
@@ -814,6 +821,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/kyc/approve`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ store_id: storeId })
       });
@@ -831,6 +839,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/kyc/reject`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ store_id: storeId, reason })
       });
