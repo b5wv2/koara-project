@@ -6,10 +6,13 @@ import { apiFetch, jsonFetch, API_BASE_URL } from './api';
 
 export async function fetchMerchantOrders(storeId) {
   try {
+    console.log('[DEBUG-FRONTEND-SVC] Fetching merchant orders for storeId:', storeId);
     const { ok, data } = await apiFetch(`/api/merchant/orders?store_id=${storeId}`);
     if (ok) {
+      console.log('[DEBUG-FRONTEND-SVC] Received response:', data);
       return data.orders || [];
     }
+    console.log('[DEBUG-FRONTEND-SVC] Received non-ok response. ok:', ok, 'data:', data);
     return [];
   } catch (err) {
     console.error('Error fetching merchant orders:', err);

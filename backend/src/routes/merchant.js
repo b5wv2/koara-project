@@ -222,6 +222,9 @@ router.delete('/promotions/:id', resolveMerchantStore, requireKoaraPlus, async (
 
 // GET /api/merchant/orders
 router.get('/orders', async (req, res) => {
+  console.log('[DEBUG-MERCHANT-ORDERS] Request received for merchant orders endpoint');
+  console.log('[DEBUG-MERCHANT-ORDERS] Authenticated user information:', req.user || 'No user info');
+  console.log('[DEBUG-MERCHANT-ORDERS] Query parameters:', req.query);
   const { store_id } = req.query;
   
   if (!store_id) {
@@ -249,6 +252,7 @@ router.get('/orders', async (req, res) => {
 
     const allOrders = [...mappedOrders, ...mappedTopups].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
+    console.log('[DEBUG-MERCHANT-ORDERS] Sending API response to frontend, total orders:', allOrders.length);
     res.status(200).json({ success: true, orders: allOrders });
   } catch (err) {
     console.error('Error fetching orders:', err.message);

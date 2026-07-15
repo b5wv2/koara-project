@@ -459,12 +459,15 @@ export const AppProvider = ({ children }) => {
 
   const fetchMerchantOrders = async (storeId) => {
     try {
+      console.log('[DEBUG-FRONTEND] Fetching merchant orders for storeId:', storeId);
       const response = await fetch(`${API_BASE_URL}/api/merchant/orders?store_id=${storeId}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('[DEBUG-FRONTEND] Received response for merchant orders:', data);
         setOrders(data.orders || []);
         return data.orders || [];
       }
+      console.log('[DEBUG-FRONTEND] Error response status:', response.status);
       return [];
     } catch (err) {
       console.error('Error fetching merchant orders:', err);

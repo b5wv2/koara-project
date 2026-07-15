@@ -145,6 +145,12 @@ class OrderService {
       await client.query('COMMIT');
       
       const newOrder = insertRes.rows[0];
+      console.log('[DEBUG-ORDER] Order created successfully:', newOrder);
+      console.log('[DEBUG-ORDER] Relationships:', {
+        store_id: newOrder.store_id,
+        merchant_product_id: newOrder.merchant_product_id,
+        platform_product_id: newOrder.platform_product_id
+      });
       
       // Trigger notification
       await notificationService.sendOrderConfirmation(customerEmail, {
@@ -167,11 +173,15 @@ class OrderService {
    * Fetches orders for a specific store
    */
   async getStoreOrders(storeId) {
-    const res = await db.query(`
+    const query = `
       SELECT * FROM orders 
       WHERE store_id = $1 
       ORDER BY created_at DESC
-    `, [storeId]);
+    `;
+    console.log('[DEBUG-ORDER] Executing query for merchant orders:', query);
+    console.log('[DEBUG-ORDER] Query params:', [storeId]);
+    const res = await db.query(query, [storeId]);
+    console.log('[DEBUG-ORDER] Number of rows returned:', res.rows.length);
     return res.rows;
   }
 
