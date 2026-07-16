@@ -58,12 +58,13 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
 
     console.log('[WEBHOOK] Raw Payload:', JSON.stringify(payload, null, 2));
 
-    const eventType = payload.event_type || payload.event || payload.type || 'unknown_event';
-    const providerOrderId = payload.order?.id || payload.id;
-    const reason = payload.reason || '';
+    const eventType = payload.event;
+    const providerOrderId = payload.data?.order_id;
+    const providerStatus = payload.data?.status;
+    const reason = payload.data?.reason || '';
 
     console.log(`\n--- Webhook Received: FazerCards ---`);
-    console.log(`Event: ${eventType}, Provider Order ID: ${providerOrderId}`);
+    console.log(`Event: ${eventType}, Provider Order ID: ${providerOrderId}, Provider Status: ${providerStatus}`);
     console.log(`Signature Valid: ${signatureValid}`);
     console.log(`-----------------------------------\n`);
 
@@ -101,10 +102,9 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
 
         // 8. Map the order status
         let newStatus;
-        if (eventType === 'order.completed') newStatus = 'completed';
-        else if (eventType === 'order.failed') newStatus = 'failed';
-        else if (eventType === 'order.refunded') newStatus = 'refunded';
-        else {
+        if (eventType === 'order.status_changed') {
+          newStatus = providerStatus; // payload.data.status
+        } else {
           await db.query(`UPDATE webhook_logs SET processing_result = $1 WHERE id = $2`, [`Ignored unknown event type: ${eventType}`, logId]);
           return;
         }
@@ -129,14 +129,12 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
         }
 
         // 8. Update the order
-        const completedAtSql = newStatus === 'completed' ? 'CURRENT_TIMESTAMP' : 'completed_at'; // retain old value if not completed, or update if completed
-        
         await db.query(`
           UPDATE topup_orders 
           SET status = $1, provider_status = $2, updated_at = CURRENT_TIMESTAMP, 
               completed_at = CASE WHEN CAST($1 AS VARCHAR) = 'completed' THEN CURRENT_TIMESTAMP ELSE completed_at END
           WHERE id = $3
-        `, [newStatus, eventType, order.id]);
+        `, [newStatus, providerStatus, order.id]);
 
         const resultMsg = `Successfully updated Koara Order ${order.local_order_id} from ${previousStatus} to ${newStatus}`;
         await db.query(`UPDATE webhook_logs SET processing_result = $1 WHERE id = $2`, [resultMsg, logId]);

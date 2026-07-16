@@ -91,7 +91,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@example.com"
+              placeholder="name@example.com"
               className="koara-input"
               required
               dir="ltr"
@@ -169,15 +169,6 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
         </div>
         */}
 
-        <div className="pt-4 border-t border-white/6">
-          <p className="text-xs font-semibold text-slate-500 mb-2">{t('test_credentials')}</p>
-          <div className="space-y-1.5 text-xs font-mono text-slate-600" dir="ltr">
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-white/3 border border-white/5">
-              <span className="text-koara-accent font-bold">Admin:</span>
-              <span>admin@gmil.com / admin1234</span>
-            </div>
-          </div>
-        </div>
       </form>
     </Modal>
   );
