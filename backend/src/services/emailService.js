@@ -26,7 +26,10 @@ const generateOTP = () => {
  * @returns {string} Rendered HTML
  */
 const getTemplate = (templateName, data = {}) => {
-  const templatePath = path.join(__dirname, '../templates', templateName);
+  let templatePath = path.join(__dirname, '../templates', templateName);
+  if (!fs.existsSync(templatePath)) {
+    templatePath = path.join(__dirname, '../../../templates', templateName);
+  }
   let html = fs.readFileSync(templatePath, 'utf8');
 
   if (typeof data === 'string' && data.length === 6) {

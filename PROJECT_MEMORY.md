@@ -327,3 +327,51 @@ PROJECT_MEMORY.md must always remain synchronized with the actual codebase.
 * This implementation deliberately uses standard OpenID connect properties (`idToken`, `google_id`, `auth_provider`) so it can easily extend to:
   * Customer Google Login (when a unified customer identity provider is built)
   * Apple/Facebook login (by simply adding `apple_id`/`facebook_id` and expanding `auth_provider`)
+
+---
+
+## 13. End-to-End Automated Gift Card Order Fulfillment (Amazon Egypt via FazerCards)
+
+**Architecture & Database Schema:**
+* **`provider_categories` Table:** Maps Koara local categories to external provider category IDs (`provider`, `local_category_name`, `provider_category_id`). Allows admin management of category mappings independently of product logic.
+* **`provider_products` Table Extensions:** Added `provider_category_id` (VARCHAR(100)) to allow category overrides per provider mapping.
+* **`orders` Table Extensions:** Added tracking and security columns: `provider_id` (INT), `provider_order_id` (VARCHAR(255)), `provider_status` (VARCHAR(50)), `cost_price` (DECIMAL(10,2)), and `encrypted_card_code` (TEXT).
+* **Catalog Mapping Separation:** Never create parallel product tables. All automated gift card products use existing `platform_products`, linked to provider APIs via `provider_products`.
+
+**Security & Encryption Architecture:**
+* **At-Rest Encryption (`backend/src/utils/encryption.js`):** Gift card codes/PINs received from provider APIs or webhooks are immediately encrypted before persistence using `AES-256-GCM` (`crypto` module).
+* **Storage Format:** Stored strictly as `iv:authTag:ciphertext` in `orders.encrypted_card_code`.
+* **Zero Merchant Exposure:** The `encrypted_card_code` column is strictly excluded from all queries returning orders to merchants (`orderService.getStoreOrders`). The merchant dashboard (`GET /api/merchant/orders`) displays status and tracking details but never exposes the gift card codes or PINs.
+
+**Fulfillment Workflow:**
+1. **Order Creation (`orderService.createOrder`):** Customer places an order for a gift card product. Order starts in `pending` status.
+2. **Merchant Approval (`orderService.approveGiftCardOrder` / `PUT|POST /orders/:id/status|approve`):**
+   * Locks the `orders` and `stores` rows (`FOR UPDATE`).
+   * Resolves active provider mapping in `provider_products` sorted by lowest `cost_price`.
+   * Verifies store wallet balance and deducts `cost_price` atomically, logging a `debit` transaction in `wallet_transactions`.
+   * Dispatches order asynchronously to `fazerCardsProvider.placeGiftCardOrder(...)`.
+   * If successful, sets `orders.status = 'processing'`, `provider_order_id = <ID>`, and commits.
+   * If provider dispatch fails synchronously, runs a clean rollback transaction (refunds wallet, logs `credit`, marks order `rejected`).
+3. **Webhook Processing & Email Delivery (`POST /api/webhooks/fazercards`):**
+   * Verifies HMAC SHA-256 signature using `WEBHOOK_SECRET` (`X-Webhook-Signature` / `X-FazerCards-Signature`).
+   * Checks `topup_orders` and `orders` tables by `provider_order_id`.
+   * On `order.status_changed` (`completed`):
+     * Fetches gift card details via `fazerCardsProvider.getOrder(provider_order_id)`.
+     * Encrypts the code (`AES-256-GCM`) and stores in `orders.encrypted_card_code`.
+     * Updates `orders.status = 'completed'` and `completed_at = CURRENT_TIMESTAMP`.
+     * Renders `giftcard-completed-customer.html` (bilingual RTL template matching Koara aesthetics) and sends the decrypted PIN directly to the customer via `emailService.sendEmail`.
+   * On `failed` / `rejected`:
+     * Automatically refunds store wallet if `cost_price > 0` and logs `credit` transaction with reason.
+     * Updates `orders.status = 'rejected'` and records outcome in `webhook_logs`.
+
+**Frontend UI Architecture (Super Admin & Merchant Dashboard):**
+* **Dead Code Avoidance (`AdminPage.jsx` Trap):** `src/pages/Admin/AdminPage.jsx` and `src/pages/Admin/tabs/*` are dead legacy code. All dashboard features and tabs must be implemented directly inside `src/pages/Admin.jsx` or clean external components imported directly.
+* **Service Layer (`catalogService.js` & `AppContext.jsx`):**
+  * `fetchProviderCategories(providerId)`, `createProviderCategory(...)`, and `deleteProviderCategory(id)` connect to `/api/admin/catalog/provider-categories` and `/api/catalog/provider-categories`.
+  * `addProviderMapping(...)` accepts `provider_category_id` alongside `provider_id`, `provider_product_id`, and `cost_price`.
+* **Super Admin Provider Categories Management (`Admin.jsx` - Catalog Tab):**
+  * Features a dedicated management table and creation modal (`Register Provider Category`) allowing Super Admins to map local categories to external codes (`category_id`, e.g. `amazon_eg`).
+  * `catalogProviderModal` (`Manage Providers`) displays Category ID for mapped products and allows selecting a Provider Category dynamically during product-to-provider mapping.
+* **Merchant Controls & Pricing (`Admin.jsx` - Gift Cards / Products Tab):**
+  * Merchants view gift card platform products (`merchantPlatformProducts`), enable/disable store offerings (`Toggle`), and set custom retail selling prices (`selling_price`) via `updateMerchantProduct`.
+  * The frontend strictly enforces the zero-code exposure rule: no card PINs or codes are ever fetched by or displayed on the merchant dashboard.

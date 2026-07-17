@@ -102,7 +102,7 @@ const PremiumLockOverlay = ({ isPlusActive, onUpgrade, children, compact = false
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, isAuthLoading, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance } = useAppContext();
+  const { user, isAuthLoading, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, fetchProviderCategories, createProviderCategory, deleteProviderCategory, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -129,7 +129,10 @@ const AdminDashboard = () => {
   const [catalogEditModal, setCatalogEditModal] = useState({ isOpen: false, product: null });
   const [catalogProviderModal, setCatalogProviderModal] = useState({ isOpen: false, productId: null, productName: '', mappings: [] });
   const [newProduct, setNewProduct] = useState({ name: '', category: '', description: '' });
-  const [newMapping, setNewMapping] = useState({ provider_id: '', provider_product_id: '', cost_price: '' });
+  const [newMapping, setNewMapping] = useState({ provider_id: '', provider_product_id: '', cost_price: '', provider_category_id: '' });
+  const [providerCategories, setProviderCategories] = useState([]);
+  const [providerCategoryModal, setProviderCategoryModal] = useState(false);
+  const [newProviderCategory, setNewProviderCategory] = useState({ provider_id: '', category_id: '', name: '' });
 
   // Merchant price editing
   const [editingMerchantPrice, setEditingMerchantPrice] = useState({});
@@ -204,6 +207,7 @@ const AdminDashboard = () => {
         if (activeTab === 'catalog') {
           fetchPlatformProducts().catch(console.error);
           fetchProviders().catch(console.error);
+          fetchProviderCategories().then(cats => setProviderCategories(cats || [])).catch(console.error);
         }
         if (activeTab === 'withdrawals') {
           setWithdrawalsLoading(true);
@@ -1027,6 +1031,64 @@ const AdminDashboard = () => {
                             <td className="cell-mono">{provider.id}</td>
                             <td className="cell-primary">{provider.name}</td>
                             <td><StatusBadge status={provider.status} /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="dash-card overflow-hidden">
+                  <SectionHeader
+                    title="Provider Categories (Gift Cards & Top-ups)"
+                    description="Map local Koara categories to external provider category IDs (e.g., FazerCards amazon_eg for Amazon Egypt)."
+                    action={
+                      <button
+                        onClick={() => { setNewProviderCategory({ provider_id: providers?.[0]?.id || '', category_id: '', name: '' }); setProviderCategoryModal(true); }}
+                        className="dash-btn dash-btn-primary"
+                      >
+                        + New Category
+                      </button>
+                    }
+                  />
+                  <div className="overflow-x-auto">
+                    <table className="koara-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Provider</th>
+                          <th>Category ID (Code)</th>
+                          <th>Display Name</th>
+                          <th className="text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(providerCategories || []).length === 0 ? (
+                          <tr><td colSpan="5"><div className="koara-empty-state"><Tag size={32} /><span>No provider categories registered yet.</span></div></td></tr>
+                        ) : (providerCategories || []).map(cat => (
+                          <tr key={cat.id}>
+                            <td className="cell-mono">{cat.id}</td>
+                            <td className="cell-primary font-semibold">{cat.provider_name || `Provider #${cat.provider_id}`}</td>
+                            <td className="cell-mono text-sky-400 font-mono">{cat.category_id}</td>
+                            <td className="text-white">{cat.name}</td>
+                            <td className="text-right">
+                              <button
+                                onClick={async () => {
+                                  if (!window.confirm(`Are you sure you want to delete category "${cat.name}"?`)) return;
+                                  const res = await deleteProviderCategory(cat.id);
+                                  if (res.success) {
+                                    const updated = await fetchProviderCategories();
+                                    setProviderCategories(updated || []);
+                                  } else {
+                                    alert(res.message || 'Failed to delete category');
+                                  }
+                                }}
+                                className="dash-btn dash-btn-danger px-2.5 py-1 text-xs"
+                                title="Delete Category"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2236,6 +2298,7 @@ const AdminDashboard = () => {
                   <tr>
                     <th>Provider</th>
                     <th>Product ID</th>
+                    <th>Category ID</th>
                     <th>Cost Price</th>
                     <th>Status</th>
                   </tr>
@@ -2245,6 +2308,7 @@ const AdminDashboard = () => {
                     <tr key={m.id}>
                       <td className="cell-primary">{m.provider_name}</td>
                       <td className="cell-mono">{m.provider_product_id}</td>
+                      <td className="cell-mono text-sky-400">{m.provider_category_id || '—'}</td>
                       <td className="font-mono text-sm text-white">{m.cost_price ? `$${parseFloat(m.cost_price).toFixed(2)}` : '—'}</td>
                       <td><StatusBadge status={m.is_active ? 'active' : 'inactive'} /></td>
                     </tr>
@@ -2269,8 +2333,19 @@ const AdminDashboard = () => {
               </select>
             </div>
             <div>
+              <label className="koara-label">Provider Category (for Gift Cards)</label>
+              <select value={newMapping.provider_category_id} onChange={(e) => setNewMapping({ ...newMapping, provider_category_id: e.target.value })} className="koara-select">
+                <option value="">None / Default Top-up</option>
+                {(providerCategories || [])
+                  .filter(cat => !newMapping.provider_id || cat.provider_id == newMapping.provider_id)
+                  .map(cat => (
+                    <option key={cat.id} value={cat.category_id}>{cat.name} ({cat.category_id})</option>
+                  ))}
+              </select>
+            </div>
+            <div>
               <label className="koara-label">Provider Product ID</label>
-              <input type="text" value={newMapping.provider_product_id} onChange={(e) => setNewMapping({ ...newMapping, provider_product_id: e.target.value })} className="koara-input" placeholder="e.g. 3449" />
+              <input type="text" value={newMapping.provider_product_id} onChange={(e) => setNewMapping({ ...newMapping, provider_product_id: e.target.value })} className="koara-input" placeholder="e.g. 3449 or 1_egb" />
             </div>
             <div>
               <label className="koara-label">Cost Price ($)</label>
@@ -2283,12 +2358,13 @@ const AdminDashboard = () => {
                 const result = await addProviderMapping(catalogProviderModal.productId, {
                   provider_id: parseInt(newMapping.provider_id),
                   provider_product_id: newMapping.provider_product_id,
-                  cost_price: newMapping.cost_price ? parseFloat(newMapping.cost_price) : null
+                  cost_price: newMapping.cost_price ? parseFloat(newMapping.cost_price) : null,
+                  provider_category_id: newMapping.provider_category_id ? newMapping.provider_category_id.trim() : null
                 });
                 if (result.success) {
                   const updatedMappings = await fetchProviderMappings(catalogProviderModal.productId);
                   setCatalogProviderModal(prev => ({ ...prev, mappings: updatedMappings }));
-                  setNewMapping({ provider_id: '', provider_product_id: '', cost_price: '' });
+                  setNewMapping({ provider_id: '', provider_product_id: '', cost_price: '', provider_category_id: '' });
                 } else {
                   alert(result.message || 'Failed to add mapping');
                 }
@@ -2299,6 +2375,72 @@ const AdminDashboard = () => {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Provider Category Modal */}
+      <Modal isOpen={providerCategoryModal} onClose={() => setProviderCategoryModal(false)} title="Register Provider Category">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!newProviderCategory.provider_id || !newProviderCategory.category_id || !newProviderCategory.name) {
+              return alert('Please fill all fields: Provider, Category ID, and Display Name');
+            }
+            const res = await createProviderCategory({
+              provider_id: parseInt(newProviderCategory.provider_id),
+              category_id: newProviderCategory.category_id.trim(),
+              name: newProviderCategory.name.trim()
+            });
+            if (res.success) {
+              const updated = await fetchProviderCategories();
+              setProviderCategories(updated || []);
+              setProviderCategoryModal(false);
+              setNewProviderCategory({ provider_id: '', category_id: '', name: '' });
+            } else {
+              alert(res.message || 'Failed to create provider category');
+            }
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="koara-label">Provider</label>
+            <select
+              value={newProviderCategory.provider_id}
+              onChange={(e) => setNewProviderCategory({ ...newProviderCategory, provider_id: e.target.value })}
+              className="koara-select"
+              required
+            >
+              <option value="">Select provider...</option>
+              {(providers || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="koara-label">Category ID / Provider Code (e.g. amazon_eg)</label>
+            <input
+              type="text"
+              value={newProviderCategory.category_id}
+              onChange={(e) => setNewProviderCategory({ ...newProviderCategory, category_id: e.target.value })}
+              className="koara-input font-mono text-sky-300"
+              placeholder="e.g. amazon_eg"
+              required
+            />
+            <p className="text-xs text-slate-400 mt-1">This code must match exactly the category code sent to the provider API (`category_id`).</p>
+          </div>
+          <div>
+            <label className="koara-label">Display Name (e.g. Amazon Egypt)</label>
+            <input
+              type="text"
+              value={newProviderCategory.name}
+              onChange={(e) => setNewProviderCategory({ ...newProviderCategory, name: e.target.value })}
+              className="koara-input"
+              placeholder="e.g. Amazon Egypt Gift Cards"
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-4 border-t border-white/10">
+            <button type="button" onClick={() => setProviderCategoryModal(false)} className="dash-btn dash-btn-secondary">Cancel</button>
+            <button type="submit" className="dash-btn dash-btn-primary">Register Category</button>
+          </div>
+        </form>
       </Modal>
 
       <SubscriptionPaymentModal 

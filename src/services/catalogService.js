@@ -92,3 +92,44 @@ export async function addProviderMapping(productId, mappingData) {
     return { success: false, message: 'Connection error' };
   }
 }
+
+// ── Provider Categories ──
+
+export async function fetchProviderCategories(providerId = null) {
+  try {
+    const url = providerId 
+      ? `/api/admin/catalog/provider-categories?provider_id=${providerId}` 
+      : '/api/admin/catalog/provider-categories';
+    const { ok, data } = await apiFetch(url);
+    if (ok) {
+      return data.categories || [];
+    }
+    return [];
+  } catch (err) {
+    console.error('Error fetching provider categories:', err);
+    return [];
+  }
+}
+
+export async function createProviderCategory(categoryData) {
+  try {
+    const { ok, data } = await jsonFetch('/api/admin/catalog/provider-categories', 'POST', categoryData);
+    return ok
+      ? { success: true, category: data.category }
+      : { success: false, message: data.error };
+  } catch (err) {
+    return { success: false, message: 'Connection error' };
+  }
+}
+
+export async function deleteProviderCategory(id) {
+  try {
+    const { ok, data } = await apiFetch(`/api/admin/catalog/provider-categories/${id}`, { method: 'DELETE' });
+    return ok
+      ? { success: true, message: data?.message || 'Deleted' }
+      : { success: false, message: data?.error || 'Failed to delete' };
+  } catch (err) {
+    return { success: false, message: 'Connection error' };
+  }
+}
+

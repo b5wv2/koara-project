@@ -194,18 +194,31 @@ const createProvidersTableQuery = `
   );
 `;
 
+const createProviderCategoriesTableQuery = `
+  CREATE TABLE IF NOT EXISTS provider_categories (
+    id SERIAL PRIMARY KEY,
+    provider_id INTEGER NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+    category_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(provider_id, category_id)
+  );
+`;
+
 const createProviderProductsTableQuery = `
   CREATE TABLE IF NOT EXISTS provider_products (
     id SERIAL PRIMARY KEY,
     provider_id INTEGER NOT NULL REFERENCES providers(id),
     product_id INTEGER NOT NULL REFERENCES platform_products(id),
     provider_product_id VARCHAR(255) NOT NULL,
+    provider_category_id VARCHAR(255),
     cost_price NUMERIC(10,2),
     currency_code VARCHAR(10) DEFAULT 'USD',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 `;
+
 
 const createMerchantProductsTableQuery = `
   CREATE TABLE IF NOT EXISTS merchant_products (
@@ -389,6 +402,7 @@ const initializeDatabase = async () => {
     // Create platform-level product architecture tables
     await client.query(createPlatformProductsTableQuery);
     await client.query(createProvidersTableQuery);
+    await client.query(createProviderCategoriesTableQuery);
     await client.query(createProviderProductsTableQuery);
 
     // Fix dirty schema state where merchant_products referenced old catalog_products
@@ -463,6 +477,7 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS receipt_url TEXT,
       ADD COLUMN IF NOT EXISTS product_name VARCHAR(255),
       ADD COLUMN IF NOT EXISTS selling_price NUMERIC(10,2),
+      ADD COLUMN IF NOT EXISTS cost_price NUMERIC(10,2),
       ADD COLUMN IF NOT EXISTS currency_code VARCHAR(10) DEFAULT 'USD',
       ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1,
       ADD COLUMN IF NOT EXISTS total_amount NUMERIC(10,2),
@@ -470,8 +485,14 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS provider_order_id VARCHAR(255),
       ADD COLUMN IF NOT EXISTS provider_name VARCHAR(255),
       ADD COLUMN IF NOT EXISTS provider_status VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS encrypted_card_code TEXT,
       ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE,
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+    `);
+
+    await client.query(`
+      ALTER TABLE provider_products 
+      ADD COLUMN IF NOT EXISTS provider_category_id VARCHAR(255);
     `);
 
     // Safely migrate existing topup_orders again with the new columns
@@ -592,8 +613,52 @@ const initializeDatabase = async () => {
       checkPlatformProducts.rows.forEach(r => { productMap[r.name] = r.id; });
     }
 
+    // Ensure FazerCards provider is seeded or exists
+    let fazerCardsId;
+    const checkFazer = await client.query("SELECT id FROM providers WHERE name = 'FazerCards'");
+    if (checkFazer.rows.length === 0) {
+      const insFazer = await client.query("INSERT INTO providers (name, status) VALUES ('FazerCards', 'active') RETURNING id");
+      fazerCardsId = insFazer.rows[0].id;
+    } else {
+      fazerCardsId = checkFazer.rows[0].id;
+    }
+    providerMap['FazerCards'] = fazerCardsId;
+
+    // Seed provider_categories for FazerCards
+    await client.query(`
+      INSERT INTO provider_categories (provider_id, category_id, name)
+      VALUES ($1, 'amazon_eg', 'Amazon Egypt')
+      ON CONFLICT (provider_id, category_id) DO NOTHING;
+    `, [fazerCardsId]);
+
+    // Ensure Amazon Egypt gift card exists in platform_products
+    let giftCardProdId = productMap['Amazon Egypt Gift Card 1 EGB'];
+    if (!giftCardProdId) {
+      const checkGc = await client.query("SELECT id FROM platform_products WHERE name = 'Amazon Egypt Gift Card 1 EGB'");
+      if (checkGc.rows.length === 0) {
+        const insGc = await client.query(`
+          INSERT INTO platform_products (name, category, image_url, description, is_active)
+          VALUES ('Amazon Egypt Gift Card 1 EGB', 'amazon_eg', NULL, 'Amazon Egypt Gift Card 1 EGB Voucher', true)
+          RETURNING id
+        `);
+        giftCardProdId = insGc.rows[0].id;
+      } else {
+        giftCardProdId = checkGc.rows[0].id;
+      }
+      productMap['Amazon Egypt Gift Card 1 EGB'] = giftCardProdId;
+    }
+
+    // Ensure provider_products mapping exists for Amazon Egypt gift card
+    const checkGcProvider = await client.query("SELECT id FROM provider_products WHERE provider_id = $1 AND product_id = $2", [fazerCardsId, giftCardProdId]);
+    if (checkGcProvider.rows.length === 0) {
+      await client.query(`
+        INSERT INTO provider_products (provider_id, product_id, provider_product_id, provider_category_id, cost_price, currency_code, is_active)
+        VALUES ($1, $2, '1_egb', 'amazon_eg', 1.00, 'USD', true)
+      `, [fazerCardsId, giftCardProdId]);
+    }
+
     // 3. Seed provider_products independently
-    const checkProviderProducts = await client.query('SELECT id FROM provider_products LIMIT 1');
+    const checkProviderProducts = await client.query("SELECT id FROM provider_products WHERE provider_product_id IN ('3449', 'FF520') LIMIT 1");
     if (checkProviderProducts.rows.length === 0) {
       console.log('Seeding provider_products mappings...');
       const reloadlyId = providerMap['Reloadly'];
@@ -662,6 +727,14 @@ const initializeDatabase = async () => {
           ]);
         } else {
           console.warn('Skipping merchant_products seed: specific platform_products required for seeding were not found.');
+        }
+
+        if (giftCardProdId) {
+          await client.query(`
+            INSERT INTO merchant_products (store_id, catalog_product_id, selling_price, is_enabled)
+            VALUES ($1, $2, 1.50, true)
+            ON CONFLICT (store_id, catalog_product_id) DO NOTHING
+          `, [alfaId, giftCardProdId]);
         }
       }
     }

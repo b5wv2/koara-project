@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تم اكتمال طلبك - {{STORE_NAME}}</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+            color: #2d3748;
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+        .email-wrapper {
+            width: 100%;
+            background-color: #f4f6f8;
+            padding: 40px 20px;
+        }
+        .email-container {
+            max-width: 580px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e2e8f0;
+        }
+        .email-header {
+            background-color: #0f172a;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 1px;
+            margin: 0;
+            font-family: 'Trebuchet MS', sans-serif;
+        }
+        .logo span {
+            color: #38bdf8;
+        }
+        .email-body {
+            padding: 40px 40px 35px 40px;
+        }
+        .greeting {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 20px;
+        }
+        .intro-text {
+            font-size: 15px;
+            color: #475569;
+            margin-bottom: 25px;
+        }
+        .order-info {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .order-info strong {
+            color: #0f172a;
+        }
+        .code-box {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 14px;
+            padding: 24px;
+            text-align: center;
+            margin: 30px 0;
+            color: #ffffff;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 15px rgba(15, 23, 42, 0.15);
+        }
+        .code-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .code-value {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 24px;
+            font-weight: 800;
+            color: #38bdf8;
+            letter-spacing: 3px;
+            word-break: break-all;
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px dashed rgba(56, 189, 248, 0.4);
+        }
+        .thank-you {
+            font-size: 15px;
+            color: #334155;
+            margin-top: 30px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .email-footer {
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 25px 30px;
+            text-align: center;
+        }
+        .powered-by {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .powered-by span {
+            color: #0f172a;
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="email-header">
+                <h1 class="logo">{{STORE_NAME}} <span>•</span></h1>
+            </div>
+            <div class="email-body">
+                <div class="greeting">مرحباً، تم اكتمال طلبك بنجاح! 🎁</div>
+                <div class="intro-text">
+                    شكراً لشرائك من متجر <strong>{{STORE_NAME}}</strong>. لقد تم تجهيز بطاقة الهدايا الخاصة بك بنجاح وكود التفعيل جاهز الآن للاستخدام.
+                </div>
+                
+                <div class="order-info">
+                    <strong>رقم الطلب:</strong> {{KOARA_ORDER_ID}}<br>
+                    <strong>حالة الطلب:</strong> مكتمل (Completed)
+                </div>
+
+                <div class="code-box">
+                    <span class="code-label">كود التفعيل الخاص بك / GIFT CARD CODE</span>
+                    <div class="code-value">{{DECRYPTED_CARD_CODE}}</div>
+                </div>
+
+                <div class="thank-you">
+                    نتمنى لك تجربة ممتعة، وشكراً لثقتك بنا!
+                </div>
+            </div>
+            <div class="email-footer">
+                <div class="powered-by">POWERED BY <span>Koara</span></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

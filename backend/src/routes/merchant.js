@@ -278,6 +278,42 @@ router.put('/orders/:id/status', async (req, res) => {
   }
 });
 
+// POST /api/merchant/orders/:id/approve
+router.post('/orders/:id/approve', async (req, res) => {
+  const { id } = req.params;
+  const { store_id } = req.body;
+
+  if (!store_id) {
+    return res.status(400).json({ error: 'store_id is required' });
+  }
+
+  try {
+    const order = await orderService.approveGiftCardOrder(id, store_id);
+    res.status(200).json({ success: true, order });
+  } catch (err) {
+    console.error('Error approving order:', err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /api/merchant/orders/:id/reject
+router.post('/orders/:id/reject', async (req, res) => {
+  const { id } = req.params;
+  const { store_id } = req.body;
+
+  if (!store_id) {
+    return res.status(400).json({ error: 'store_id is required' });
+  }
+
+  try {
+    const order = await orderService.rejectGiftCardOrder(id, store_id);
+    res.status(200).json({ success: true, order });
+  } catch (err) {
+    console.error('Error rejecting order:', err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // --- Withdrawals ---
 
 // POST /api/merchant/withdraw

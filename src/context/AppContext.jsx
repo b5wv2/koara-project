@@ -765,6 +765,50 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const fetchProviderCategories = async (providerId = null) => {
+    try {
+      const url = providerId
+        ? `${API_BASE_URL}/api/admin/catalog/provider-categories?provider_id=${providerId}`
+        : `${API_BASE_URL}/api/admin/catalog/provider-categories`;
+      const response = await fetch(url, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        return data.categories || [];
+      }
+      return [];
+    } catch (err) {
+      return [];
+    }
+  };
+
+  const createProviderCategory = async (categoryData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/provider-categories`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categoryData)
+      });
+      const data = await response.json();
+      return response.ok ? { success: true, category: data.category } : { success: false, message: data.error };
+    } catch (err) {
+      return { success: false, message: 'Connection error' };
+    }
+  };
+
+  const deleteProviderCategory = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/catalog/provider-categories/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      return response.ok ? { success: true, message: data.message } : { success: false, message: data.error };
+    } catch (err) {
+      return { success: false, message: 'Connection error' };
+    }
+  };
+
   const fetchMerchantPlatformProducts = async (storeId) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/merchant/products?store_id=${storeId}`, {
@@ -886,6 +930,7 @@ export const AppProvider = ({ children }) => {
       ledger, setLedger,
       platformProducts, setPlatformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct,
       providers, setProviders, fetchProviders, fetchProviderMappings, addProviderMapping,
+      fetchProviderCategories, createProviderCategory, deleteProviderCategory,
       merchantPlatformProducts, setMerchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct,
       subscription, setSubscription, isPlusActive, upgradeSubscription, fetchSubscription,
       syncWalletBalance

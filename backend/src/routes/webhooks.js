@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const db = require('../config/db');
+const fazerCardsProvider = require('../services/providers/fazerCardsProvider');
+const encryption = require('../utils/encryption');
+const emailService = require('../services/emailService');
 
 // We use express.raw to ensure we have the exact payload body for HMAC signature verification
 router.post('/fazercards', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -113,9 +116,111 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
         const orderRes = await db.query('SELECT * FROM topup_orders WHERE provider_order_id = $1', [providerOrderId]);
         
         if (orderRes.rows.length === 0) {
-          await db.query(`UPDATE webhook_logs SET processing_result = 'Order not found in topup_orders' WHERE id = $1`, [logId]);
-          console.warn(`[WEBHOOK] Order with provider ID ${providerOrderId} not found.`);
-          return;
+          // Check if it is a Gift Card order in the `orders` table
+          const gcOrderRes = await db.query('SELECT * FROM orders WHERE provider_order_id = $1', [providerOrderId]);
+          if (gcOrderRes.rows.length === 0) {
+            await db.query(`UPDATE webhook_logs SET processing_result = 'Order not found in topup_orders or orders' WHERE id = $1`, [logId]);
+            console.warn(`[WEBHOOK] Order with provider ID ${providerOrderId} not found.`);
+            return;
+          }
+
+          // --- Process Gift Card Order ---
+          const gcOrder = gcOrderRes.rows[0];
+          const previousStatus = gcOrder.status;
+
+          if (previousStatus === newStatus) {
+            await db.query(`UPDATE webhook_logs SET processing_result = $1 WHERE id = $2`, [`Ignored: Gift Card Order already in status ${newStatus}`, logId]);
+            console.log(`[WEBHOOK] Ignored duplicate event for Koara Gift Card Order ${gcOrder.order_number} (already ${newStatus})`);
+            return;
+          }
+
+          if (newStatus === 'completed') {
+            console.log(`[WEBHOOK-GC] Fetching encrypted PIN code for provider order ${providerOrderId}...`);
+            const getOrderRes = await fazerCardsProvider.getOrder(providerOrderId);
+            let extractedCode = null;
+
+            if (getOrderRes && getOrderRes.success) {
+              const payload = getOrderRes.payload || getOrderRes.order?.payload || getOrderRes.order || {};
+              if (Array.isArray(payload.cards) && payload.cards.length > 0) {
+                extractedCode = payload.cards[0].pin || payload.cards[0].code || payload.cards[0].voucher_code || JSON.stringify(payload.cards[0]);
+              } else if (payload.pin || payload.code || payload.voucher_code) {
+                extractedCode = payload.pin || payload.code || payload.voucher_code;
+              } else if (typeof payload === 'string') {
+                extractedCode = payload;
+              } else if (getOrderRes.order?.pin || getOrderRes.order?.code) {
+                extractedCode = getOrderRes.order.pin || getOrderRes.order.code;
+              } else {
+                extractedCode = JSON.stringify(payload);
+              }
+            }
+
+            const encryptedCode = encryption.encrypt(extractedCode || 'PENDING-CODE-FROM-PROVIDER');
+
+            await db.query(`
+              UPDATE orders 
+              SET status = $1, provider_status = $2, encrypted_card_code = $3, updated_at = CURRENT_TIMESTAMP, 
+                  completed_at = CURRENT_TIMESTAMP
+              WHERE id = $4
+            `, [newStatus, providerStatus, encryptedCode, gcOrder.id]);
+
+            const storeRes = await db.query('SELECT store_name, email FROM stores WHERE id = $1', [gcOrder.store_id]);
+            const storeName = storeRes.rows[0]?.store_name || 'Koara Store';
+
+            await emailService.sendEmail(
+              gcOrder.customer_email,
+              `تم اكتمال طلبك - ${storeName}`,
+              'giftcard-completed-customer.html',
+              {
+                STORE_NAME: storeName,
+                KOARA_ORDER_ID: gcOrder.order_number,
+                DECRYPTED_CARD_CODE: extractedCode || 'AVAILABLE IN STORE DASHBOARD'
+              }
+            );
+
+            const resultMsg = `Successfully completed Koara Gift Card Order ${gcOrder.order_number}`;
+            await db.query(`UPDATE webhook_logs SET processing_result = $1 WHERE id = $2`, [resultMsg, logId]);
+            console.log(`[WEBHOOK-SUCCESS] Event: ${eventType} | Provider ID: ${providerOrderId} | GiftCard ID: ${gcOrder.order_number} | ${previousStatus} -> completed | SigValid: true`);
+            return;
+          } else if (newStatus === 'failed' || newStatus === 'rejected') {
+            const costPrice = parseFloat(gcOrder.cost_price || 0);
+            if (costPrice > 0) {
+              const refundClient = await db.pool.connect();
+              try {
+                await refundClient.query('BEGIN');
+                await refundClient.query('UPDATE stores SET balance = balance + $1 WHERE id = $2', [costPrice, gcOrder.store_id]);
+                await refundClient.query(`
+                  INSERT INTO wallet_transactions (store_id, amount, transaction_type, reason)
+                  VALUES ($1, $2, 'credit', $3)
+                `, [gcOrder.store_id, costPrice, `Refund due to FazerCards webhook failure for Order ${gcOrder.order_number}`]);
+                await refundClient.query('COMMIT');
+              } catch (e) {
+                if (refundClient) await refundClient.query('ROLLBACK');
+                console.error('[WEBHOOK-GC-REFUND-ERROR]', e.message);
+              } finally {
+                if (refundClient) refundClient.release();
+              }
+            }
+
+            await db.query(`
+              UPDATE orders 
+              SET status = 'rejected', provider_status = $1, updated_at = CURRENT_TIMESTAMP
+              WHERE id = $2
+            `, [providerStatus, gcOrder.id]);
+
+            const resultMsg = `Rejected Koara Gift Card Order ${gcOrder.order_number} cleanly due to provider failure`;
+            await db.query(`UPDATE webhook_logs SET processing_result = $1 WHERE id = $2`, [resultMsg, logId]);
+            console.log(`[WEBHOOK-SUCCESS] Event: ${eventType} | Provider ID: ${providerOrderId} | GiftCard ID: ${gcOrder.order_number} | ${previousStatus} -> rejected`);
+            return;
+          } else {
+            await db.query(`
+              UPDATE orders 
+              SET status = $1, provider_status = $2, updated_at = CURRENT_TIMESTAMP
+              WHERE id = $3
+            `, [newStatus, providerStatus, gcOrder.id]);
+            const resultMsg = `Updated Koara Gift Card Order ${gcOrder.order_number} to ${newStatus}`;
+            await db.query(`UPDATE webhook_logs SET processing_result = $1 WHERE id = $2`, [resultMsg, logId]);
+            return;
+          }
         }
 
         const order = orderRes.rows[0];

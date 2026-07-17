@@ -129,6 +129,67 @@ router.put('/providers/:id', async (req, res) => {
 });
 
 // =============================================
+// Provider Categories Management
+// =============================================
+
+// GET /api/admin/catalog/provider-categories
+router.get('/provider-categories', async (req, res) => {
+  const { provider_id } = req.query;
+  try {
+    let query = `
+      SELECT pc.*, p.name AS provider_name
+      FROM provider_categories pc
+      JOIN providers p ON p.id = pc.provider_id
+    `;
+    const params = [];
+    if (provider_id) {
+      query += ` WHERE pc.provider_id = $1`;
+      params.push(provider_id);
+    }
+    query += ` ORDER BY pc.name ASC`;
+    const result = await db.query(query, params);
+    res.json({ success: true, categories: result.rows });
+  } catch (err) {
+    console.error('Error fetching provider categories:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/catalog/provider-categories
+router.post('/provider-categories', async (req, res) => {
+  const { provider_id, category_id, name } = req.body;
+  if (!provider_id || !category_id || !name) {
+    return res.status(400).json({ error: 'provider_id, category_id, and name are required' });
+  }
+
+  try {
+    const result = await db.query(
+      `INSERT INTO provider_categories (provider_id, category_id, name)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [provider_id, category_id, name]
+    );
+    res.status(201).json({ success: true, category: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'Category already exists for this provider' });
+    console.error('Error creating provider category:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/admin/catalog/provider-categories/:id
+router.delete('/provider-categories/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await db.query('DELETE FROM provider_categories WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Category not found' });
+    res.json({ success: true, message: 'Provider category deleted' });
+  } catch (err) {
+    console.error('Error deleting provider category:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// =============================================
 // Provider-Product Mappings
 // =============================================
 
@@ -153,16 +214,16 @@ router.get('/products/:id/providers', async (req, res) => {
 // POST /api/admin/catalog/products/:id/providers — add a mapping
 router.post('/products/:id/providers', async (req, res) => {
   const { id } = req.params;
-  const { provider_id, provider_product_id, cost_price, currency_code, is_active } = req.body;
+  const { provider_id, provider_product_id, provider_category_id, cost_price, currency_code, is_active } = req.body;
   if (!provider_id || !provider_product_id) {
     return res.status(400).json({ error: 'provider_id and provider_product_id are required' });
   }
 
   try {
     const result = await db.query(
-      `INSERT INTO provider_products (provider_id, product_id, provider_product_id, cost_price, currency_code, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [provider_id, id, provider_product_id, cost_price || null, currency_code || 'USD', is_active !== undefined ? is_active : true]
+      `INSERT INTO provider_products (provider_id, product_id, provider_product_id, provider_category_id, cost_price, currency_code, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [provider_id, id, provider_product_id, provider_category_id || null, cost_price || null, currency_code || 'USD', is_active !== undefined ? is_active : true]
     );
     res.status(201).json({ success: true, mapping: result.rows[0] });
   } catch (err) {
@@ -174,17 +235,18 @@ router.post('/products/:id/providers', async (req, res) => {
 // PUT /api/admin/catalog/provider-products/:id — update a mapping
 router.put('/provider-products/:id', async (req, res) => {
   const { id } = req.params;
-  const { provider_product_id, cost_price, currency_code, is_active } = req.body;
+  const { provider_product_id, provider_category_id, cost_price, currency_code, is_active } = req.body;
 
   try {
     const result = await db.query(
       `UPDATE provider_products 
        SET provider_product_id = COALESCE($1, provider_product_id),
-           cost_price = COALESCE($2, cost_price),
-           currency_code = COALESCE($3, currency_code),
-           is_active = COALESCE($4, is_active)
-       WHERE id = $5 RETURNING *`,
-      [provider_product_id, cost_price, currency_code, is_active, id]
+           provider_category_id = COALESCE($2, provider_category_id),
+           cost_price = COALESCE($3, cost_price),
+           currency_code = COALESCE($4, currency_code),
+           is_active = COALESCE($5, is_active)
+       WHERE id = $6 RETURNING *`,
+      [provider_product_id, provider_category_id, cost_price, currency_code, is_active, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Mapping not found' });
     res.json({ success: true, mapping: result.rows[0] });
