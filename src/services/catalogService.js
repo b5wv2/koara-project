@@ -59,13 +59,14 @@ export async function deactivatePlatformProduct(id) {
 
 export async function fetchProviders() {
   try {
-    const { ok, data } = await apiFetch('/api/admin/catalog/providers');
+    const { ok, status, data } = await apiFetch('/api/admin/catalog/providers');
     if (ok) {
-      return data.providers || [];
+      return Array.isArray(data?.providers) ? data.providers : (Array.isArray(data) ? data : []);
     }
+    console.error(`Error fetching providers: HTTP ${status}`);
     return [];
   } catch (err) {
-    console.error('Error fetching providers:', err);
+    console.error('Error fetching providers (network):', err);
     return [];
   }
 }

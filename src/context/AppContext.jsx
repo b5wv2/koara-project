@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { translations } from '../translations';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const AppContext = createContext();
 
@@ -727,12 +727,14 @@ export const AppProvider = ({ children }) => {
       const response = await fetch(`${API_BASE_URL}/api/admin/catalog/providers`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        setProviders(data.providers || []);
-        return data.providers || [];
+        const provList = Array.isArray(data?.providers) ? data.providers : (Array.isArray(data) ? data : []);
+        setProviders(provList);
+        return provList;
       }
+      console.error(`Error fetching providers: HTTP ${response.status} ${response.statusText}`);
       return [];
     } catch (err) {
-      console.error('Error fetching providers:', err);
+      console.error('Error fetching providers (network):', err);
       return [];
     }
   };

@@ -11,7 +11,7 @@ import SubscriptionPaymentModal from '../components/SubscriptionPaymentModal';
 import MerchantWithdrawalModal from '../components/modals/MerchantWithdrawalModal';
 import MerchantCustomizationTab from '../components/MerchantCustomizationTab';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // ── Shared sub-components ──────────────────────────────────────────────
 
@@ -221,6 +221,14 @@ const AdminDashboard = () => {
   }, [activeTab, role]);
 
   React.useEffect(() => {
+    if (role === 'admin' && (activeTab === 'catalog' || providerCategoryModal || catalogProviderModal.isOpen)) {
+      if (!providers || providers.length === 0) {
+        fetchProviders().catch(console.error);
+      }
+    }
+  }, [role, activeTab, providerCategoryModal, catalogProviderModal.isOpen, providers, fetchProviders]);
+
+  React.useEffect(() => {
     if (role === 'merchant' && storeId) {
       syncWalletBalance(storeId);
       if (activeTab === 'products') {
@@ -238,7 +246,7 @@ const AdminDashboard = () => {
         fetchMerchantOrders(storeId).catch(console.error);
       }
       if (activeTab === 'subscription') {
-        fetch(`${import.meta.env.VITE_API_URL}/api/subscription/history`, { credentials: 'include' })
+        fetch(`${API_BASE_URL}/api/subscription/history`, { credentials: 'include' })
           .then(res => res.json())
           .then(data => setBillingHistory(data))
           .catch(console.error);
@@ -252,7 +260,7 @@ const AdminDashboard = () => {
   const fetchMerchantPromotions = async () => {
     setPromotionsLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/merchant/promotions`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE_URL}/api/merchant/promotions`, { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
         setPromotions(data.promotions);
@@ -534,7 +542,7 @@ const AdminDashboard = () => {
     setUpgradeError('');
     try {
       if (upgradeMethod === 'wallet') {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/subscription/upgrade/wallet`, {
+        const res = await fetch(`${API_BASE_URL}/api/subscription/upgrade/wallet`, {
           method: 'POST',
           credentials: 'include'
         });
@@ -990,6 +998,9 @@ const AdminDashboard = () => {
                               <button
                                 onClick={async () => {
                                   const mappings = await fetchProviderMappings(product.id);
+                                  if (!providers || providers.length === 0) {
+                                    await fetchProviders();
+                                  }
                                   setCatalogProviderModal({ isOpen: true, productId: product.id, productName: product.name, mappings });
                                 }}
                                 className="dash-btn dash-btn-secondary"
@@ -1044,7 +1055,14 @@ const AdminDashboard = () => {
                     description="Map local Koara categories to external provider category IDs (e.g., FazerCards amazon_eg for Amazon Egypt)."
                     action={
                       <button
-                        onClick={() => { setNewProviderCategory({ provider_id: providers?.[0]?.id || '', category_id: '', name: '' }); setProviderCategoryModal(true); }}
+                        onClick={async () => {
+                          let provs = providers;
+                          if (!provs || provs.length === 0) {
+                            provs = await fetchProviders();
+                          }
+                          setNewProviderCategory({ provider_id: provs?.[0]?.id || '', category_id: '', name: '' });
+                          setProviderCategoryModal(true);
+                        }}
                         className="dash-btn dash-btn-primary"
                       >
                         + New Category
