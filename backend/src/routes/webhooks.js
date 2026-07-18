@@ -135,52 +135,88 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
           }
 
           if (newStatus === 'completed') {
-            console.log(`[WEBHOOK-GC] Fetching encrypted PIN code for provider order ${providerOrderId}...`);
-            const getOrderRes = await fazerCardsProvider.getOrder(providerOrderId);
-            let extractedCode = null;
+            try {
+              console.log(`[WEBHOOK-GC] Fetching encrypted PIN code for provider order ${providerOrderId}...`);
+              const getOrderRes = await fazerCardsProvider.getOrder(providerOrderId);
+              let extractedCode = null;
 
-            if (getOrderRes && getOrderRes.success) {
-              const payload = getOrderRes.payload || getOrderRes.order?.payload || getOrderRes.order || {};
-              if (Array.isArray(payload.cards) && payload.cards.length > 0) {
-                extractedCode = payload.cards[0].pin || payload.cards[0].code || payload.cards[0].voucher_code || JSON.stringify(payload.cards[0]);
-              } else if (payload.pin || payload.code || payload.voucher_code) {
-                extractedCode = payload.pin || payload.code || payload.voucher_code;
-              } else if (typeof payload === 'string') {
-                extractedCode = payload;
-              } else if (getOrderRes.order?.pin || getOrderRes.order?.code) {
-                extractedCode = getOrderRes.order.pin || getOrderRes.order.code;
-              } else {
-                extractedCode = JSON.stringify(payload);
+              if (getOrderRes && getOrderRes.success) {
+                const orderObj = getOrderRes.order || getOrderRes.raw_response?.order || {};
+                const payloadObj = getOrderRes.payload || orderObj.payload || getOrderRes.raw_response?.payload || {};
+                const cardsArray = payloadObj.cards || orderObj.cards || getOrderRes.raw_response?.cards;
+
+                if (Array.isArray(cardsArray) && cardsArray.length > 0) {
+                  const firstCard = cardsArray[0];
+                  if (typeof firstCard === 'string') {
+                    extractedCode = firstCard;
+                  } else if (typeof firstCard === 'object' && firstCard !== null) {
+                    if (firstCard.code && firstCard.pin) {
+                      extractedCode = `${firstCard.code} (PIN: ${firstCard.pin})`;
+                    } else if (firstCard.pin || firstCard.code || firstCard.voucher_code) {
+                      extractedCode = firstCard.pin || firstCard.code || firstCard.voucher_code;
+                    } else {
+                      extractedCode = JSON.stringify(firstCard);
+                    }
+                  } else {
+                    extractedCode = String(firstCard);
+                  }
+                } else if (payloadObj.pin || payloadObj.code || payloadObj.voucher_code) {
+                  extractedCode = payloadObj.pin || payloadObj.code || payloadObj.voucher_code;
+                } else if (orderObj.pin || orderObj.code || orderObj.voucher_code) {
+                  extractedCode = orderObj.pin || orderObj.code || orderObj.voucher_code;
+                } else if (typeof payloadObj === 'string') {
+                  extractedCode = payloadObj;
+                }
               }
+
+              if (!extractedCode) {
+                throw new Error(`Failed to extract gift card code from provider response: ${JSON.stringify(getOrderRes)}`);
+              }
+
+              console.log('[WEBHOOK-GC] Gift card extracted successfully');
+
+              console.log('[WEBHOOK-GC] Encrypting gift card');
+              const encryptedCode = encryption.encrypt(extractedCode);
+
+              console.log('[WEBHOOK-GC] Saving encrypted code');
+              await db.query(`
+                UPDATE orders 
+                SET status = $1, provider_status = $2, encrypted_card_code = $3, updated_at = CURRENT_TIMESTAMP, 
+                    completed_at = CURRENT_TIMESTAMP
+                WHERE id = $4
+              `, [newStatus, providerStatus, encryptedCode, gcOrder.id]);
+
+              const storeRes = await db.query('SELECT store_name, email FROM stores WHERE id = $1', [gcOrder.store_id]);
+              const storeName = storeRes.rows[0]?.store_name || 'Koara Store';
+
+              console.log('[WEBHOOK-GC] Sending customer email');
+              const emailSent = await emailService.sendEmail(
+                gcOrder.customer_email,
+                `تم اكتمال طلبك - ${storeName}`,
+                'giftcard-completed-customer.html',
+                {
+                  STORE_NAME: storeName,
+                  KOARA_ORDER_ID: gcOrder.order_number,
+                  DECRYPTED_CARD_CODE: extractedCode
+                }
+              );
+
+              if (!emailSent) {
+                throw new Error(`Email provider failed to deliver email to ${gcOrder.customer_email} for order ${gcOrder.order_number}`);
+              }
+
+              console.log('[WEBHOOK-GC] Customer email sent successfully');
+
+              const resultMsg = `Successfully completed Koara Gift Card Order ${gcOrder.order_number}`;
+              await db.query(`UPDATE webhook_logs SET processing_result = $1 WHERE id = $2`, [resultMsg, logId]);
+              console.log(`[WEBHOOK-SUCCESS] Event: ${eventType} | Provider ID: ${providerOrderId} | GiftCard ID: ${gcOrder.order_number} | ${previousStatus} -> completed | SigValid: true`);
+              return;
+            } catch (gcErr) {
+              console.error('[WEBHOOK-GC] Fulfillment step failed:', gcErr.message);
+              console.error(gcErr.stack || gcErr);
+              await db.query(`UPDATE webhook_logs SET processing_result = $1 WHERE id = $2`, [`Error in GC completion: ${gcErr.message}`, logId]).catch(e => console.error(e));
+              throw gcErr;
             }
-
-            const encryptedCode = encryption.encrypt(extractedCode || 'PENDING-CODE-FROM-PROVIDER');
-
-            await db.query(`
-              UPDATE orders 
-              SET status = $1, provider_status = $2, encrypted_card_code = $3, updated_at = CURRENT_TIMESTAMP, 
-                  completed_at = CURRENT_TIMESTAMP
-              WHERE id = $4
-            `, [newStatus, providerStatus, encryptedCode, gcOrder.id]);
-
-            const storeRes = await db.query('SELECT store_name, email FROM stores WHERE id = $1', [gcOrder.store_id]);
-            const storeName = storeRes.rows[0]?.store_name || 'Koara Store';
-
-            await emailService.sendEmail(
-              gcOrder.customer_email,
-              `تم اكتمال طلبك - ${storeName}`,
-              'giftcard-completed-customer.html',
-              {
-                STORE_NAME: storeName,
-                KOARA_ORDER_ID: gcOrder.order_number,
-                DECRYPTED_CARD_CODE: extractedCode || 'AVAILABLE IN STORE DASHBOARD'
-              }
-            );
-
-            const resultMsg = `Successfully completed Koara Gift Card Order ${gcOrder.order_number}`;
-            await db.query(`UPDATE webhook_logs SET processing_result = $1 WHERE id = $2`, [resultMsg, logId]);
-            console.log(`[WEBHOOK-SUCCESS] Event: ${eventType} | Provider ID: ${providerOrderId} | GiftCard ID: ${gcOrder.order_number} | ${previousStatus} -> completed | SigValid: true`);
-            return;
           } else if (newStatus === 'failed' || newStatus === 'rejected') {
             const costPrice = parseFloat(gcOrder.cost_price || 0);
             if (costPrice > 0) {

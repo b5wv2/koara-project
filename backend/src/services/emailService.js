@@ -60,7 +60,7 @@ const getTemplate = (templateName, data = {}) => {
  */
 const sendEmail = async (to, subject, templateName, data) => {
   if (!resendApiKey) {
-    console.warn('RESEND_API_KEY is not set. Email not sent. Data generated was:', data);
+    console.warn('[EMAIL] RESEND_API_KEY is not set. Email not sent. Data generated was:', data);
     return true; // Pretend it succeeded for dev mode without key
   }
 
@@ -73,10 +73,22 @@ const sendEmail = async (to, subject, templateName, data) => {
       subject,
       html,
     });
-    console.log('Email sent successfully:', resData.id);
+
+    if (resData && resData.error) {
+      console.error('[EMAIL] Provider API returned error:', JSON.stringify(resData.error, null, 2));
+      console.error('[EMAIL] Complete provider response:', JSON.stringify(resData, null, 2));
+      return false;
+    }
+
+    const emailId = resData?.data?.id || resData?.id || 'unknown';
+    console.log('[EMAIL] Email sent successfully:', emailId);
     return true;
   } catch (error) {
-    console.error('Error sending email via Resend:', error);
+    console.error('[EMAIL] Exception sending email via Resend:');
+    console.error(error.stack || error);
+    if (error.response || error.data) {
+      console.error('[EMAIL] Complete provider response:', JSON.stringify(error.response || error.data, null, 2));
+    }
     return false;
   }
 };
