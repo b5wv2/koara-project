@@ -186,7 +186,7 @@ router.post('/fazercards', express.raw({ type: 'application/json' }), async (req
                 WHERE id = $4
               `, [newStatus, providerStatus, encryptedCode, gcOrder.id]);
 
-              const storeRes = await db.query('SELECT store_name, email FROM stores WHERE id = $1', [gcOrder.store_id]);
+              const storeRes = await db.query('SELECT store_name FROM stores WHERE id = $1', [gcOrder.store_id]);
               const storeName = storeRes.rows[0]?.store_name || 'Koara Store';
 
               console.log('[WEBHOOK-GC] Sending customer email');
