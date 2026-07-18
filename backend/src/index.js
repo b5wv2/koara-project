@@ -10,7 +10,7 @@ console.log("================================");
 
 // Load environment variables early
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
-
+console.log("API_KEY =", process.env.API_KEY);
 // STRICT SECURITY CHECK
 if (!process.env.JWT_SECRET) {
   console.error('CRITICAL ERROR: JWT_SECRET environment variable is not configured.');
