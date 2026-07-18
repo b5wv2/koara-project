@@ -742,13 +742,18 @@ const initializeDatabase = async () => {
     await client.query('COMMIT');
 
     console.log('Database tables verified/created and seeded successfully.');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Database schema transaction failed, rolled back.', error.message);
-    throw error;
-  } finally {
-    client.release();
-  }
+} catch (error) {
+  await client.query('ROLLBACK');
+
+  console.error('================ ERROR ================');
+  console.error(error);
+  console.error(error.stack);
+  console.error('=======================================');
+
+  throw error;
+} finally {
+  client.release();
+}
 };
 
 module.exports = initializeDatabase;
