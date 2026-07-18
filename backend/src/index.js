@@ -118,9 +118,11 @@ const bootstrap = async () => {
       console.log(`-----------------------------------------------`);
     });
   } catch (error) {
-    console.error('CRITICAL: Server boot failed during database initialization!');
-    console.error(error.message);
-    process.exit(1);
+  console.error('================ BOOT ERROR ================');
+  console.error(error);
+  console.error(error.stack);
+  console.error('============================================');
+  process.exit(1);
   }
 };
 
