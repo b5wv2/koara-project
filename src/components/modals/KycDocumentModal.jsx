@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import Modal from '../Modal';
 import { API_BASE_URL } from '../../services/api';
+import DashButton from '../ui/DashButton';
 
 /**
  * KYC document preview modal — view document + approve/reject actions.
@@ -35,25 +36,28 @@ const KycDocumentModal = ({ selectedKyc, setSelectedKyc, onApprove, onReject }) 
           )}
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => {
+          <DashButton
+            onClick={async () => {
               const id = selectedKyc.store_id || selectedKyc.id;
-              setSelectedKyc(null);
-              onReject(id);
+              const res = await onReject(id);
+              if (res !== false && (!res || res.success !== false)) setSelectedKyc(null);
+              return res;
             }}
             className="dash-btn dash-btn-danger flex-1 justify-center py-2.5 rounded-xl"
           >
             Reject Application
-          </button>
-          <button
-            onClick={() => {
-              onApprove(selectedKyc.store_id || selectedKyc.id);
-              setSelectedKyc(null);
+          </DashButton>
+          <DashButton
+            onClick={async () => {
+              const id = selectedKyc.store_id || selectedKyc.id;
+              const res = await onApprove(id);
+              if (res !== false && (!res || res.success !== false)) setSelectedKyc(null);
+              return res;
             }}
             className="dash-btn dash-btn-success flex-1 justify-center py-2.5 rounded-xl"
           >
             Approve & Activate
-          </button>
+          </DashButton>
         </div>
       </div>
     </Modal>

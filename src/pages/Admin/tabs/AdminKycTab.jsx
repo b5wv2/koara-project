@@ -3,6 +3,7 @@ import { ShieldCheck, FileText } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import SectionHeader from '../../../components/ui/SectionHeader';
 import StatusBadge from '../../../components/ui/StatusBadge';
+import DashButton from '../../../components/ui/DashButton';
 
 /**
  * Admin KYC tab — pending KYC applications table.
@@ -49,9 +50,9 @@ const AdminKycTab = ({ kycPendingLoading, onApproveKyc, onRejectKyc, onViewDocum
                 </td>
                 <td>
                   {app.kyc_document_url ? (
-                    <button onClick={() => onViewDocument(app)} className="dash-btn dash-btn-secondary">
+                    <DashButton onClick={() => onViewDocument(app)} className="dash-btn dash-btn-secondary">
                       <FileText size={13} /> View Doc
-                    </button>
+                    </DashButton>
                   ) : (
                     <span style={{ color: '#475569', fontSize: '0.75rem' }}>N/A</span>
                   )}
@@ -60,8 +61,8 @@ const AdminKycTab = ({ kycPendingLoading, onApproveKyc, onRejectKyc, onViewDocum
                 <td className="text-right">
                   {app.status === 'pending' && (
                     <div className="flex justify-end gap-2">
-                      <button onClick={() => onApproveKyc(app.id)} className="dash-btn dash-btn-success">Approve</button>
-                      <button onClick={() => onRejectKyc(app.id)} className="dash-btn dash-btn-danger">Reject</button>
+                      <DashButton onClick={() => onApproveKyc(app.id)} className="dash-btn dash-btn-success">Approve</DashButton>
+                      <DashButton onClick={() => onRejectKyc(app.id)} className="dash-btn dash-btn-danger">Reject</DashButton>
                     </div>
                   )}
                 </td>

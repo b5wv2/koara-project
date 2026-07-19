@@ -3,6 +3,7 @@ import { Package, Edit2 } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import SectionHeader from '../../../components/ui/SectionHeader';
 import Toggle from '../../../components/ui/Toggle';
+import DashButton from '../../../components/ui/DashButton';
 
 /**
  * Merchant products tab — platform products enable/price/customize table.
@@ -62,15 +63,18 @@ const MerchantProductsTab = ({ editingMerchantPrice, setEditingMerchantPrice, on
                     />
                   </td>
                   <td className="text-right">
-                    <button onClick={() => onCustomize(product)} className="dash-btn dash-btn-secondary">
+                    <DashButton onClick={() => onCustomize(product)} className="dash-btn dash-btn-secondary">
                       <Edit2 size={14} className="mr-1 inline" /> Customize
-                    </button>
+                    </DashButton>
                   </td>
                   <td className="text-right">
-                    <button
+                    <DashButton
                       onClick={async () => {
                         const price = parseFloat(editingMerchantPrice[product.id] ?? product.selling_price);
-                        if (!price || price <= 0) return alert('Please enter a valid price');
+                        if (!price || price <= 0) {
+                          alert('Please enter a valid price');
+                          return { success: false };
+                        }
                         await updateMerchantProduct(product.id, storeId, {
                           selling_price: price,
                           is_enabled: isEnabled,
@@ -80,11 +84,12 @@ const MerchantProductsTab = ({ editingMerchantPrice, setEditingMerchantPrice, on
                         });
                         setEditingMerchantPrice(prev => { const n = { ...prev }; delete n[product.id]; return n; });
                         await fetchMerchantPlatformProducts(storeId);
+                        return { success: true };
                       }}
                       className="dash-btn dash-btn-primary"
                     >
                       Save
-                    </button>
+                    </DashButton>
                   </td>
                 </tr>
               );

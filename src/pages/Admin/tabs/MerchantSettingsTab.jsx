@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2, UploadCloud } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
+import DashButton from '../../../components/ui/DashButton';
 
 /**
  * Merchant settings tab — store settings (logo, name, subdomain).
@@ -51,9 +52,9 @@ const MerchantSettingsTab = () => {
                   />
                 </label>
                 {currentMerchant?.logoUrl && (
-                  <button onClick={() => updateStoreLogo(storeId, null)} className="dash-btn dash-btn-danger">
+                  <DashButton onClick={() => updateStoreLogo(storeId, null)} className="dash-btn dash-btn-danger">
                     <Trash2 size={13} /> Remove
-                  </button>
+                  </DashButton>
                 )}
               </div>
               <p className="text-xs" style={{ color: '#475569' }}>PNG, JPG, WEBP. Max 2MB.</p>

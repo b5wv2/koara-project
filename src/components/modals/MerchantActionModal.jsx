@@ -1,5 +1,6 @@
 import React from 'react';
 import Modal from '../Modal';
+import DashButton from '../ui/DashButton';
 
 /**
  * Merchant action modal — Request funds top-up or payout.
@@ -10,7 +11,7 @@ const MerchantActionModal = ({ merchantActionModal, setMerchantActionModal, onSu
     onClose={() => setMerchantActionModal({ isOpen: false, type: '', amount: 0 })}
     title={merchantActionModal.type === 'add' ? 'Request Funds Top-up' : 'Request Payout'}
   >
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(e); }} className="space-y-4">
       <p className="text-sm" style={{ color: '#64748B' }}>
         {merchantActionModal.type === 'add'
           ? 'Enter the amount you wired to the platform bank account. Admin will verify and credit your wallet.'
@@ -25,9 +26,9 @@ const MerchantActionModal = ({ merchantActionModal, setMerchantActionModal, onSu
           className="koara-input" required dir="ltr"
         />
       </div>
-      <button type="submit" className="dash-btn dash-btn-primary w-full justify-center py-2.5 rounded-xl text-sm font-semibold">
+      <DashButton type="submit" onClick={onSubmit} className="dash-btn dash-btn-primary w-full justify-center py-2.5 rounded-xl text-sm font-semibold">
         Submit Request
-      </button>
+      </DashButton>
     </form>
   </Modal>
 );

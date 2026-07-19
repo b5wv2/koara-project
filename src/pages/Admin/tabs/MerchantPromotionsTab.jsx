@@ -3,6 +3,7 @@ import { Tag } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import SectionHeader from '../../../components/ui/SectionHeader';
 import Toggle from '../../../components/ui/Toggle';
+import DashButton from '../../../components/ui/DashButton';
 
 /**
  * Merchant promotions tab — promo codes table.
@@ -21,7 +22,7 @@ const MerchantPromotionsTab = () => {
         title="Marketing & Promos"
         description="Create discount codes for your customers."
         action={
-          <button className="dash-btn dash-btn-primary hidden sm:inline-flex">+ New Code</button>
+          <DashButton className="dash-btn dash-btn-primary hidden sm:inline-flex">+ New Code</DashButton>
         }
       />
       <div className="overflow-x-auto">

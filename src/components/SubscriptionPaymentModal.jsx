@@ -3,6 +3,7 @@ import Modal from './Modal';
 import { Loader2, ExternalLink, ShieldCheck, CheckCircle, AlertCircle, Check, Copy } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { useAppContext } from '../context/AppContext';
+import DashButton from './ui/DashButton';
 
 const NETWORKS = [
   { id: 'usdttrc20', name: 'USDT (TRC20)', symbol: '₮' },
@@ -53,14 +54,17 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
       if (data.success && data.pay_address) {
         setPaymentData(data);
         setStep(3); // Payment view
+        return { success: true };
       } else {
         setError(data.error || t('err_failed_gen_invoice'));
         setStep(1); // Back to selection if error
+        return { success: false };
       }
     } catch (err) {
       console.error('Error creating invoice:', err);
       setError(t('err_net_gen_invoice'));
       setStep(1);
+      return { success: false };
     }
   };
 
@@ -137,13 +141,13 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
             )}
 
-            <button
+            <DashButton
               onClick={handleCreateInvoice}
               disabled={!selectedNetwork}
               className="dash-btn dash-btn-primary w-full justify-center py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('continue_to_payment')}
-            </button>
+            </DashButton>
           </div>
         )}
 

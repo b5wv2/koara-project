@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Modal from './Modal';
 import { UploadCloud, CheckCircle2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import DashButton from './ui/DashButton';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -34,7 +35,7 @@ const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
   const { status, reason, request } = storeRequestStatus;
 
   const handleResubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setLoading(true);
     setErrorMsg('');
 
@@ -60,9 +61,11 @@ const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
       }
 
       setResubmitted(true);
+      return { success: true };
     } catch (err) {
       console.error('Resubmit error:', err.message);
       setErrorMsg(err.message);
+      return { success: false };
     } finally {
       setLoading(false);
     }
@@ -185,13 +188,14 @@ const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
             </label>
           </div>
 
-          <button 
-            type="submit" 
+          <DashButton 
+            type="submit"
+            onClick={handleResubmit}
             disabled={loading}
             className="w-full mt-6 bg-koara-blue text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            {loading ? 'Resubmitting...' : 'Resubmit Application'}
-          </button>
+            Resubmit Application
+          </DashButton>
         </form>
       </Modal>
     );

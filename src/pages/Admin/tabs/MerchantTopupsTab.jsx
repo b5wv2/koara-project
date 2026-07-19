@@ -4,6 +4,7 @@ import { useAppContext } from '../../../context/AppContext';
 import SectionHeader from '../../../components/ui/SectionHeader';
 import Toggle from '../../../components/ui/Toggle';
 import * as topupService from '../../../services/topupService';
+import DashButton from '../../../components/ui/DashButton';
 
 /**
  * Merchant topups tab — direct top-ups table.
@@ -62,21 +63,25 @@ const MerchantTopupsTab = ({ merchantTopups, topupsLoading, editingTopupPrice, s
                     />
                   </td>
                   <td className="text-right">
-                    <button
+                    <DashButton
                       onClick={async () => {
                         const price = parseFloat(editingTopupPrice[topup.offer_id] ?? topup.selling_price);
-                        if (!price || price <= 0) return alert('Please enter a valid price');
+                        if (!price || price <= 0) {
+                          alert('Please enter a valid price');
+                          return { success: false };
+                        }
                         await topupService.updateTopup(topup.offer_id, storeId, {
                           selling_price: price,
                           is_enabled: topup.is_enabled,
                         });
                         setEditingTopupPrice(prev => { const n = { ...prev }; delete n[topup.offer_id]; return n; });
                         await reloadTopups();
+                        return { success: true };
                       }}
                       className="dash-btn dash-btn-primary"
                     >
                       Save
-                    </button>
+                    </DashButton>
                   </td>
                 </tr>
               );

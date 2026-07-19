@@ -3,6 +3,7 @@ import Modal from './Modal';
 import { Copy, CheckCircle, Loader2 } from 'lucide-react';
 import { API_BASE_URL } from '../services/api';
 import { useAppContext } from '../context/AppContext';
+import DashButton from './ui/DashButton';
 
 const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: propStoreId }) => {
   const { user, store, t } = useAppContext();
@@ -141,27 +142,20 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: p
               {error && <div className="text-xs text-red-400">{error}</div>}
             </div>
 
-            <button
+            <DashButton
               onClick={handleVerify}
+              loading={isVerifying}
               disabled={isVerifying || !!successMsg}
-              className="w-full py-3 rounded-lg font-bold text-white flex justify-center items-center gap-2 transition-all"
-              style={{ 
-                background: (isVerifying || successMsg) ? 'rgba(255,255,255,0.1)' : 'var(--koara-primary)',
-                opacity: (isVerifying || successMsg) ? 0.7 : 1
-              }}
+              className="dash-btn dash-btn-primary w-full py-3 rounded-lg font-bold text-white flex justify-center items-center gap-2 transition-all"
             >
-              {isVerifying ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" /> {t('verifying_payment')}
-                </>
-              ) : successMsg ? (
+              {successMsg ? (
                 <>
                   <CheckCircle size={18} /> {t('verified_payment')}
                 </>
               ) : (
                 t('verify_payment')
               )}
-            </button>
+            </DashButton>
             {isVerifying && (
               <div className="text-xs text-blue-400 mt-2 text-center leading-relaxed">
                 {t('desc_verifying_payment')}<br/>

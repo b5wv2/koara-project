@@ -1,5 +1,6 @@
 import React from 'react';
 import Modal from '../Modal';
+import DashButton from '../ui/DashButton';
 
 /**
  * Admin balance modal — Add/Deduct credit to/from a store.
@@ -10,7 +11,7 @@ const BalanceModal = ({ balanceModal, setBalanceModal, onSubmit }) => (
     onClose={() => setBalanceModal({ isOpen: false, type: '', storeId: null, amount: 0, error: '' })}
     title={`${balanceModal.type === 'add' ? 'Add Credit to' : 'Deduct Credit from'} Store`}
   >
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(e); }} className="space-y-4">
       <p className="text-sm" style={{ color: '#64748B' }}>
         {balanceModal.type === 'add'
           ? 'Enter the amount of credit to add to this store.'
@@ -26,12 +27,13 @@ const BalanceModal = ({ balanceModal, setBalanceModal, onSubmit }) => (
           className="koara-input" dir="ltr"
         />
       </div>
-      <button
+      <DashButton
         type="submit"
+        onClick={onSubmit}
         className={`dash-btn w-full justify-center py-2.5 rounded-xl text-sm font-semibold ${balanceModal.type === 'add' ? 'dash-btn-success' : 'dash-btn-warning'}`}
       >
         Confirm {balanceModal.type === 'add' ? 'Addition' : 'Deduction'}
-      </button>
+      </DashButton>
     </form>
   </Modal>
 );

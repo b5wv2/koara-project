@@ -3,6 +3,7 @@ import { Image as ImageIcon, UploadCloud } from 'lucide-react';
 import Modal from '../Modal';
 import { API_BASE_URL } from '../../services/api';
 import { uploadProductImage } from '../../services/merchantProductService';
+import DashButton from '../ui/DashButton';
 
 /**
  * Customize product modal — merchant product customization with image upload.
@@ -98,13 +99,13 @@ const CustomizeProductModal = ({ customizingProduct, setCustomizingProduct, onSa
 
         <div className="pt-4 flex justify-end gap-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <button onClick={() => setCustomizingProduct(null)} className="dash-btn dash-btn-secondary">Cancel</button>
-          <button
+          <DashButton
             onClick={onSave}
             className="dash-btn dash-btn-primary"
             disabled={customizingProduct.uploading}
           >
             Save Customizations
-          </button>
+          </DashButton>
         </div>
       </div>
     )}

@@ -1,5 +1,6 @@
 import React from 'react';
 import Modal from '../Modal';
+import DashButton from '../ui/DashButton';
 
 /**
  * Delete store modal — admin store deletion confirmation.
@@ -19,9 +20,9 @@ const DeleteStoreModal = ({ deleteModal, setDeleteModal, onConfirm }) => (
         <button onClick={() => setDeleteModal({ isOpen: false, storeId: null, storeName: '' })} className="dash-btn dash-btn-secondary flex-1 justify-center py-2.5 rounded-xl">
           Cancel
         </button>
-        <button onClick={onConfirm} className="dash-btn dash-btn-danger flex-1 justify-center py-2.5 rounded-xl">
+        <DashButton onClick={onConfirm} className="dash-btn dash-btn-danger flex-1 justify-center py-2.5 rounded-xl">
           Delete Permanently
-        </button>
+        </DashButton>
       </div>
     </div>
   </Modal>

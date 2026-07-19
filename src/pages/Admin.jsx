@@ -111,6 +111,11 @@ const AdminDashboard = () => {
 
   // Modals
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [isApprovingReceipt, setIsApprovingReceipt] = useState(false);
+
+  React.useEffect(() => {
+    setIsApprovingReceipt(false);
+  }, [selectedReceipt]);
   const [balanceModal, setBalanceModal] = useState({ isOpen: false, type: '', storeId: null, amount: 0, error: '' });
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, storeId: null, storeName: '' });
   const [merchantActionModal, setMerchantActionModal] = useState({ isOpen: false, type: '', amount: 0 });
@@ -381,6 +386,7 @@ const AdminDashboard = () => {
     } else {
       alert(res.message);
     }
+    return res;
   };
 
   const handleLogout = () => {
@@ -2072,11 +2078,39 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <button onClick={() => handleProcessOrder(selectedReceipt.id, 'rejected', selectedReceipt.order_type === 'topup')} className="dash-btn dash-btn-danger flex-1 justify-center py-2.5 rounded-xl">
+              <button
+                onClick={() => handleProcessOrder(selectedReceipt.id, 'rejected', selectedReceipt.order_type === 'topup')}
+                disabled={isApprovingReceipt}
+                className="dash-btn dash-btn-danger flex-1 justify-center py-2.5 rounded-xl"
+              >
                 Reject Order
               </button>
-              <button onClick={() => handleProcessOrder(selectedReceipt.id, 'approved', selectedReceipt.order_type === 'topup')} className="dash-btn dash-btn-success flex-1 justify-center py-2.5 rounded-xl">
-                Approve Payment
+              <button
+                onClick={async () => {
+                  if (isApprovingReceipt || !selectedReceipt) return;
+                  setIsApprovingReceipt(true);
+                  try {
+                    const res = await handleProcessOrder(selectedReceipt.id, 'approved', selectedReceipt.order_type === 'topup');
+                    if (res && res.success === false) {
+                      setIsApprovingReceipt(false);
+                    }
+                  } catch (err) {
+                    setIsApprovingReceipt(false);
+                  }
+                }}
+                disabled={isApprovingReceipt}
+                className="dash-btn dash-btn-success flex-1 justify-center py-2.5 rounded-xl relative"
+              >
+                {isApprovingReceipt ? (
+                  <>
+                    <span className="opacity-0">Approve Payment</span>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    </div>
+                  </>
+                ) : (
+                  <span>Approve Payment</span>
+                )}
               </button>
             </div>
             <p className="text-xs" style={{ color: '#475569' }}>

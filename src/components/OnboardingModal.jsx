@@ -4,6 +4,7 @@ import OTPInput from './OTPInput';
 import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, Building2, User, ShieldCheck, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
+import DashButton from './ui/DashButton';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -139,8 +140,10 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       setStep(2);
       setCooldown(60);
       setSuccessMsg(t('success_verify_code_sent'));
+      return { success: true };
     } catch (err) {
       setErrorMsg(err.message);
+      return { success: false };
     } finally {
       setLoading(false);
     }
@@ -170,8 +173,10 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
       setSuccessMsg('');
       setStep(3);
+      return { success: true };
     } catch (err) {
       setErrorMsg(err.message);
+      return { success: false };
     } finally {
       setLoading(false);
     }
@@ -302,9 +307,11 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       }
 
       setStep(6);
+      return { success: true };
     } catch (err) {
       console.error('Onboarding submit error:', err.message);
       setErrorMsg(err.message || t('err_conn_failed'));
+      return { success: false };
     } finally {
       setLoading(false);
     }
@@ -387,17 +394,13 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
               {t('verification_locked')} {lockCountdown}
             </div>
           )}
-          <button
+          <DashButton
             onClick={handleSendRegistrationCode}
             disabled={loading || !!globalLockUntil}
             className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-4"
           >
-            {loading ? (
-              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('processing')}</>
-            ) : (
-              <>{t('continue')} <ArrowRight size={14} /></>
-            )}
-          </button>
+            {t('continue')} <ArrowRight size={14} />
+          </DashButton>
         </div>
       )}
 
@@ -421,15 +424,13 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
               {t('verification_locked')} {lockCountdown}
             </div>
           )}
-          <button
-            onClick={handleVerifyRegistrationCode}
+          <DashButton
+            onClick={() => handleVerifyRegistrationCode()}
             disabled={loading || verificationCode.length < 6 || !!globalLockUntil}
             className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-2"
           >
-            {loading ? (
-              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('verifying')}</>
-            ) : t('step_verify')}
-          </button>
+            {t('step_verify')}
+          </DashButton>
           <div className="text-center">
             <button
               type="button"
@@ -547,15 +548,13 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             <button onClick={() => { setErrorMsg(''); setStep(4); }} className="dash-btn dash-btn-secondary py-2.5 px-4 rounded-xl">
               <ArrowLeft size={14} /> {t('back')}
             </button>
-            <button
+            <DashButton
               onClick={handleSubmit}
               disabled={loading || !kycDocument}
               className="dash-btn dash-btn-primary flex-1 justify-center py-2.5 rounded-xl text-sm font-semibold"
             >
-              {loading ? (
-                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('submitting')}</>
-              ) : t('submit_application')}
-            </button>
+              {t('submit_application')}
+            </DashButton>
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Activity } from 'lucide-react';
 import Modal from '../Modal';
 import StatusBadge from '../ui/StatusBadge';
+import DashButton from '../ui/DashButton';
 
 /**
  * Provider mappings modal — manage provider-to-product mappings.
@@ -65,10 +66,13 @@ const ProviderMappingsModal = ({
           <label className="koara-label">Cost Price ($)</label>
           <input type="number" step="0.01" value={newMapping.cost_price} onChange={(e) => setNewMapping({ ...newMapping, cost_price: e.target.value })} className="koara-input" placeholder="0.00" dir="ltr" />
         </div>
-        <button
+        <DashButton
           type="button"
           onClick={async () => {
-            if (!newMapping.provider_id || !newMapping.provider_product_id) return alert('Provider and Product ID are required');
+            if (!newMapping.provider_id || !newMapping.provider_product_id) {
+              alert('Provider and Product ID are required');
+              return { success: false };
+            }
             const result = await onAddMapping(catalogProviderModal.productId, {
               provider_id: parseInt(newMapping.provider_id),
               provider_product_id: newMapping.provider_product_id,
@@ -81,11 +85,12 @@ const ProviderMappingsModal = ({
             } else {
               alert(result.message || 'Failed to add mapping');
             }
+            return result;
           }}
           className="dash-btn dash-btn-primary w-full justify-center py-2.5 rounded-xl text-sm font-semibold"
         >
           Add Mapping
-        </button>
+        </DashButton>
       </div>
     </div>
   </Modal>

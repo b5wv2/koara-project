@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshCw, CheckCircle, XCircle, Banknote, Search } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
+import DashButton from '../../../components/ui/DashButton';
 
 const AdminWithdrawalsTab = () => {
   const { adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal } = useAppContext();
@@ -19,23 +20,25 @@ const AdminWithdrawalsTab = () => {
   };
 
   const handleApprove = async (id) => {
-    if (!window.confirm('Are you sure you want to approve this withdrawal? Ensure you have sent the funds manually.')) return;
+    if (!window.confirm('Are you sure you want to approve this withdrawal? Ensure you have sent the funds manually.')) return { success: false };
     setProcessingId(id);
     const res = await approveWithdrawal(id);
     if (!res.success) {
       alert(res.message || 'Failed to approve withdrawal');
     }
     setProcessingId(null);
+    return res;
   };
 
   const handleReject = async (id) => {
-    if (!window.confirm('Are you sure you want to reject this withdrawal? Funds will be refunded to the merchant wallet.')) return;
+    if (!window.confirm('Are you sure you want to reject this withdrawal? Funds will be refunded to the merchant wallet.')) return { success: false };
     setProcessingId(id);
     const res = await rejectWithdrawal(id);
     if (!res.success) {
       alert(res.message || 'Failed to reject withdrawal');
     }
     setProcessingId(null);
+    return res;
   };
 
   const filteredWithdrawals = adminWithdrawals.filter(w => {
@@ -124,22 +127,22 @@ const AdminWithdrawalsTab = () => {
                     <td className="px-6 py-4 text-right">
                       {w.status === 'pending' ? (
                         <div className="flex items-center justify-end gap-2">
-                          <button
+                          <DashButton
                             onClick={() => handleReject(w.id)}
                             disabled={processingId !== null}
                             className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded transition-colors disabled:opacity-50"
                             title="Reject & Refund"
                           >
                             <XCircle size={20} />
-                          </button>
-                          <button
+                          </DashButton>
+                          <DashButton
                             onClick={() => handleApprove(w.id)}
                             disabled={processingId !== null}
                             className="p-1.5 text-slate-400 hover:text-green-400 hover:bg-green-400/10 rounded transition-colors disabled:opacity-50"
                             title="Mark as Approved"
                           >
                             <CheckCircle size={20} />
-                          </button>
+                          </DashButton>
                         </div>
                       ) : (
                         <span className="text-xs text-slate-500">

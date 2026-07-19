@@ -5,6 +5,7 @@ import { useAppContext } from '../context/AppContext';
 import { Eye, EyeOff, LogIn, ArrowLeft, Mail } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import OTPInput from './OTPInput';
+import DashButton from './ui/DashButton';
 
 const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboarding }) => {
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
   const { login, googleLogin, t } = useAppContext();
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError('');
     setLoading(true);
 
@@ -27,7 +28,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
       if (result.isStoreRequest) {
         onStoreStatus({ status: result.status, reason: result.rejection_reason, request: result.request });
         onClose();
-        return;
+        return result;
       }
       onClose();
       setEmail('');
@@ -36,6 +37,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
     } else {
       setError(result.message);
     }
+    return result;
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
@@ -128,23 +130,15 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
           </div>
         </div>
 
-        <button
+        <DashButton
           type="submit"
+          onClick={handleLogin}
           disabled={loading}
           className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              {t('signing_in')}
-            </>
-          ) : (
-            <>
-              <LogIn size={15} />
-              {t('signin')}
-            </>
-          )}
-        </button>
+          <LogIn size={16} />
+          {t('sign_in')}
+        </DashButton>
 
         {/* Temporarily hidden Google Login
         <div className="relative">

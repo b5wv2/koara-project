@@ -94,7 +94,7 @@ const AdminPage = () => {
   const handleLogout = () => { logout(); navigate('/'); };
 
   const handleAdminBalanceUpdate = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setBalanceModal(prev => ({ ...prev, error: '' }));
     const amount = Number(balanceModal.amount);
     const result = balanceModal.type === 'add'
@@ -107,6 +107,7 @@ const AdminPage = () => {
     } else {
       setBalanceModal(prev => ({ ...prev, error: result.message }));
     }
+    return result;
   };
 
   const handleMerchantAction = (e) => {
@@ -126,6 +127,7 @@ const AdminPage = () => {
   const handleProcessOrder = async (id, action, isTopup = false) => {
     const res = await updateOrderStatus(id, storeId, action, isTopup);
     if (res.success) { setSelectedReceipt(null); } else { alert(res.message); }
+    return res;
   };
 
   const handleApproveKyc = async (kycStoreId) => {
@@ -135,10 +137,11 @@ const AdminPage = () => {
       fetchPendingKyc().then(data => setKycApplications(data || []));
       fetchAllStoresAdmin();
     } else { alert('Failed to approve application.'); }
+    return { success: !!success };
   };
 
   const handleRejectKycSubmit = async (e) => {
-    if (e) e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     const success = await rejectKyc(rejectKycModal.storeId, rejectReason);
     if (success) {
       alert('Application rejected successfully.');
@@ -146,6 +149,7 @@ const AdminPage = () => {
       setRejectReason('');
       fetchPendingKyc().then(data => setKycApplications(data || []));
     } else { alert('Failed to reject application.'); }
+    return { success: !!success };
   };
 
   const handleSaveCustomization = async () => {
@@ -159,7 +163,11 @@ const AdminPage = () => {
       });
       await fetchMerchantPlatformProducts(storeId);
       setCustomizingProduct(null);
-    } catch { alert('Failed to save custom changes'); }
+      return { success: true };
+    } catch {
+      alert('Failed to save custom changes');
+      return { success: false };
+    }
   };
 
   const handleDeleteStore = async () => {
@@ -169,6 +177,7 @@ const AdminPage = () => {
       if (activeTab === 'merchants' || activeTab === 'dashboard') fetchAllStoresAdmin();
       if (activeTab === 'ledger' || activeTab === 'dashboard') fetchGlobalTransactions();
     } else { alert(res.message || 'Failed to delete store'); }
+    return res;
   };
 
   // ── Render ──
@@ -181,7 +190,7 @@ const AdminPage = () => {
         case 'withdrawals': return <AdminWithdrawalsTab />;
         case 'merchants': return <AdminMerchantsTab onAddBalance={(id) => setBalanceModal({ isOpen: true, type: 'add', storeId: id, amount: '' })} onDeductBalance={(id) => setBalanceModal({ isOpen: true, type: 'deduct', storeId: id, amount: '' })} onDeleteStore={(id, name) => setDeleteModal({ isOpen: true, storeId: id, storeName: name })} />;
         case 'ledger': return <AdminLedgerTab />;
-        case 'catalog': return <AdminCatalogTab onCreateProduct={() => { setNewProduct({ name: '', category: '', description: '' }); setCatalogCreateModal(true); }} onEditProduct={(p) => setCatalogEditModal({ isOpen: true, product: { ...p } })} onDeactivateProduct={async (id) => { await deactivatePlatformProduct(id); }} onManageProviders={async (p) => { const mappings = await fetchProviderMappings(p.id); setCatalogProviderModal({ isOpen: true, productId: p.id, productName: p.name, mappings }); }} />;
+        case 'catalog': return <AdminCatalogTab onCreateProduct={() => { setNewProduct({ name: '', category: '', description: '' }); setCatalogCreateModal(true); }} onEditProduct={(p) => setCatalogEditModal({ isOpen: true, product: { ...p } })} onDeactivateProduct={async (id) => { await deactivatePlatformProduct(id); return { success: true }; }} onManageProviders={async (p) => { const mappings = await fetchProviderMappings(p.id); setCatalogProviderModal({ isOpen: true, productId: p.id, productName: p.name, mappings }); return { success: true }; }} />;
         default: return null;
       }
     } else {

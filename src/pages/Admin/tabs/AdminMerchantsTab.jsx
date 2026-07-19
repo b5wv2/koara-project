@@ -4,6 +4,7 @@ import { useAppContext } from '../../../context/AppContext';
 import SectionHeader from '../../../components/ui/SectionHeader';
 import StatusBadge from '../../../components/ui/StatusBadge';
 import Toggle from '../../../components/ui/Toggle';
+import DashButton from '../../../components/ui/DashButton';
 
 /**
  * Admin merchants tab — store management table.
@@ -47,15 +48,15 @@ const AdminMerchantsTab = ({ onAddBalance, onDeductBalance, onDeleteStore }) => 
                 </td>
                 <td className="text-right">
                   <div className="flex justify-end gap-2">
-                    <button onClick={() => onAddBalance(merchant.id)} className="dash-btn dash-btn-success">
+                    <DashButton onClick={() => onAddBalance(merchant.id)} className="dash-btn dash-btn-success">
                       <ArrowUpRight size={13} /> Add
-                    </button>
-                    <button onClick={() => onDeductBalance(merchant.id)} className="dash-btn dash-btn-warning">
+                    </DashButton>
+                    <DashButton onClick={() => onDeductBalance(merchant.id)} className="dash-btn dash-btn-warning">
                       <ArrowDownRight size={13} /> Deduct
-                    </button>
-                    <button onClick={() => onDeleteStore(merchant.id, merchant.name)} className="dash-btn dash-btn-danger">
+                    </DashButton>
+                    <DashButton onClick={() => onDeleteStore(merchant.id, merchant.name)} className="dash-btn dash-btn-danger">
                       <Trash2 size={13} /> Delete
-                    </button>
+                    </DashButton>
                   </div>
                 </td>
               </tr>

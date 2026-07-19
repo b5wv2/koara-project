@@ -1,5 +1,6 @@
 import React from 'react';
 import Modal from '../Modal';
+import DashButton from '../ui/DashButton';
 
 /**
  * Reject KYC modal — admin KYC rejection with reason.
@@ -26,9 +27,9 @@ const RejectKycModal = ({ rejectKycModal, setRejectKycModal, rejectReason, setRe
         <button onClick={() => setRejectKycModal({ isOpen: false, storeId: null })} className="dash-btn dash-btn-secondary px-4 py-2.5 rounded-xl">
           Cancel
         </button>
-        <button onClick={onSubmit} className="dash-btn dash-btn-danger flex-1 justify-center py-2.5 rounded-xl">
+        <DashButton onClick={onSubmit} className="dash-btn dash-btn-danger flex-1 justify-center py-2.5 rounded-xl">
           Confirm Rejection
-        </button>
+        </DashButton>
       </div>
     </div>
   </Modal>

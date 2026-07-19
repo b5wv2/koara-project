@@ -3,6 +3,7 @@ import { Package, Activity } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import SectionHeader from '../../../components/ui/SectionHeader';
 import StatusBadge from '../../../components/ui/StatusBadge';
+import DashButton from '../../../components/ui/DashButton';
 
 /**
  * Admin catalog tab — platform product catalog + providers table.
@@ -16,9 +17,9 @@ const AdminCatalogTab = ({ onCreateProduct, onEditProduct, onDeactivateProduct, 
         <SectionHeader
           title="Platform Product Catalog"
           action={
-            <button onClick={onCreateProduct} className="dash-btn dash-btn-primary">
+            <DashButton onClick={onCreateProduct} className="dash-btn dash-btn-primary">
               + New Product
-            </button>
+            </DashButton>
           }
         />
         <div className="overflow-x-auto">
@@ -41,15 +42,15 @@ const AdminCatalogTab = ({ onCreateProduct, onEditProduct, onDeactivateProduct, 
                   <td className="cell-primary">{product.name}</td>
                   <td style={{ color: '#94A3B8' }}>{product.category}</td>
                   <td>
-                    <button onClick={() => onManageProviders(product)} className="dash-btn dash-btn-secondary">
+                    <DashButton onClick={() => onManageProviders(product)} className="dash-btn dash-btn-secondary">
                       Manage Providers
-                    </button>
+                    </DashButton>
                   </td>
                   <td className="text-right">
                     <div className="flex justify-end gap-2">
-                      <button onClick={() => onEditProduct(product)} className="dash-btn dash-btn-secondary">Edit</button>
+                      <DashButton onClick={() => onEditProduct(product)} className="dash-btn dash-btn-secondary">Edit</DashButton>
                       {product.is_active && (
-                        <button onClick={() => onDeactivateProduct(product.id)} className="dash-btn dash-btn-danger">Deactivate</button>
+                        <DashButton onClick={() => onDeactivateProduct(product.id)} className="dash-btn dash-btn-danger">Deactivate</DashButton>
                       )}
                     </div>
                   </td>

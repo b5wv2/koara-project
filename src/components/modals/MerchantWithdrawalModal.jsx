@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import { useAppContext } from '../../context/AppContext';
+import DashButton from '../ui/DashButton';
 
 /**
  * Merchant Withdrawal Modal - specific to manual withdrawals.
@@ -126,13 +127,15 @@ const MerchantWithdrawalModal = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        <button 
+        <DashButton 
           type="submit" 
+          onClick={handleSubmit}
+          loading={isSubmitting}
           disabled={isSubmitting || success !== ''}
           className="dash-btn dash-btn-primary w-full justify-center py-2.5 rounded-xl text-sm font-semibold mt-6"
         >
-          {isSubmitting ? 'Processing...' : 'Confirm Withdrawal'}
-        </button>
+          Confirm Withdrawal
+        </DashButton>
       </form>
     </Modal>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Modal from './Modal';
 import { Loader2, ExternalLink, ShieldCheck, CheckCircle, AlertCircle, Check } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import DashButton from './ui/DashButton';
 
 const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
   const [loading, setLoading] = useState(true);
@@ -212,7 +213,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
             </div>
 
             <div className="w-full space-y-2.5">
-              <button
+              <DashButton
                 onClick={() => openPaymentWindow(invoiceUrl)}
                 className="dash-btn dash-btn-primary w-full justify-center py-3 gap-2 transition-all duration-300"
                 style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #7C3AED 100%)' }}
@@ -226,7 +227,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
                 }}
               >
                 <ExternalLink size={16} /> {t('open_payment_again')}
-              </button>
+              </DashButton>
               <button
                 onClick={handleCancel}
                 className="dash-btn dash-btn-secondary w-full justify-center py-3 transition-all duration-300"

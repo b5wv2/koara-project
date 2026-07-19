@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import OTPInput from './OTPInput';
+import DashButton from './ui/DashButton';
 import { useAppContext } from '../context/AppContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -56,7 +57,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
   }, [globalLockUntil]);
 
   const handleRequestCode = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!email) {
       setErrorMsg(t('err_enter_email'));
       return;
@@ -84,8 +85,10 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
       setStep(2);
       setCooldown(60);
       setSuccessMsg(data.message || t('success_code_sent'));
+      return { success: true };
     } catch (err) {
       setErrorMsg(err.message);
+      return { success: false };
     } finally {
       setLoading(false);
     }
@@ -149,15 +152,17 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
       }
       
       setStep(3);
+      return { success: true };
     } catch (err) {
       setErrorMsg(err.message);
+      return { success: false };
     } finally {
       setLoading(false);
     }
   };
 
   const handleResetPassword = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (password.length < 8) {
       setErrorMsg(t('err_pass_length'));
       return;
@@ -182,8 +187,10 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
       if (!response.ok) throw new Error(data.error || t('err_failed_reset'));
       
       setStep(4);
+      return { success: true };
     } catch (err) {
       setErrorMsg(err.message);
+      return { success: false };
     } finally {
       setLoading(false);
     }
@@ -232,9 +239,9 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
               {t('verification_locked')} {lockCountdown}
             </div>
           )}
-          <button disabled={loading || !!globalLockUntil} type="submit" className="w-full mt-4 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50">
-            {loading ? t('sending') : t('send_verification_code')}
-          </button>
+          <DashButton onClick={handleRequestCode} disabled={loading || !!globalLockUntil} type="submit" className="dash-btn dash-btn-primary w-full mt-4 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50">
+            {t('send_verification_code')}
+          </DashButton>
         </form>
       )}
 
@@ -255,14 +262,14 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
               {t('verification_locked')} {lockCountdown}
             </div>
           )}
-          <button 
+          <DashButton 
             onClick={() => handleVerifyCode()}
             disabled={loading || code.length < 6 || !!globalLockUntil} 
             type="button" 
-            className="w-full mt-6 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="dash-btn dash-btn-primary w-full mt-6 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
           >
-            {loading ? t('verifying') : t('verify_code')}
-          </button>
+            {t('verify_code')}
+          </DashButton>
           
           <div className="mt-4 text-center">
             <button 
@@ -304,9 +311,9 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
               minLength={8}
             />
           </div>
-          <button disabled={loading} type="submit" className="w-full mt-4 bg-koara-blue text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
-            {loading ? t('resetting') : t('reset_password_btn')}
-          </button>
+          <DashButton onClick={handleResetPassword} disabled={loading} type="submit" className="dash-btn dash-btn-primary w-full mt-4 bg-koara-blue text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
+            {t('reset_password_btn')}
+          </DashButton>
         </form>
       )}
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, RotateCcw, Monitor, Smartphone, UploadCloud, Layout, Type, Palette, LayoutGrid, Lock, ShoppingCart } from 'lucide-react';
+import DashButton from './ui/DashButton';
 
 const PRESETS = {
   default: {
@@ -68,9 +69,11 @@ const MerchantCustomizationTab = () => {
     setHasChanges(isChanged);
   }, [theme, originalTheme]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    await new Promise(resolve => setTimeout(resolve, 400));
     setOriginalTheme(theme);
     setHasChanges(false);
+    return { success: true };
   };
 
   const handleDiscard = () => {
@@ -104,9 +107,9 @@ const MerchantCustomizationTab = () => {
           {hasChanges && <span className="text-amber-400 text-xs font-medium animate-pulse flex items-center gap-1.5 mr-2"><div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div> Unsaved Changes</span>}
           <button onClick={handleReset} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium transition-colors">Reset</button>
           <button onClick={handleDiscard} disabled={!hasChanges} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-colors">Discard</button>
-          <button onClick={handleSave} disabled={!hasChanges} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-lg shadow-blue-900/20">
+          <DashButton onClick={handleSave} disabled={!hasChanges} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-lg shadow-blue-900/20">
             <Save size={14} /> Save
-          </button>
+          </DashButton>
         </div>
       </div>
 

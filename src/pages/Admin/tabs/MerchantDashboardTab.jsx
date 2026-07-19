@@ -3,6 +3,7 @@ import { Package, Image as ImageIcon } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import SectionHeader from '../../../components/ui/SectionHeader';
 import StatusBadge from '../../../components/ui/StatusBadge';
+import DashButton from '../../../components/ui/DashButton';
 
 /**
  * Merchant dashboard tab — wallet card + stats + orders queue.
@@ -23,12 +24,12 @@ const MerchantDashboardTab = ({ onAddFunds, onWithdraw, onInspectReceipt }) => {
               ${merchants.find(m => m.id === storeId)?.balance.toFixed(2) || '0.00'}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={onAddFunds} className="dash-btn dash-btn-secondary justify-center py-2.5 rounded-xl text-xs font-semibold">
+              <DashButton onClick={onAddFunds} className="dash-btn dash-btn-secondary justify-center py-2.5 rounded-xl text-xs font-semibold">
                 Add Funds
-              </button>
-              <button onClick={onWithdraw} className="dash-btn dash-btn-primary justify-center py-2.5 rounded-xl text-xs font-semibold">
+              </DashButton>
+              <DashButton onClick={onWithdraw} className="dash-btn dash-btn-primary justify-center py-2.5 rounded-xl text-xs font-semibold">
                 Withdraw
-              </button>
+              </DashButton>
             </div>
           </div>
         </div>
@@ -73,9 +74,9 @@ const MerchantDashboardTab = ({ onAddFunds, onWithdraw, onInspectReceipt }) => {
                 </div>
               </div>
               {order.status === 'pending' && (
-                <button onClick={() => onInspectReceipt(order)} className="dash-btn dash-btn-secondary">
+                <DashButton onClick={() => onInspectReceipt(order)} className="dash-btn dash-btn-secondary">
                   <ImageIcon size={13} /> Inspect Receipt
-                </button>
+                </DashButton>
               )}
             </div>
           ))
