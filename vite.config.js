@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import sitemap from 'vite-plugin-sitemap'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -10,6 +11,9 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    sitemap({
+      hostname: 'https://getkoara.com'
+    })
   ],
 
   resolve: {
