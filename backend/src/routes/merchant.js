@@ -23,6 +23,96 @@ const resolveMerchantStore = async (req, res, next) => {
   }
 };
 
+// --- Store Settings & Customization ---
+
+// PUT /api/merchant/store
+router.put('/store', resolveMerchantStore, async (req, res) => {
+  const { logo_url, store_name, bank_name, account_name, account_no } = req.body;
+  const storeId = req.merchantStoreId;
+
+  try {
+    const currentRes = await db.query('SELECT * FROM stores WHERE id = $1', [storeId]);
+    if (currentRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Store not found or unauthorized' });
+    }
+    const current = currentRes.rows[0];
+
+    const newLogoUrl = logo_url !== undefined ? logo_url : current.logo_url;
+    const newStoreName = store_name !== undefined ? store_name : current.store_name;
+    const newBankName = bank_name !== undefined ? bank_name : current.bank_name;
+    const newAccountName = account_name !== undefined ? account_name : current.account_name;
+    const newAccountNo = account_no !== undefined ? account_no : current.account_no;
+
+    const result = await db.query(
+      `UPDATE stores 
+       SET logo_url = $1, store_name = $2, bank_name = $3, account_name = $4, account_no = $5
+       WHERE id = $6 RETURNING *`,
+      [newLogoUrl, newStoreName, newBankName, newAccountName, newAccountNo, storeId]
+    );
+    res.json({ success: true, store: result.rows[0] });
+  } catch (err) {
+    console.error('Error updating store:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/merchant/store/customization
+router.get('/store/customization', resolveMerchantStore, async (req, res) => {
+  const storeId = req.merchantStoreId;
+  try {
+    const storeRes = await db.query('SELECT customization, logo_url, store_name FROM stores WHERE id = $1', [storeId]);
+    if (storeRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Store not found' });
+    }
+    const store = storeRes.rows[0];
+    const subscriptionService = require('../services/subscriptionService');
+    const sub = await subscriptionService.ensureSubscription(storeId);
+    const isPlusActive = sub.plan === 'plus' && sub.status === 'active';
+
+    res.json({
+      success: true,
+      customization: store.customization || {},
+      logo_url: store.logo_url || null,
+      store_name: store.store_name,
+      isPlusActive
+    });
+  } catch (err) {
+    console.error('Error fetching store customization:', err);
+    res.status(500).json({ error: 'Internal server error fetching store customization' });
+  }
+});
+
+// PUT /api/merchant/store/customization
+router.put('/store/customization', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
+  const storeId = req.merchantStoreId;
+  const { customization, logo_url } = req.body;
+
+  try {
+    const currentRes = await db.query('SELECT customization, logo_url FROM stores WHERE id = $1', [storeId]);
+    if (currentRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Store not found' });
+    }
+    const current = currentRes.rows[0];
+    const newCustomization = customization && typeof customization === 'object' ? customization : (current.customization || {});
+    const newLogoUrl = logo_url !== undefined ? logo_url : current.logo_url;
+
+    const result = await db.query(
+      `UPDATE stores SET customization = $1, logo_url = $2 WHERE id = $3 RETURNING *`,
+      [newCustomization, newLogoUrl, storeId]
+    );
+
+    res.json({
+      success: true,
+      customization: result.rows[0].customization || {},
+      logo_url: result.rows[0].logo_url,
+      store: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Error updating store customization:', err);
+    res.status(500).json({ error: 'Internal server error updating store customization' });
+  }
+});
+
 // --- Categories ---
 
 // POST /api/merchant/categories

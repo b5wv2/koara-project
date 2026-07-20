@@ -10,55 +10,87 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 // one place so every early-return branch below can reuse the same block.
 // All colors here are pulled from the palette already used throughout this
 // file (#020617, #3B82F6, slate grays) — nothing new is introduced.
-const ScopedStyles = () => (
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap');
+// Scoped styles: a distinctive display face for headings, a subtle themed
+// scrollbar, and the entrance/shimmer motion used across the page. Kept in
+// one place so every early-return branch below can reuse the same block.
+const ScopedStyles = ({ custom = {} }) => {
+  const primaryColor = custom.primaryColor || '#3B82F6';
+  const secondaryColor = custom.secondaryColor || '#1E293B';
+  const bgColor = custom.bgColor || '#020617';
+  const textColor = custom.textColor || '#FFFFFF';
+  const fontFamily = custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif";
+  const borderRadius = custom.borderRadius || '16px';
+  const animations = custom.animations || 'smooth';
 
-    .sf-display { font-family: 'Sora', ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.01em; }
+  return (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Orbitron:wght@600;700;800&display=swap');
 
-    .sf-root { scrollbar-width: thin; scrollbar-color: rgba(59,130,246,0.35) transparent; }
-    .sf-root::-webkit-scrollbar { width: 10px; height: 10px; }
-    .sf-root::-webkit-scrollbar-track { background: transparent; }
-    .sf-root::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.25); border-radius: 999px; border: 2px solid #020617; }
-    .sf-root::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.4); }
+      :root {
+        --sf-primary: ${primaryColor};
+        --sf-secondary: ${secondaryColor};
+        --sf-bg: ${bgColor};
+        --sf-text: ${textColor};
+        --sf-font: ${fontFamily};
+        --sf-radius: ${borderRadius};
+      }
 
-    @keyframes sf-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .sf-rise { animation: sf-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+      .sf-display { font-family: var(--sf-font), ui-sans-serif, system-ui, sans-serif !important; letter-spacing: -0.01em; }
 
-    @keyframes sf-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-    .sf-skeleton {
-      background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 37%, rgba(255,255,255,0.03) 63%);
-      background-size: 200% 100%;
-      animation: sf-shimmer 1.6s ease-in-out infinite;
-    }
+      .sf-root { 
+        scrollbar-width: thin; 
+        scrollbar-color: var(--sf-primary) transparent; 
+        background: var(--sf-bg) !important;
+        color: var(--sf-text) !important;
+        font-family: var(--sf-font), ui-sans-serif, system-ui, sans-serif !important;
+      }
+      .sf-root::-webkit-scrollbar { width: 10px; height: 10px; }
+      .sf-root::-webkit-scrollbar-track { background: transparent; }
+      .sf-root::-webkit-scrollbar-thumb { background: var(--sf-primary); opacity: 0.35; border-radius: 999px; border: 2px solid var(--sf-bg); }
+      .sf-root::-webkit-scrollbar-thumb:hover { opacity: 0.5; }
 
-    .sf-focusable:focus-visible {
-      outline: 2px solid #3B82F6;
-      outline-offset: 3px;
-      border-radius: 1rem;
-    }
+      @keyframes sf-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      .sf-rise { animation: ${animations === 'none' ? 'none' : animations === 'fast' ? 'sf-rise 0.25s cubic-bezier(0.16, 1, 0.3, 1) both' : 'sf-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both'}; }
 
-    @media (prefers-reduced-motion: reduce) {
-      .sf-rise { animation: none; }
-      .sf-skeleton { animation: none; }
-    }
-  `}</style>
-);
+      @keyframes sf-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+      .sf-skeleton {
+        background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 37%, rgba(255,255,255,0.03) 63%);
+        background-size: 200% 100%;
+        animation: sf-shimmer 1.6s ease-in-out infinite;
+      }
+
+      .sf-focusable:focus-visible {
+        outline: 2px solid var(--sf-primary);
+        outline-offset: 3px;
+        border-radius: var(--sf-radius);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .sf-rise { animation: none; }
+        .sf-skeleton { animation: none; }
+      }
+    `}</style>
+  );
+};
 
 // Fixed ambient backdrop shared by every screen of the storefront.
-const AmbientBackground = () => (
-  <div
-    className="fixed inset-0 pointer-events-none z-0"
-    style={{ background: 'radial-gradient(ellipse 80% 40% at 50% -10%, rgba(37,99,235,0.08) 0%, transparent 70%)' }}
-    aria-hidden="true"
-  />
-);
+const AmbientBackground = ({ custom = {} }) => {
+  const primaryColor = custom.primaryColor || '#2563EB';
+  return (
+    <div
+      className="fixed inset-0 pointer-events-none z-0"
+      style={{ background: `radial-gradient(ellipse 80% 40% at 50% -10%, ${primaryColor}18 0%, transparent 70%)` }}
+      aria-hidden="true"
+    />
+  );
+};
 
 const Storefront = ({ store }) => {
   const { t, language, setLanguage, createOrder } = useAppContext();
 
   // Strictly use the ID from the dynamically loaded store
   const storeId = store.id;
+  const custom = store?.customization || {};
 
   const [catalog, setCatalog] = useState({ categories: [], products: [], promos: [], platform_products: [] });
   const [topupsCatalogs, setTopupsCatalogs] = useState([]);
@@ -126,7 +158,7 @@ const Storefront = ({ store }) => {
   const merchant = store ? {
     id: store.id,
     name: store.store_name,
-    logoUrl: store.logo_url,
+    logoUrl: store.logo_url || store.logoUrl || null,
     active: store.status === 'active',
     bankName: store.bank_name,
     bankAccountName: store.account_name,
@@ -137,14 +169,14 @@ const Storefront = ({ store }) => {
 
   if (!merchant || !merchant.active) {
     return (
-      <div className="sf-root min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: '#020617' }}>
-        <ScopedStyles />
-        <AmbientBackground />
-        <div className="relative z-10 max-w-md w-full rounded-2xl p-8 text-center sf-rise" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="sf-root min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: custom.bgColor || '#020617', color: custom.textColor || '#FFFFFF', fontFamily: custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif" }}>
+        <ScopedStyles custom={custom} />
+        <AmbientBackground custom={custom} />
+        <div className="relative z-10 max-w-md w-full p-8 text-center sf-rise" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: custom.borderRadius || '16px' }}>
           <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <X size={28} style={{ color: '#f87171' }} />
           </div>
-          <h2 className="sf-display text-xl font-bold text-white mb-2">
+          <h2 className="sf-display text-xl font-bold mb-2" style={{ color: custom.textColor || '#FFFFFF' }}>
             {language === 'en' ? 'Store Suspended' : 'تم إيقاف المتجر'}
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed">
@@ -159,12 +191,12 @@ const Storefront = ({ store }) => {
 
   if (loadingCatalog) {
     return (
-      <div className="sf-root min-h-screen flex flex-col" style={{ background: '#020617' }}>
-        <ScopedStyles />
-        <AmbientBackground />
+      <div className="sf-root min-h-screen flex flex-col" style={{ background: custom.bgColor || '#020617', color: custom.textColor || '#FFFFFF', fontFamily: custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif" }}>
+        <ScopedStyles custom={custom} />
+        <AmbientBackground custom={custom} />
         <header className="relative z-10 py-4 px-4 sm:px-8 flex justify-between items-center shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl sf-skeleton" />
+            <div className="w-9 h-9 sf-skeleton" style={{ borderRadius: custom.borderRadius || '12px' }} />
             <div className="w-28 h-4 rounded sf-skeleton" />
           </div>
         </header>
@@ -176,7 +208,7 @@ const Storefront = ({ store }) => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div key={i} className="overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: custom.borderRadius || '16px' }}>
                   <div className="h-32 sf-skeleton" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }} />
                   <div className="p-5 space-y-2">
                     <div className="w-2/3 h-3.5 rounded sf-skeleton" />
@@ -188,7 +220,7 @@ const Storefront = ({ store }) => {
           </div>
         </main>
         <div className="relative z-10 flex items-center justify-center gap-2 pb-8 text-xs font-medium" style={{ color: '#475569' }}>
-          <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: '#3B82F6' }} />
+          <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: custom.primaryColor || '#3B82F6' }} />
           {language === 'en' ? 'Loading catalog…' : 'جارٍ تحميل الكتالوج…'}
         </div>
       </div>
@@ -197,9 +229,9 @@ const Storefront = ({ store }) => {
 
   if (catalogError) {
     return (
-      <div className="sf-root min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: '#020617' }}>
-        <ScopedStyles />
-        <AmbientBackground />
+      <div className="sf-root min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: custom.bgColor || '#020617', color: custom.textColor || '#FFFFFF', fontFamily: custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif" }}>
+        <ScopedStyles custom={custom} />
+        <AmbientBackground custom={custom} />
         <div className="relative z-10 sf-rise">
           <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <X size={24} style={{ color: '#f87171' }} />
@@ -346,10 +378,11 @@ const Storefront = ({ store }) => {
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       role="button"
       tabIndex={0}
-      className="sf-focusable group rounded-2xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300"
+      className="sf-focusable group overflow-hidden cursor-pointer flex flex-col transition-all duration-300"
       style={{
         background: 'rgba(255,255,255,0.03)',
         border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: custom.borderRadius || '16px'
       }}
       onMouseEnter={e => {
         e.currentTarget.style.borderColor = `${color}55`;
@@ -392,7 +425,7 @@ const Storefront = ({ store }) => {
       {/* Info */}
       <div className="p-5 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="sf-display font-bold text-white text-sm truncate">{name}</h3>
+          <h3 className="sf-display font-bold text-white text-sm truncate" style={{ color: custom.textColor || '#FFFFFF' }}>{name}</h3>
           <div className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: `${color}14`, color }}>
             {productCount} {productCount === 1 ? (language === 'en' ? 'item' : 'منتج') : (language === 'en' ? 'items' : 'منتجات')}
           </div>
@@ -413,13 +446,13 @@ const Storefront = ({ store }) => {
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
         role="button"
         tabIndex={0}
-        className="sf-focusable group rounded-2xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300"
-        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+        className="sf-focusable group overflow-hidden cursor-pointer flex flex-col transition-all duration-300"
+        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: custom.borderRadius || '16px' }}
         onMouseEnter={e => {
-          e.currentTarget.style.borderColor = 'rgba(59,130,246,0.35)';
+          e.currentTarget.style.borderColor = custom.primaryColor || 'rgba(59,130,246,0.35)';
           e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
           e.currentTarget.style.transform = 'translateY(-3px)';
-          e.currentTarget.style.boxShadow = '0 20px 40px -12px rgba(37,99,235,0.25), 0 8px 20px -10px rgba(0,0,0,0.5)';
+          e.currentTarget.style.boxShadow = `0 20px 40px -12px ${custom.primaryColor || 'rgba(37,99,235,0.25)'}, 0 8px 20px -10px rgba(0,0,0,0.5)`;
         }}
         onMouseLeave={e => {
           e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
@@ -432,7 +465,7 @@ const Storefront = ({ store }) => {
         <div className="aspect-video flex items-center justify-center p-6 relative overflow-hidden" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
           <div
             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            style={{ background: 'radial-gradient(circle at 50% 20%, rgba(59,130,246,0.1) 0%, transparent 70%)' }}
+            style={{ background: `radial-gradient(circle at 50% 20%, ${custom.primaryColor || 'rgba(59,130,246,0.1)'}18 0%, transparent 70%)` }}
             aria-hidden="true"
           />
           {product.image_url || product.image ? (
@@ -443,7 +476,7 @@ const Storefront = ({ store }) => {
           {hasDiscount && (
             <div
               className="absolute top-0 right-0 rtl:right-auto rtl:left-0 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
-              style={{ background: '#ef4444', borderBottomLeftRadius: '0.75rem', borderBottomRightRadius: language === 'ar' ? '0.75rem' : 0 }}
+              style={{ background: custom.primaryColor || '#ef4444', borderBottomLeftRadius: '0.75rem', borderBottomRightRadius: language === 'ar' ? '0.75rem' : 0 }}
             >
               {language === 'ar' ? 'تخفيض' : 'Sale'}
             </div>
@@ -452,21 +485,21 @@ const Storefront = ({ store }) => {
 
         {/* Info */}
         <div className="p-4 flex-1 flex flex-col">
-          <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 mb-3 group-hover:text-blue-300 transition-colors">
+          <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 mb-3 group-hover:text-blue-300 transition-colors" style={{ color: custom.textColor || '#FFFFFF' }}>
             {product.name}
           </h3>
           <div className="mt-auto flex items-end justify-between gap-2">
             {product.selling_price ? (
-              <span className="sf-display font-black text-white text-lg">${parseFloat(product.selling_price).toFixed(2)}</span>
+              <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.selling_price).toFixed(2)}</span>
             ) : product.sale_price !== null && product.sale_price !== undefined ? (
               <div className="flex flex-col">
                 <span className="text-xs line-through mb-0.5" style={{ color: '#475569' }}>${parseFloat(product.price).toFixed(2)}</span>
-                <span className="sf-display font-black text-white text-lg">${parseFloat(product.sale_price).toFixed(2)}</span>
+                <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.sale_price).toFixed(2)}</span>
               </div>
             ) : (
-              <span className="sf-display font-black text-white text-lg">${parseFloat(product.price).toFixed(2)}</span>
+              <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.price).toFixed(2)}</span>
             )}
-            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors" style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA' }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors" style={{ background: `${custom.primaryColor || '#3B82F6'}20`, color: custom.primaryColor || '#60A5FA' }}>
               {language === 'ar' ? <ArrowLeft size={12} /> : <ArrowRight size={12} />}
             </div>
           </div>
@@ -476,15 +509,15 @@ const Storefront = ({ store }) => {
   };
 
   return (
-    <div className="sf-root min-h-screen flex flex-col" style={{ background: '#020617' }}>
-      <ScopedStyles />
-      <AmbientBackground />
+    <div className="sf-root min-h-screen flex flex-col" style={{ background: custom.bgColor || '#020617', color: custom.textColor || '#FFFFFF', fontFamily: custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif" }}>
+      <ScopedStyles custom={custom} />
+      <AmbientBackground custom={custom} />
 
       {/* ── Store Header ── */}
       <header
         className="sticky top-0 z-40 py-3.5 px-4 sm:px-8 flex justify-between items-center shrink-0"
         style={{
-          background: 'rgba(2,6,23,0.85)',
+          background: `${custom.bgColor || '#020617'}D9`,
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -495,19 +528,19 @@ const Storefront = ({ store }) => {
             <img
               src={merchant.logoUrl}
               alt={merchant.name}
-              className="w-10 h-10 rounded-xl object-cover shrink-0"
-              style={{ border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 0 0 3px rgba(37,99,235,0.08)' }}
+              className="w-10 h-10 object-cover shrink-0"
+              style={{ border: '1px solid rgba(255,255,255,0.12)', boxShadow: `0 0 0 3px ${custom.primaryColor || '#2563EB'}15`, borderRadius: custom.borderRadius || '12px' }}
             />
           ) : (
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-base shrink-0"
-              style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', boxShadow: '0 0 0 3px rgba(37,99,235,0.08)' }}
+              className="w-10 h-10 flex items-center justify-center text-white font-bold text-base shrink-0"
+              style={{ background: `linear-gradient(135deg, ${custom.primaryColor || '#2563EB'}, #4F46E5)`, boxShadow: `0 0 0 3px ${custom.primaryColor || '#2563EB'}15`, borderRadius: custom.borderRadius || '12px' }}
             >
               {merchant.name ? merchant.name.charAt(0) : 'S'}
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="sf-display font-bold text-white text-base tracking-tight truncate">{merchant.name}</h1>
+            <h1 className="sf-display font-bold text-base tracking-tight truncate" style={{ color: custom.textColor || '#FFFFFF' }}>{merchant.name}</h1>
             <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#4ade80' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
               {language === 'en' ? 'Store open' : 'المتجر متاح الآن'}
@@ -517,8 +550,8 @@ const Storefront = ({ store }) => {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-            className="sf-focusable text-xs font-bold tracking-wide transition-colors px-3 py-2 rounded-lg"
-            style={{ color: '#94A3B8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="sf-focusable text-xs font-bold tracking-wide transition-colors px-3 py-2"
+            style={{ color: custom.textColor || '#94A3B8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: custom.borderRadius || '8px' }}
           >
             {language === 'en' ? 'AR' : 'EN'}
           </button>
@@ -528,72 +561,133 @@ const Storefront = ({ store }) => {
       {/* ── Catalog ── */}
       <main className="flex-1 relative z-10 max-w-5xl mx-auto w-full px-4 sm:px-8 py-10 sm:py-14">
         {selectedCategoryId === null ? (
-          /* Category Selection Grid */
-          <div className="space-y-8">
-            <div className="sf-rise">
-              <div className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: '#60A5FA' }}>
-                <ShoppingBag size={12} />
-                {language === 'en' ? 'Catalog' : 'الكتالوج'}
+          /* Category / Catalog Selection Grid */
+          <div className="space-y-12">
+            {custom.showHero !== false && (
+              <div
+                className="sf-rise p-8 sm:p-12 relative overflow-hidden flex flex-col items-center text-center shadow-xl"
+                style={{
+                  backgroundColor: custom.secondaryColor || '#1E293B',
+                  color: custom.textColor || '#FFFFFF',
+                  borderRadius: custom.borderRadius || '16px',
+                  border: `1px solid ${custom.primaryColor || '#3B82F6'}30`
+                }}
+              >
+                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, rgba(255,255,255,0.2) 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+                <h1 className="sf-display text-3xl sm:text-4xl font-extrabold tracking-tight mb-3 relative z-10" style={{ color: custom.textColor || '#FFFFFF' }}>
+                  {language === 'en' ? `Welcome to ${merchant.name}` : `مرحباً بك في ${merchant.name}`}
+                </h1>
+                <p className="text-sm sm:text-base opacity-80 max-w-xl mx-auto mb-6 relative z-10">
+                  {language === 'en' ? 'Discover top-tier digital products, game top-ups, and exclusive offers tailored just for you.' : 'اكتشف أفضل المنتجات الرقمية وشحن الألعاب والعروض الحصرية المصممة خصيصاً لك.'}
+                </p>
               </div>
-              <h2 className="sf-display text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                {language === 'en' ? 'Browse by category' : 'تصفح حسب الفئة'}
-              </h2>
-              <p className="text-sm mt-1.5" style={{ color: '#64748B' }}>
-                {language === 'en' ? 'Pick a category to see what\u2019s in stock' : 'اختر فئة لعرض المنتجات المتوفرة'}
-              </p>
-            </div>
+            )}
 
-            {/* Category grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {catalog.categories.filter(c => storeProducts.some(p => p.category_id === c.id || p.categoryId === c.id)).map((category, idx) => {
-                const count = storeProducts.filter(p => p.category_id === category.id || p.categoryId === category.id).length;
-                return (
-                  <div key={category.id} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
-                    <CategoryCard
-                      onClick={() => setSelectedCategoryId(category.id)}
-                      color={category.color || '#3b82f6'}
-                      logoSrc={category.logo_url || category.logoUrl}
-                      iconText={category.icon_text || category.iconText}
-                      name={category.name}
-                      productCount={count}
-                    />
-                  </div>
-                );
-              })}
+            {custom.showFeaturedProducts !== false && storeProducts.length > 0 && (
+              <div className="sf-rise">
+                <div className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: custom.primaryColor || '#60A5FA' }}>
+                  <ShoppingBag size={12} />
+                  {language === 'en' ? 'Featured Products' : 'منتجات مميزة'}
+                </div>
+                <h2 className="sf-display text-xl sm:text-2xl font-bold tracking-tight mb-4" style={{ color: custom.textColor || '#FFFFFF' }}>
+                  {language === 'en' ? 'Top Picks For You' : 'أفضل الاختيارات لك'}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                  {storeProducts.slice(0, 3).map((product, idx) => (
+                    <ProductCard key={`featured-${product.id}`} product={product} onClick={() => handleProductClick(product)} />
+                  ))}
+                </div>
+              </div>
+            )}
 
-              {platformCategories.map((catName, idx) => {
-                const colors = { 'Free Fire': '#FF4C29', 'PUBG Mobile': '#F2A154' };
-                const color = colors[catName] || '#3b82f6';
-                const count = platformProducts.filter(p => p.category === catName).length;
-                return (
-                  <div key={`platform-${catName}`} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
-                    <CategoryCard
-                      onClick={() => setSelectedCategoryId(catName)}
-                      color={color}
-                      logoSrc={null}
-                      iconText={catName.charAt(0)}
-                      name={catName}
-                      productCount={count}
-                    />
+            {custom.showCategories !== false ? (
+              <div className="space-y-8">
+                <div className="sf-rise">
+                  <div className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: custom.primaryColor || '#60A5FA' }}>
+                    <ShoppingBag size={12} />
+                    {language === 'en' ? 'Catalog' : 'الكتالوج'}
                   </div>
-                );
-              })}
+                  <h2 className="sf-display text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: custom.textColor || '#FFFFFF' }}>
+                    {language === 'en' ? 'Browse by category' : 'تصفح حسب الفئة'}
+                  </h2>
+                  <p className="text-sm mt-1.5" style={{ color: '#64748B' }}>
+                    {language === 'en' ? 'Pick a category to see what\u2019s in stock' : 'اختر فئة لعرض المنتجات المتوفرة'}
+                  </p>
+                </div>
 
-              {topupsCatalogs.map((tc, idx) => (
-                tc.offers.length > 0 && (
-                  <div key={`topups-${tc.category.id}`} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
-                    <CategoryCard
-                      onClick={() => setSelectedCategoryId(tc.category.id)}
-                      color={'#8b5cf6'}
-                      logoSrc={null}
-                      iconText={tc.category.name.charAt(0)}
-                      name={tc.category.name}
-                      productCount={tc.offers.length}
-                    />
+                {/* Category grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                  {catalog.categories.filter(c => storeProducts.some(p => p.category_id === c.id || p.categoryId === c.id)).map((category, idx) => {
+                    const count = storeProducts.filter(p => p.category_id === category.id || p.categoryId === category.id).length;
+                    return (
+                      <div key={category.id} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
+                        <CategoryCard
+                          onClick={() => setSelectedCategoryId(category.id)}
+                          color={category.color || custom.primaryColor || '#3b82f6'}
+                          logoSrc={category.logo_url || category.logoUrl}
+                          iconText={category.icon_text || category.iconText}
+                          name={category.name}
+                          productCount={count}
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {platformCategories.map((catName, idx) => {
+                    const colors = { 'Free Fire': '#FF4C29', 'PUBG Mobile': '#F2A154' };
+                    const color = colors[catName] || custom.primaryColor || '#3b82f6';
+                    const count = platformProducts.filter(p => p.category === catName).length;
+                    return (
+                      <div key={`platform-${catName}`} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
+                        <CategoryCard
+                          onClick={() => setSelectedCategoryId(catName)}
+                          color={color}
+                          logoSrc={null}
+                          iconText={catName.charAt(0)}
+                          name={catName}
+                          productCount={count}
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {topupsCatalogs.map((tc, idx) => (
+                    tc.offers.length > 0 && (
+                      <div key={`topups-${tc.category.id}`} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
+                        <CategoryCard
+                          onClick={() => setSelectedCategoryId(tc.category.id)}
+                          color={'#8b5cf6'}
+                          logoSrc={null}
+                          iconText={tc.category.name.charAt(0)}
+                          name={tc.category.name}
+                          productCount={tc.offers.length}
+                        />
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* If showCategories is false, display all products directly */
+              <div className="space-y-8">
+                <div className="sf-rise">
+                  <div className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: custom.primaryColor || '#60A5FA' }}>
+                    <ShoppingBag size={12} />
+                    {language === 'en' ? 'All Products' : 'جميع المنتجات'}
                   </div>
-                )
-              ))}
-            </div>
+                  <h2 className="sf-display text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: custom.textColor || '#FFFFFF' }}>
+                    {language === 'en' ? 'Explore Our Catalog' : 'تصفح كتالوج المنتجات'}
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                  {storeProducts.map((product, idx) => (
+                    <div key={`all-cat-off-${product.id}`} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
+                      <ProductCard product={product} onClick={() => handleProductClick(product)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* Products Sub-Grid View */
@@ -601,8 +695,8 @@ const Storefront = ({ store }) => {
             <div className="sf-rise flex items-center gap-4">
               <button
                 onClick={() => setSelectedCategoryId(null)}
-                className="sf-focusable w-9 h-9 rounded-xl flex items-center justify-center transition-colors shrink-0"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94A3B8' }}
+                className="sf-focusable w-9 h-9 flex items-center justify-center transition-colors shrink-0"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94A3B8', borderRadius: custom.borderRadius || '12px' }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#94A3B8'; }}
                 aria-label={language === 'en' ? 'Back to catalog' : 'العودة للكتالوج'}
@@ -613,13 +707,13 @@ const Storefront = ({ store }) => {
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold mb-0.5" style={{ color: '#475569' }}>
                   <span>{language === 'en' ? 'Catalog' : 'الكتالوج'}</span>
                   <ChevronDivider language={language} />
-                  <span style={{ color: '#60A5FA' }} className="truncate">
+                  <span style={{ color: custom.primaryColor || '#60A5FA' }} className="truncate">
                     {typeof selectedCategoryId === 'string'
                       ? selectedCategoryId
                       : catalog.categories.find(c => c.id === selectedCategoryId)?.name}
                   </span>
                 </div>
-                <h2 className="sf-display text-xl sm:text-2xl font-bold tracking-tight text-white truncate">
+                <h2 className="sf-display text-xl sm:text-2xl font-bold tracking-tight truncate" style={{ color: custom.textColor || '#FFFFFF' }}>
                   {typeof selectedCategoryId === 'string'
                     ? selectedCategoryId
                     : catalog.categories.find(c => c.id === selectedCategoryId)?.name}
@@ -647,6 +741,41 @@ const Storefront = ({ store }) => {
           </div>
         )}
       </main>
+
+      {/* ── Testimonials Section (when enabled in customization) ── */}
+      {custom.showTestimonials && (
+        <section className="relative z-10 max-w-5xl mx-auto w-full px-4 sm:px-8 pb-14 sf-rise">
+          <div
+            className="p-8 sm:p-10"
+            style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: custom.borderRadius || '16px'
+            }}
+          >
+            <h3 className="sf-display text-lg sm:text-xl font-bold mb-6 text-center" style={{ color: custom.textColor || '#FFFFFF' }}>
+              {language === 'en' ? 'What Our Customers Say' : 'ماذا يقول عملاؤنا'}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {[
+                { name: language === 'en' ? 'Ahmed K.' : 'أحمد ك.', comment: language === 'en' ? 'Fast delivery and very reliable service. Highly recommended!' : 'تسليم سريع وخدمة موثوقة جداً. أنصح بهم بشدة!' },
+                { name: language === 'en' ? 'Sara M.' : 'سارة م.', comment: language === 'en' ? 'Best store for top-ups and digital cards!' : 'أفضل متجر لشحن الألعاب والبطاقات الرقمية!' },
+                { name: language === 'en' ? 'Omar T.' : 'عمر ت.', comment: language === 'en' ? 'Instant delivery and great support team.' : 'تسليم فوري وفريق دعم رائع جداً.' }
+              ].map((t, i) => (
+                <div key={i} className="p-5 flex flex-col justify-between" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: custom.borderRadius || '12px' }}>
+                  <p className="text-sm italic mb-4" style={{ color: '#94A3B8' }}>"{t.comment}"</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs" style={{ background: `${custom.primaryColor || '#3B82F6'}20`, color: custom.primaryColor || '#3B82F6' }}>
+                      {t.name.charAt(0)}
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: custom.textColor || '#FFFFFF' }}>{t.name}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Footer ── */}
       <footer className="relative z-10 w-full py-7" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>

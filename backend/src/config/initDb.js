@@ -24,6 +24,8 @@ const createStoresTableQuery = `
     account_name VARCHAR(255),
     account_no VARCHAR(255),
     balance NUMERIC(10, 2) DEFAULT 0.00,
+    logo_url TEXT,
+    customization JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 `;
@@ -367,6 +369,8 @@ const initializeDatabase = async () => {
 
     // Ensure balance column exists if table was already created without it
     await client.query('ALTER TABLE stores ADD COLUMN IF NOT EXISTS balance NUMERIC(10, 2) DEFAULT 0.00;');
+    await client.query('ALTER TABLE stores ADD COLUMN IF NOT EXISTS logo_url TEXT;');
+    await client.query(`ALTER TABLE stores ADD COLUMN IF NOT EXISTS customization JSONB DEFAULT '{}'::jsonb;`);
 
     // Create wallet_transactions table
     await client.query(createWalletTransactionsTableQuery);

@@ -25,6 +25,8 @@ import MerchantTopupsTab from './tabs/MerchantTopupsTab';
 import MerchantPromotionsTab from './tabs/MerchantPromotionsTab';
 import MerchantSettingsTab from './tabs/MerchantSettingsTab';
 import MerchantPayoutsTab from './tabs/MerchantPayoutsTab';
+import MerchantCustomizationTab from '../../components/MerchantCustomizationTab';
+import PremiumLockOverlay from '../../components/ui/PremiumLockOverlay';
 
 // Modals
 import PaymentProviderModal from '../../components/PaymentProviderModal';
@@ -40,6 +42,8 @@ import CatalogCreateModal from '../../components/modals/CatalogCreateModal';
 import CatalogEditModal from '../../components/modals/CatalogEditModal';
 import ProviderMappingsModal from '../../components/modals/ProviderMappingsModal';
 import MerchantWithdrawalModal from '../../components/modals/MerchantWithdrawalModal';
+import Modal from '../../components/Modal';
+import SubscriptionPaymentModal from '../../components/SubscriptionPaymentModal';
 
 // ── AdminPage ──────────────────────────────────────────────────────
 
@@ -52,6 +56,7 @@ const AdminPage = () => {
     platformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct,
     providers, fetchProviderMappings, addProviderMapping,
     updateMerchantProduct, fetchMerchantPlatformProducts, updateOrderStatus,
+    isPlusActive,
   } = useAppContext();
 
   const navigate = useNavigate();
@@ -76,6 +81,7 @@ const AdminPage = () => {
   const [newProduct, setNewProduct] = useState({ name: '', category: '', description: '' });
   const [newMapping, setNewMapping] = useState({ provider_id: '', provider_product_id: '', cost_price: '' });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   if (!user) return <Navigate to="/" />;
 
@@ -199,6 +205,7 @@ const AdminPage = () => {
         case 'products': return <MerchantProductsTab editingMerchantPrice={merchantDash.editingMerchantPrice} setEditingMerchantPrice={merchantDash.setEditingMerchantPrice} onCustomize={(p) => setCustomizingProduct({ ...p, custom_title: p.custom_title || '', custom_description: p.custom_description || '', custom_image_url: p.custom_image_url || '', previewImage: p.custom_image_url || p.image_url || '' })} />;
         case 'topups': return <MerchantTopupsTab merchantTopups={merchantDash.merchantTopups} topupsLoading={merchantDash.topupsLoading} editingTopupPrice={merchantDash.editingTopupPrice} setEditingTopupPrice={merchantDash.setEditingTopupPrice} reloadTopups={merchantDash.reloadTopups} />;
         case 'promotions': return <MerchantPromotionsTab />;
+        case 'customization': return <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}><MerchantCustomizationTab /></PremiumLockOverlay>;
         case 'settings': return <MerchantSettingsTab />;
         case 'payouts': return <MerchantPayoutsTab />;
         default: return null;
@@ -238,6 +245,9 @@ const AdminPage = () => {
       <CatalogCreateModal isOpen={catalogCreateModal} onClose={() => setCatalogCreateModal(false)} newProduct={newProduct} setNewProduct={setNewProduct} onCreate={createPlatformProduct} />
       <CatalogEditModal catalogEditModal={catalogEditModal} setCatalogEditModal={setCatalogEditModal} onUpdate={updatePlatformProduct} />
       <ProviderMappingsModal catalogProviderModal={catalogProviderModal} setCatalogProviderModal={setCatalogProviderModal} newMapping={newMapping} setNewMapping={setNewMapping} providers={providers} onAddMapping={addProviderMapping} onFetchMappings={fetchProviderMappings} />
+      <Modal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} title="Upgrade to Koara Plus">
+        <SubscriptionPaymentModal onClose={() => setUpgradeModalOpen(false)} />
+      </Modal>
     </div>
   );
 };

@@ -199,7 +199,7 @@ export const AppProvider = ({ children }) => {
                   balance: parseFloat(data.store.balance) || 0.00,
                   active: data.store.status === 'active',
                   subdomain: data.store.subdomain,
-                  logoUrl: null,
+                  logoUrl: data.store.logo_url || null,
                   bankName: data.store.bank_name || 'Chase Bank',
                   bankAccountName: data.store.account_name || `${data.store.store_name} LLC`,
                   bankAccountNumber: data.store.account_no || '1234567890'
@@ -211,6 +211,7 @@ export const AppProvider = ({ children }) => {
                 name: data.store.store_name,
                 active: data.store.status === 'active',
                 subdomain: data.store.subdomain,
+                logoUrl: data.store.logo_url !== undefined ? data.store.logo_url : m.logoUrl,
                 bankName: data.store.bank_name || m.bankName,
                 bankAccountName: data.store.account_name || m.bankAccountName,
                 bankAccountNumber: data.store.account_no || m.bankAccountNumber
@@ -279,7 +280,7 @@ export const AppProvider = ({ children }) => {
                   balance: parseFloat(data.store.balance) || 0.00,
                   active: data.store.status === 'active',
                   subdomain: data.store.subdomain,
-                  logoUrl: null,
+                  logoUrl: data.store.logo_url || null,
                   bankName: data.store.bank_name || 'Chase Bank',
                   bankAccountName: data.store.account_name || `${data.store.store_name} LLC`,
                   bankAccountNumber: data.store.account_no || '1234567890'
@@ -291,6 +292,7 @@ export const AppProvider = ({ children }) => {
                 name: data.store.store_name,
                 active: data.store.status === 'active',
                 subdomain: data.store.subdomain,
+                logoUrl: data.store.logo_url !== undefined ? data.store.logo_url : m.logoUrl,
                 bankName: data.store.bank_name || m.bankName,
                 bankAccountName: data.store.account_name || m.bankAccountName,
                 bankAccountNumber: data.store.account_no || m.bankAccountNumber
@@ -511,9 +513,25 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const updateStoreLogo = (storeId, logoUrl) => {
+  const updateStoreLogo = async (storeId, logoUrl) => {
     setMerchants(prev => prev.map(m => m.id === storeId ? { ...m, logoUrl } : m));
     setStore(prev => prev && prev.id === storeId ? { ...prev, logo_url: logoUrl } : prev);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/merchant/store`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logo_url: logoUrl })
+      });
+      const data = await response.json();
+      if (data.success && data.store) {
+        setStore(data.store);
+      }
+      return data;
+    } catch (err) {
+      console.error('Error updating store logo:', err);
+      return { success: false, message: 'Connection error' };
+    }
   };
 
   const updateCategoryLogo = (categoryId, logoUrl) => {

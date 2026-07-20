@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Trash2, UploadCloud } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import DashButton from '../../../components/ui/DashButton';
+import { uploadProductImage } from '../../../services/merchantProductService';
 
 /**
  * Merchant settings tab — store settings (logo, name, subdomain).
  */
 const MerchantSettingsTab = () => {
   const { user, store, merchants, updateStoreLogo } = useAppContext();
-  const storeId = user?.storeId;
-  const currentMerchant = merchants.find(m => m.id === storeId);
+  const storeId = user?.storeId || store?.id;
+  const currentMerchant = merchants.find(m => m.id === storeId) || {};
+  const currentLogoUrl = store?.logo_url || currentMerchant?.logoUrl || null;
+  const [uploading, setUploading] = useState(false);
 
   return (
     <div className="dash-card p-6">
@@ -26,38 +29,44 @@ const MerchantSettingsTab = () => {
 
           <div className="flex items-center gap-5">
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden shrink-0" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              {currentMerchant?.logoUrl ? (
-                <img src={currentMerchant.logoUrl} alt="Store Logo" className="w-full h-full object-cover" />
+              {currentLogoUrl ? (
+                <img src={currentLogoUrl} alt="Store Logo" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl" style={{ background: 'linear-gradient(135deg,#2563EB,#4F46E5)' }}>
-                  {currentMerchant?.name.charAt(0) || 'S'}
+                  {currentMerchant?.name?.charAt(0) || store?.store_name?.charAt(0) || 'S'}
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
               <div className="flex gap-2">
-                <label className="dash-btn dash-btn-secondary cursor-pointer">
-                  <UploadCloud size={13} /> Upload Image
+                <label className={`dash-btn dash-btn-secondary cursor-pointer ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <UploadCloud size={13} /> {uploading ? 'Uploading...' : 'Upload Image'}
                   <input
-                    type="file" accept="image/*" className="hidden"
-                    onChange={(e) => {
+                    type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden"
+                    disabled={uploading}
+                    onChange={async (e) => {
                       const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => updateStoreLogo(storeId, event.target.result);
-                        reader.readAsDataURL(file);
+                      if (file && storeId) {
+                        setUploading(true);
+                        const res = await uploadProductImage(file);
+                        setUploading(false);
+                        if (res.success) {
+                          await updateStoreLogo(storeId, res.url);
+                        } else {
+                          alert(res.message || 'Error uploading image');
+                        }
                       }
                     }}
                   />
                 </label>
-                {currentMerchant?.logoUrl && (
-                  <DashButton onClick={() => updateStoreLogo(storeId, null)} className="dash-btn dash-btn-danger">
+                {currentLogoUrl && (
+                  <DashButton onClick={() => storeId && updateStoreLogo(storeId, null)} disabled={uploading} className="dash-btn dash-btn-danger">
                     <Trash2 size={13} /> Remove
                   </DashButton>
                 )}
               </div>
-              <p className="text-xs" style={{ color: '#475569' }}>PNG, JPG, WEBP. Max 2MB.</p>
+              <p className="text-xs" style={{ color: '#475569' }}>PNG, JPG, WEBP. Max 5MB.</p>
             </div>
           </div>
         </div>

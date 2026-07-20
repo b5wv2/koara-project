@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Save, RotateCcw, Monitor, Smartphone, UploadCloud, Layout, Type, Palette, LayoutGrid, Lock, ShoppingCart } from 'lucide-react';
 import DashButton from './ui/DashButton';
+import { useAppContext } from '../context/AppContext';
+import { uploadProductImage } from '../services/merchantProductService';
 
 const PRESETS = {
   default: {
@@ -58,45 +60,163 @@ const PRESETS = {
 };
 
 const MerchantCustomizationTab = () => {
+  const { store, merchants, updateStoreLogo, isPlusActive: contextIsPlusActive } = useAppContext();
+  const currentMerchant = merchants?.find(m => m.id === store?.id) || {};
+  const currentLogoUrl = store?.logo_url || currentMerchant?.logoUrl || null;
+
   const [theme, setTheme] = useState(PRESETS.default);
   const [originalTheme, setOriginalTheme] = useState(PRESETS.default);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeSection, setActiveSection] = useState('presets');
   const [previewMode, setPreviewMode] = useState('desktop');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState(currentLogoUrl);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [plusActive, setPlusActive] = useState(contextIsPlusActive !== undefined ? contextIsPlusActive : false);
 
   useEffect(() => {
-    const isChanged = JSON.stringify(theme) !== JSON.stringify(originalTheme);
+    if (contextIsPlusActive !== undefined) {
+      setPlusActive(contextIsPlusActive);
+    }
+  }, [contextIsPlusActive]);
+
+  useEffect(() => {
+    const fetchCustomization = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+        const res = await fetch('/api/merchant/store/customization', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            const loadedTheme = {
+              ...PRESETS.default,
+              ...(data.customization || {})
+            };
+            setTheme(loadedTheme);
+            setOriginalTheme(loadedTheme);
+            if (data.logo_url !== undefined && data.logo_url !== null) {
+              setLogoPreview(data.logo_url);
+            }
+            if (data.isPlusActive !== undefined) {
+              setPlusActive(data.isPlusActive);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch customization:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCustomization();
+  }, [store?.id]);
+
+  useEffect(() => {
+    if (currentLogoUrl !== undefined && !logoPreview) {
+      setLogoPreview(currentLogoUrl);
+    }
+  }, [currentLogoUrl]);
+
+  useEffect(() => {
+    const isChanged = JSON.stringify(theme) !== JSON.stringify(originalTheme) || logoPreview !== (store?.logo_url || currentLogoUrl);
     setHasChanges(isChanged);
-  }, [theme, originalTheme]);
+  }, [theme, originalTheme, logoPreview, currentLogoUrl, store?.logo_url]);
+
+  const handleLogoUpload = async (e) => {
+    if (!plusActive) return;
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    const result = await uploadProductImage(file);
+    setUploadingLogo(false);
+    if (result.success) {
+      setLogoPreview(result.url);
+      setHasChanges(true);
+    } else {
+      alert(result.message || 'Logo upload failed');
+    }
+  };
 
   const handleSave = async () => {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    setOriginalTheme(theme);
-    setHasChanges(false);
-    return { success: true };
+    if (!plusActive) {
+      alert('Koara Plus subscription required to save customization.');
+      return { success: false };
+    }
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/merchant/store/customization', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          customization: theme,
+          logo_url: logoPreview
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to save store customization');
+        setSaving(false);
+        return { success: false };
+      }
+
+      if (store?.id && logoPreview !== (store?.logo_url || null)) {
+        await updateStoreLogo(store.id, logoPreview);
+      }
+      setOriginalTheme(theme);
+      setHasChanges(false);
+      setSaving(false);
+      return { success: true };
+    } catch (err) {
+      console.error('Error saving store customization:', err);
+      alert('Error saving store customization');
+      setSaving(false);
+      return { success: false };
+    }
   };
 
   const handleDiscard = () => {
     setTheme(originalTheme);
+    setLogoPreview(store?.logo_url || currentLogoUrl);
   };
 
   const handleReset = () => {
+    if (!plusActive) return;
     setTheme(PRESETS.default);
-    if (JSON.stringify(PRESETS.default) === JSON.stringify(originalTheme)) {
-      setHasChanges(false);
-    }
+    setLogoPreview(store?.logo_url || currentLogoUrl);
   };
 
   const applyPreset = (presetKey) => {
+    if (!plusActive) return;
     setTheme(PRESETS[presetKey]);
   };
 
   const updateTheme = (key, value) => {
+    if (!plusActive) return;
     setTheme(prev => ({ ...prev, [key]: value }));
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#020617] text-white rounded-xl overflow-hidden shadow-2xl border border-white/5" style={{ height: 'calc(100vh - 120px)' }}>
+    <div className="flex flex-col h-full bg-[#020617] text-white rounded-xl overflow-hidden shadow-2xl border border-white/5 relative" style={{ height: 'calc(100vh - 120px)' }}>
+      {loading && (
+        <div className="absolute inset-0 bg-slate-950/70 z-30 flex items-center justify-center backdrop-blur-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-blue-400">
+            <div className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin"></div>
+            Loading customization...
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0 bg-[#0B0F19]">
         <div>
@@ -105,10 +225,10 @@ const MerchantCustomizationTab = () => {
         </div>
         <div className="flex items-center gap-3">
           {hasChanges && <span className="text-amber-400 text-xs font-medium animate-pulse flex items-center gap-1.5 mr-2"><div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div> Unsaved Changes</span>}
-          <button onClick={handleReset} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium transition-colors">Reset</button>
-          <button onClick={handleDiscard} disabled={!hasChanges} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-colors">Discard</button>
-          <DashButton onClick={handleSave} disabled={!hasChanges} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-lg shadow-blue-900/20">
-            <Save size={14} /> Save
+          <button onClick={handleReset} disabled={!plusActive || saving} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-colors">Reset</button>
+          <button onClick={handleDiscard} disabled={!hasChanges || !plusActive || saving} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-colors">Discard</button>
+          <DashButton onClick={handleSave} disabled={!hasChanges || !plusActive || saving} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-lg shadow-blue-900/20">
+            <Save size={14} /> {saving ? 'Saving...' : 'Save'}
           </DashButton>
         </div>
       </div>
@@ -159,9 +279,9 @@ const MerchantCustomizationTab = () => {
                     <label className="text-[11px] text-slate-400 block mb-1 capitalize">{colorKey.replace(/([A-Z])/g, ' $1').trim()}</label>
                     <div className="flex items-center gap-2">
                       <div className="relative w-7 h-7 rounded border border-white/10 overflow-hidden shrink-0">
-                        <input type="color" value={theme[colorKey]} onChange={(e) => updateTheme(colorKey, e.target.value)} className="absolute -top-2 -left-2 w-12 h-12 cursor-pointer border-0 p-0" />
+                        <input type="color" disabled={!plusActive} value={theme[colorKey]} onChange={(e) => updateTheme(colorKey, e.target.value)} className="absolute -top-2 -left-2 w-12 h-12 cursor-pointer border-0 p-0 disabled:cursor-not-allowed" />
                       </div>
-                      <input type="text" value={theme[colorKey].toUpperCase()} onChange={(e) => updateTheme(colorKey, e.target.value)} className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs font-mono text-white outline-none focus:border-blue-500 transition-colors uppercase" />
+                      <input type="text" disabled={!plusActive} value={theme[colorKey].toUpperCase()} onChange={(e) => updateTheme(colorKey, e.target.value)} className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs font-mono text-white outline-none focus:border-blue-500 transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed" />
                     </div>
                   </div>
                 ))}
@@ -173,7 +293,7 @@ const MerchantCustomizationTab = () => {
                 <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wider">Typography & Styling</h3>
                 <div>
                   <label className="text-[11px] text-slate-400 block mb-1">Primary Font</label>
-                  <select value={theme.fontFamily} onChange={(e) => updateTheme('fontFamily', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 appearance-none">
+                  <select disabled={!plusActive} value={theme.fontFamily} onChange={(e) => updateTheme('fontFamily', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 appearance-none disabled:opacity-50 disabled:cursor-not-allowed">
                     <option value="Inter, sans-serif" className="bg-slate-900">Inter</option>
                     <option value="Roboto, sans-serif" className="bg-slate-900">Roboto</option>
                     <option value="Orbitron, sans-serif" className="bg-slate-900">Orbitron</option>
@@ -182,7 +302,7 @@ const MerchantCustomizationTab = () => {
                 </div>
                 <div>
                   <label className="text-[11px] text-slate-400 block mb-1">Border Radius</label>
-                  <select value={theme.borderRadius} onChange={(e) => updateTheme('borderRadius', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 appearance-none">
+                  <select disabled={!plusActive} value={theme.borderRadius} onChange={(e) => updateTheme('borderRadius', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 appearance-none disabled:opacity-50 disabled:cursor-not-allowed">
                     <option value="0px" className="bg-slate-900">Sharp (0px)</option>
                     <option value="4px" className="bg-slate-900">Slight (4px)</option>
                     <option value="8px" className="bg-slate-900">Normal (8px)</option>
@@ -192,7 +312,7 @@ const MerchantCustomizationTab = () => {
                 </div>
                 <div>
                   <label className="text-[11px] text-slate-400 block mb-1">Animations</label>
-                  <select value={theme.animations} onChange={(e) => updateTheme('animations', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 appearance-none">
+                  <select disabled={!plusActive} value={theme.animations} onChange={(e) => updateTheme('animations', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 appearance-none disabled:opacity-50 disabled:cursor-not-allowed">
                     <option value="none" className="bg-slate-900">None</option>
                     <option value="smooth" className="bg-slate-900">Smooth</option>
                     <option value="fast" className="bg-slate-900">Fast & Snappy</option>
@@ -209,8 +329,9 @@ const MerchantCustomizationTab = () => {
                     <span className="text-xs text-slate-300 capitalize">{toggleKey.replace('show', '').replace(/([A-Z])/g, ' $1').trim()}</span>
                     <button
                       type="button"
+                      disabled={!plusActive}
                       onClick={() => updateTheme(toggleKey, !theme[toggleKey])}
-                      className="w-8 h-4 rounded-full relative transition-colors duration-200 focus:outline-none"
+                      className="w-8 h-4 rounded-full relative transition-colors duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ backgroundColor: theme[toggleKey] ? '#2563EB' : 'rgba(255,255,255,0.1)' }}
                     >
                       <div className={`w-2.5 h-2.5 rounded-full bg-white absolute top-[3px] transition-transform duration-200 ${theme[toggleKey] ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
@@ -220,11 +341,33 @@ const MerchantCustomizationTab = () => {
                 
                 <div className="pt-4 border-t border-white/5">
                   <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-3">Branding</h3>
-                  <div className="border border-dashed border-white/20 rounded p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500/50 hover:bg-white/5 transition-colors">
-                    <UploadCloud size={18} className="text-slate-400 mb-1.5" />
-                    <span className="text-[10px] text-slate-300 font-medium">Upload Custom Logo</span>
-                    <span className="text-[9px] text-slate-500 mt-0.5">PNG, SVG (Max 2MB)</span>
-                  </div>
+                  {logoPreview ? (
+                    <div className="border border-white/10 rounded p-4 flex flex-col items-center justify-center text-center bg-white/5">
+                      <img src={logoPreview} alt="Store Logo Preview" className="w-16 h-16 rounded-xl object-cover border border-white/20 mb-3 shadow-md" />
+                      <div className="flex gap-2 w-full justify-center">
+                        <label className={`px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-[11px] font-medium transition-colors text-white ${!plusActive || uploadingLogo ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                          Change Logo
+                          <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleLogoUpload} disabled={!plusActive || uploadingLogo} />
+                        </label>
+                        <button
+                          type="button"
+                          disabled={!plusActive}
+                          onClick={() => { if (!plusActive) return; setLogoPreview(null); setHasChanges(true); }}
+                          className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded text-[11px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {uploadingLogo && <span className="text-[10px] text-blue-400 mt-2">Uploading image...</span>}
+                    </div>
+                  ) : (
+                    <label className={`border border-dashed border-white/20 rounded p-4 flex flex-col items-center justify-center text-center transition-colors block w-full ${!plusActive || uploadingLogo ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-blue-500/50 hover:bg-white/5'}`}>
+                      <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleLogoUpload} disabled={!plusActive || uploadingLogo} />
+                      <UploadCloud size={18} className="text-slate-400 mb-1.5" />
+                      <span className="text-[10px] text-slate-300 font-medium">{uploadingLogo ? 'Uploading...' : 'Upload Custom Logo'}</span>
+                      <span className="text-[9px] text-slate-500 mt-0.5">PNG, JPG, WEBP (Max 5MB)</span>
+                    </label>
+                  )}
                 </div>
               </div>
             )}
@@ -270,7 +413,12 @@ const MerchantCustomizationTab = () => {
             >
               {/* Mock Header */}
               <div className="px-5 py-3 flex items-center justify-between shadow-sm sticky top-0 z-20" style={{ backgroundColor: theme.bgColor }}>
-                <div className="font-extrabold text-lg tracking-tight" style={{ color: theme.primaryColor }}>STORE</div>
+                <div className="flex items-center gap-2">
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Store Logo" className="w-7 h-7 rounded-lg object-cover" />
+                  ) : null}
+                  <div className="font-extrabold text-lg tracking-tight" style={{ color: theme.primaryColor }}>{store?.store_name || 'STORE'}</div>
+                </div>
                 <div className="flex gap-3 text-[11px] font-medium opacity-70 hidden md:flex">
                   <span className="hover:opacity-100 cursor-pointer">Home</span>
                   <span className="hover:opacity-100 cursor-pointer">Products</span>
