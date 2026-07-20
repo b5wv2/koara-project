@@ -12,7 +12,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     sitemap({
-      hostname: 'https://getkoara.com'
+      hostname: 'https://www.getkoara.com'
     })
   ],
 
