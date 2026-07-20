@@ -10,6 +10,8 @@ import LocalBankTransferModal from '../components/LocalBankTransferModal';
 import SubscriptionPaymentModal from '../components/SubscriptionPaymentModal';
 import MerchantWithdrawalModal from '../components/modals/MerchantWithdrawalModal';
 import MerchantCustomizationTab from '../components/MerchantCustomizationTab';
+import PremiumLockOverlay from '../components/ui/PremiumLockOverlay';
+import Toggle from '../components/ui/Toggle';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -57,18 +59,6 @@ const StatusBadge = ({ status }) => {
   };
   return <span className={`koara-badge ${cls}`}>{labels[status?.toLowerCase()] || status}</span>;
 };
-
-const ToggleSwitch = ({ on, onToggle }) => (
-  <button
-    type="button"
-    onClick={onToggle}
-    className="koara-toggle"
-    data-on={on ? 'true' : 'false'}
-    style={{ background: on ? '#2563EB' : 'rgba(255,255,255,0.12)' }}
-  >
-    <span className="koara-toggle-thumb" style={{ transform: on ? 'translateX(19px)' : 'translateX(3px)' }} />
-  </button>
-);
 
 // ── AdminDashboard ──────────────────────────────────────────────────────
 

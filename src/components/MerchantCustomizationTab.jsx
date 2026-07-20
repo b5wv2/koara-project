@@ -3,6 +3,7 @@ import { Save, RotateCcw, Monitor, Smartphone, UploadCloud, Layout, Type, Palett
 import DashButton from './ui/DashButton';
 import { useAppContext } from '../context/AppContext';
 import { uploadProductImage } from '../services/merchantProductService';
+import { apiFetch, jsonFetch } from '../services/api';
 
 const PRESETS = {
   default: {
@@ -85,29 +86,19 @@ const MerchantCustomizationTab = () => {
     const fetchCustomization = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-        const res = await fetch('/api/merchant/store/customization', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success) {
-            const loadedTheme = {
-              ...PRESETS.default,
-              ...(data.customization || {})
-            };
-            setTheme(loadedTheme);
-            setOriginalTheme(loadedTheme);
-            if (data.logo_url !== undefined && data.logo_url !== null) {
-              setLogoPreview(data.logo_url);
-            }
-            if (data.isPlusActive !== undefined) {
-              setPlusActive(data.isPlusActive);
-            }
+        const { ok, data } = await apiFetch('/api/merchant/store/customization');
+        if (ok && data.success) {
+          const loadedTheme = {
+            ...PRESETS.default,
+            ...(data.customization || {})
+          };
+          setTheme(loadedTheme);
+          setOriginalTheme(loadedTheme);
+          if (data.logo_url !== undefined && data.logo_url !== null) {
+            setLogoPreview(data.logo_url);
+          }
+          if (data.isPlusActive !== undefined) {
+            setPlusActive(data.isPlusActive);
           }
         }
       } catch (err) {
@@ -152,21 +143,12 @@ const MerchantCustomizationTab = () => {
     }
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/merchant/store/customization', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          customization: theme,
-          logo_url: logoPreview
-        })
+      const { ok, data } = await jsonFetch('/api/merchant/store/customization', 'PUT', {
+        customization: theme,
+        logo_url: logoPreview
       });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || 'Failed to save store customization');
+      if (!ok) {
+        alert(data?.error || 'Failed to save store customization');
         setSaving(false);
         return { success: false };
       }
