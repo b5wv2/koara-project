@@ -3,30 +3,14 @@ const router = express.Router();
 const db = require('../config/db');
 const orderService = require('../services/orderService');
 const { requireKoaraPlus } = require('../middleware/subscriptionCheck');
+const resolveMerchantStore = require('../middleware/resolveMerchantStore');
 
-// --- Middleware to resolve store ---
-const resolveMerchantStore = async (req, res, next) => {
-  if (req.merchantStoreId) return next();
-  if (!req.user || req.user.role !== 'merchant') {
-    return res.status(403).json({ error: 'Unauthorized: Merchant access required' });
-  }
-  try {
-    const result = await db.query('SELECT id FROM stores WHERE owner_id = $1', [req.user.id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Merchant store not found' });
-    }
-    req.merchantStoreId = result.rows[0].id;
-    next();
-  } catch (err) {
-    console.error('Error resolving merchant store:', err);
-    res.status(500).json({ error: 'Internal server error resolving store' });
-  }
-};
+router.use(resolveMerchantStore);
 
 // --- Store Settings & Customization ---
 
 // PUT /api/merchant/store
-router.put('/store', resolveMerchantStore, async (req, res) => {
+router.put('/store', async (req, res) => {
   const { logo_url, store_name, bank_name, account_name, account_no } = req.body;
   const storeId = req.merchantStoreId;
 
@@ -57,7 +41,7 @@ router.put('/store', resolveMerchantStore, async (req, res) => {
 });
 
 // GET /api/merchant/store/customization
-router.get('/store/customization', resolveMerchantStore, async (req, res) => {
+router.get('/store/customization', async (req, res) => {
   const storeId = req.merchantStoreId;
   try {
     const storeRes = await db.query('SELECT customization, logo_url, store_name FROM stores WHERE id = $1', [storeId]);
@@ -83,7 +67,7 @@ router.get('/store/customization', resolveMerchantStore, async (req, res) => {
 });
 
 // PUT /api/merchant/store/customization
-router.put('/store/customization', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
+router.put('/store/customization', requireKoaraPlus, async (req, res) => {
   const storeId = req.merchantStoreId;
   const { customization, logo_url } = req.body;
 
@@ -117,8 +101,9 @@ router.put('/store/customization', resolveMerchantStore, requireKoaraPlus, async
 
 // POST /api/merchant/categories
 router.post('/categories', async (req, res) => {
-  const { store_id, name, icon_text, logo_url, color, active } = req.body;
-  if (!store_id || !name) return res.status(400).json({ error: 'store_id and name are required' });
+  const { name, icon_text, logo_url, color, active } = req.body;
+  const store_id = req.merchantStoreId;
+  if (!name) return res.status(400).json({ error: 'name is required' });
 
   try {
     const result = await db.query(
@@ -136,7 +121,8 @@ router.post('/categories', async (req, res) => {
 // PUT /api/merchant/categories/:id
 router.put('/categories/:id', async (req, res) => {
   const { id } = req.params;
-  const { store_id, name, icon_text, logo_url, color, active } = req.body;
+  const { name, icon_text, logo_url, color, active } = req.body;
+  const store_id = req.merchantStoreId;
   
   try {
     const result = await db.query(
@@ -159,7 +145,7 @@ router.put('/categories/:id', async (req, res) => {
 // DELETE /api/merchant/categories/:id
 router.delete('/categories/:id', async (req, res) => {
   const { id } = req.params;
-  const { store_id } = req.body; // should ideally be authenticated session storeId
+  const store_id = req.merchantStoreId;
   try {
     const result = await db.query('DELETE FROM categories WHERE id = $1 AND store_id = $2 RETURNING id', [id, store_id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Category not found or access denied' });
@@ -172,8 +158,9 @@ router.delete('/categories/:id', async (req, res) => {
 // --- Products ---
 
 router.post('/products', async (req, res) => {
-  const { store_id, category_id, name, price, sale_price, image_url, active } = req.body;
-  if (!store_id || !name || price === undefined) return res.status(400).json({ error: 'Missing required fields' });
+  const { category_id, name, price, sale_price, image_url, active } = req.body;
+  const store_id = req.merchantStoreId;
+  if (!name || price === undefined) return res.status(400).json({ error: 'Missing required fields' });
 
   try {
     const result = await db.query(
@@ -189,7 +176,8 @@ router.post('/products', async (req, res) => {
 
 router.put('/products/:id', async (req, res) => {
   const { id } = req.params;
-  const { store_id, category_id, name, price, sale_price, image_url, active } = req.body;
+  const { category_id, name, price, sale_price, image_url, active } = req.body;
+  const store_id = req.merchantStoreId;
   
   try {
     const result = await db.query(
@@ -212,7 +200,7 @@ router.put('/products/:id', async (req, res) => {
 
 router.delete('/products/:id', async (req, res) => {
   const { id } = req.params;
-  const { store_id } = req.body; 
+  const store_id = req.merchantStoreId; 
   try {
     const result = await db.query('DELETE FROM products WHERE id = $1 AND store_id = $2 RETURNING id', [id, store_id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Product not found or access denied' });
@@ -225,22 +213,21 @@ router.delete('/products/:id', async (req, res) => {
 // --- Promotions ---
 
 // [PREMIUM FEATURE] - Get Promos
-router.get('/promotions', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
+router.get('/promotions', requireKoaraPlus, async (req, res) => {
+  const store_id = req.merchantStoreId;
   try {
-    const store_id = req.merchantStoreId;
     const result = await db.query(
       `SELECT * FROM promos WHERE store_id = $1 ORDER BY created_at DESC`,
       [store_id]
     );
     res.json({ success: true, promotions: result.rows });
   } catch (err) {
-    console.error('Error fetching promotions:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // [PREMIUM FEATURE] - Create Promo
-router.post('/promotions', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
+router.post('/promotions', requireKoaraPlus, async (req, res) => {
   const store_id = req.merchantStoreId;
   const { code, discount_type, value, status, usage_limit, expires_at } = req.body;
   
@@ -259,13 +246,12 @@ router.post('/promotions', resolveMerchantStore, requireKoaraPlus, async (req, r
     if (err.code === '23505') {
       return res.status(400).json({ error: 'Promo code already exists for this store' });
     }
-    console.error('Error creating promotion:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // [PREMIUM FEATURE] - Update Promo
-router.put('/promotions/:id', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
+router.put('/promotions/:id', requireKoaraPlus, async (req, res) => {
   const { id } = req.params;
   const store_id = req.merchantStoreId;
   const { code, discount_type, value, status, usage_limit, expires_at } = req.body;
@@ -289,13 +275,12 @@ router.put('/promotions/:id', resolveMerchantStore, requireKoaraPlus, async (req
     if (err.code === '23505') {
       return res.status(400).json({ error: 'Promo code already exists for this store' });
     }
-    console.error('Error updating promotion:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // [PREMIUM FEATURE] - Delete Promo
-router.delete('/promotions/:id', resolveMerchantStore, requireKoaraPlus, async (req, res) => {
+router.delete('/promotions/:id', requireKoaraPlus, async (req, res) => {
   const { id } = req.params;
   const store_id = req.merchantStoreId; 
   try {
@@ -303,7 +288,6 @@ router.delete('/promotions/:id', resolveMerchantStore, requireKoaraPlus, async (
     if (result.rows.length === 0) return res.status(404).json({ error: 'Promotion not found or access denied' });
     res.json({ success: true, message: 'Promotion deleted' });
   } catch (err) {
-    console.error('Error deleting promotion:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -315,11 +299,7 @@ router.get('/orders', async (req, res) => {
   console.log('[DEBUG-MERCHANT-ORDERS] Request received for merchant orders endpoint');
   console.log('[DEBUG-MERCHANT-ORDERS] Authenticated user information:', req.user || 'No user info');
   console.log('[DEBUG-MERCHANT-ORDERS] Query parameters:', req.query);
-  const { store_id } = req.query;
-  
-  if (!store_id) {
-    return res.status(400).json({ error: 'store_id query parameter is required' });
-  }
+  const store_id = req.merchantStoreId;
 
   try {
     const orders = await orderService.getStoreOrders(store_id);
@@ -353,10 +333,11 @@ router.get('/orders', async (req, res) => {
 // PUT /api/merchant/orders/:id/status
 router.put('/orders/:id/status', async (req, res) => {
   const { id } = req.params;
-  const { store_id, status } = req.body;
+  const { status } = req.body;
+  const store_id = req.merchantStoreId;
 
-  if (!store_id || !status) {
-    return res.status(400).json({ error: 'store_id and status are required' });
+  if (!status) {
+    return res.status(400).json({ error: 'status is required' });
   }
 
   try {
@@ -371,11 +352,7 @@ router.put('/orders/:id/status', async (req, res) => {
 // POST /api/merchant/orders/:id/approve
 router.post('/orders/:id/approve', async (req, res) => {
   const { id } = req.params;
-  const { store_id } = req.body;
-
-  if (!store_id) {
-    return res.status(400).json({ error: 'store_id is required' });
-  }
+  const store_id = req.merchantStoreId;
 
   try {
     const order = await orderService.approveGiftCardOrder(id, store_id);
@@ -389,11 +366,7 @@ router.post('/orders/:id/approve', async (req, res) => {
 // POST /api/merchant/orders/:id/reject
 router.post('/orders/:id/reject', async (req, res) => {
   const { id } = req.params;
-  const { store_id } = req.body;
-
-  if (!store_id) {
-    return res.status(400).json({ error: 'store_id is required' });
-  }
+  const store_id = req.merchantStoreId;
 
   try {
     const order = await orderService.rejectGiftCardOrder(id, store_id);
@@ -407,7 +380,7 @@ router.post('/orders/:id/reject', async (req, res) => {
 // --- Withdrawals ---
 
 // POST /api/merchant/withdraw
-router.post('/withdraw', resolveMerchantStore, async (req, res) => {
+router.post('/withdraw', async (req, res) => {
   const storeId = req.merchantStoreId;
   const { amount } = req.body;
   const merchantId = req.user.id;

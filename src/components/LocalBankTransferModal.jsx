@@ -67,6 +67,7 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: p
 
       const response = await fetch(`${API_BASE_URL}/api/payments/local/verify`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },

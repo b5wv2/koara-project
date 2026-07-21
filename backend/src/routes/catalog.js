@@ -1,6 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const authMiddleware = require('../middleware/authMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
+
+// Restrict all mutations (POST, PUT, DELETE) to admins
+router.use((req, res, next) => {
+  if (req.method === 'GET') {
+    return next();
+  }
+  authMiddleware(req, res, (err) => {
+    if (err) return next(err);
+    adminMiddleware(req, res, next);
+  });
+});
 
 // =============================================
 // Admin Catalog Management — Platform Products

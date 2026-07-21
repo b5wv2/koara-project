@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const localPaymentService = require('../services/localPaymentService');
+const authMiddleware = require('../middleware/authMiddleware');
+const resolveMerchantStore = require('../middleware/resolveMerchantStore');
 
 // GET /api/payments/local/config
 router.get('/config', (req, res) => {
@@ -11,12 +13,13 @@ router.get('/config', (req, res) => {
 });
 
 // POST /api/payments/local/verify
-router.post('/verify', async (req, res) => {
+router.post('/verify', authMiddleware, resolveMerchantStore, async (req, res) => {
   // Use store_id as merchant_id to align with existing architecture
-  const { store_id, transaction_id, amount } = req.body;
+  const { transaction_id, amount } = req.body;
+  const store_id = req.merchantStoreId;
 
-  if (!store_id || !transaction_id || amount === undefined || amount === null || isNaN(amount) || Number(amount) <= 0) {
-    return res.status(400).json({ error: 'store_id, transaction_id are required, and amount must be greater than 0' });
+  if (!transaction_id || amount === undefined || amount === null || isNaN(amount) || Number(amount) <= 0) {
+    return res.status(400).json({ error: 'transaction_id is required, and amount must be greater than 0' });
   }
 
   try {

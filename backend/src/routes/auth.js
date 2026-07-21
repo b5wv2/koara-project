@@ -14,8 +14,16 @@ const authMiddleware = require('../middleware/authMiddleware');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const setSessionCookie = (res, user) => {
+  const payload = {
+    id: user.id,
+    role: user.role,
+    email: user.email
+  };
+  if (user.storeRequestId) {
+    payload.storeRequestId = user.storeRequestId;
+  }
   const token = jwt.sign(
-    { id: user.id, role: user.role, email: user.email },
+    payload,
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -226,6 +234,13 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
 
     await client.query('COMMIT');
 
+    setSessionCookie(res, {
+      id: newRequest.id,
+      role: 'applicant',
+      email: newRequest.email,
+      storeRequestId: newRequest.id
+    });
+
     res.status(201).json({
       success: true,
       message: 'Store application submitted successfully and is pending review.',
@@ -276,6 +291,12 @@ router.post('/google-login', async (req, res) => {
       if (requestResult.rows.length > 0) {
         // User has a pending or rejected store request
         const reqStore = requestResult.rows[0];
+        setSessionCookie(res, {
+          id: reqStore.owner_id || reqStore.id,
+          role: 'applicant',
+          email: reqStore.email,
+          storeRequestId: reqStore.id
+        });
         return res.status(200).json({
           isStoreRequest: true,
           status: reqStore.status,
@@ -382,6 +403,13 @@ router.post('/login', async (req, res) => {
         return res.status(401).json({ message: 'Invalid credentials. Please try again.' });
       }
 
+      setSessionCookie(res, {
+        id: reqStore.owner_id || reqStore.id,
+        role: 'applicant',
+        email: reqStore.email,
+        storeRequestId: reqStore.id
+      });
+
       return res.status(200).json({
         status: reqStore.status,
         rejection_reason: reqStore.rejection_reason,
@@ -483,7 +511,7 @@ router.post('/logout', (req, res) => {
 });
 
 // POST /resubmit route
-router.post('/resubmit', upload.single('kyc_document'), async (req, res) => {
+router.post('/resubmit', authMiddleware, upload.single('kyc_document'), async (req, res) => {
   const { store_id, bank_name, account_holder_name, account_number } = req.body;
 
   if (!store_id || !bank_name || !account_holder_name || !account_number) {
@@ -491,6 +519,25 @@ router.post('/resubmit', upload.single('kyc_document'), async (req, res) => {
   }
 
   try {
+    const ownershipCheck = await db.query(
+      `SELECT id, email, owner_id FROM store_requests WHERE id = $1 AND status = 'rejected'`,
+      [store_id]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Rejected store request not found.' });
+    }
+
+    const reqRow = ownershipCheck.rows[0];
+    const isOwner =
+      (req.user.email && reqRow.email.toLowerCase() === req.user.email.toLowerCase()) ||
+      (req.user.storeRequestId && Number(req.user.storeRequestId) === Number(reqRow.id)) ||
+      (req.user.id && reqRow.owner_id && Number(req.user.id) === Number(reqRow.owner_id));
+
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Unauthorized: You do not own this store request.' });
+    }
+
     let updateQuery;
     let queryParams;
 

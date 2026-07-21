@@ -51,6 +51,7 @@ const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
 
       const response = await fetch(`${API_BASE_URL}/api/auth/resubmit`, {
         method: 'POST',
+        credentials: 'include',
         body: formData
       });
 

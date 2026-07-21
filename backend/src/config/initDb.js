@@ -57,6 +57,7 @@ const createStoreRequestsTableQuery = `
     rejection_reason TEXT,
     reviewed_by INTEGER,
     reviewed_at TIMESTAMP,
+    owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 `;
@@ -378,8 +379,9 @@ const initializeDatabase = async () => {
     // Create store_requests table
     await client.query(createStoreRequestsTableQuery);
 
-    // Ensure subdomain column exists if table was already created without it
+    // Ensure subdomain and owner_id columns exist if table was already created without them
     await client.query('ALTER TABLE store_requests ADD COLUMN IF NOT EXISTS subdomain VARCHAR(255) UNIQUE;');
+    await client.query('ALTER TABLE store_requests ADD COLUMN IF NOT EXISTS owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL;');
 
     // Create withdrawal_requests table
     await client.query(createWithdrawalRequestsTableQuery);

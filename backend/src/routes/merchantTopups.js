@@ -2,12 +2,14 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const topupCatalogService = require('../services/topupCatalogService');
+const resolveMerchantStore = require('../middleware/resolveMerchantStore');
+
+router.use(resolveMerchantStore);
 
 // GET /api/merchant/topups?store_id=X
 // Returns all catalog topups merged with merchant's specific settings
 router.get('/', async (req, res) => {
-  const { store_id } = req.query;
-  if (!store_id) return res.status(400).json({ error: 'store_id is required' });
+  const store_id = req.merchantStoreId;
 
   try {
     const catalogs = topupCatalogService.getCatalogs();
@@ -53,8 +55,8 @@ router.get('/', async (req, res) => {
 // Enable/disable and set selling price
 router.put('/:offerId', async (req, res) => {
   const { offerId } = req.params;
-  const { store_id, selling_price, is_enabled } = req.body;
-  if (!store_id) return res.status(400).json({ error: 'store_id is required' });
+  const { selling_price, is_enabled } = req.body;
+  const store_id = req.merchantStoreId;
 
   try {
     const priceValue = selling_price !== null && selling_price !== undefined && selling_price !== '' ? selling_price : 0;
@@ -82,8 +84,7 @@ router.put('/:offerId', async (req, res) => {
 // POST /api/merchant/topups/orders/:orderId/approve
 router.post('/orders/:orderId/approve', async (req, res) => {
   const { orderId } = req.params;
-  const { store_id } = req.body;
-  if (!store_id) return res.status(400).json({ error: 'store_id is required' });
+  const store_id = req.merchantStoreId;
 
   try {
     const topupOrderService = require('../services/topupOrderService');
@@ -98,8 +99,7 @@ router.post('/orders/:orderId/approve', async (req, res) => {
 // POST /api/merchant/topups/orders/:orderId/reject
 router.post('/orders/:orderId/reject', async (req, res) => {
   const { orderId } = req.params;
-  const { store_id } = req.body;
-  if (!store_id) return res.status(400).json({ error: 'store_id is required' });
+  const store_id = req.merchantStoreId;
 
   try {
     const topupOrderService = require('../services/topupOrderService');

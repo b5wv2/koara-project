@@ -4,6 +4,7 @@ const db = require('../config/db');
 const subscriptionService = require('../services/subscriptionService');
 const multer = require('multer');
 const path = require('path');
+const resolveMerchantStore = require('../middleware/resolveMerchantStore');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -29,11 +30,12 @@ const upload = multer({
   }
 });
 
+router.use(resolveMerchantStore);
+
 // GET /api/merchant/products?store_id=X
 // Returns ALL platform products with merchant's enable/price status (LEFT JOIN)
 router.get('/', async (req, res) => {
-  const { store_id } = req.query;
-  if (!store_id) return res.status(400).json({ error: 'store_id is required' });
+  const store_id = req.merchantStoreId;
 
   try {
     const result = await db.query(`
@@ -66,8 +68,8 @@ router.get('/', async (req, res) => {
 // PUT /api/merchant/products/:productId — enable/disable or set selling price, title, description, image
 router.put('/:productId', async (req, res) => {
   const { productId } = req.params;
-  const { store_id, selling_price, is_enabled, custom_title, custom_description, custom_image_url } = req.body;
-  if (!store_id) return res.status(400).json({ error: 'store_id is required' });
+  const { selling_price, is_enabled, custom_title, custom_description, custom_image_url } = req.body;
+  const store_id = req.merchantStoreId;
 
   try {
     if (custom_title || custom_description || custom_image_url) {
@@ -112,9 +114,10 @@ router.put('/:productId', async (req, res) => {
 
 // POST /api/merchant/products/bulk-enable — enable multiple products at once
 router.post('/bulk-enable', async (req, res) => {
-  const { store_id, product_ids, default_price } = req.body;
-  if (!store_id || !product_ids || !Array.isArray(product_ids) || product_ids.length === 0) {
-    return res.status(400).json({ error: 'store_id and product_ids array are required' });
+  const { product_ids, default_price } = req.body;
+  const store_id = req.merchantStoreId;
+  if (!product_ids || !Array.isArray(product_ids) || product_ids.length === 0) {
+    return res.status(400).json({ error: 'product_ids array is required' });
   }
   if (!default_price || default_price <= 0) {
     return res.status(400).json({ error: 'default_price must be a positive number' });
