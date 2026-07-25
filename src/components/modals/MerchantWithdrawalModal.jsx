@@ -28,18 +28,24 @@ const MerchantWithdrawalModal = ({ isOpen, onClose }) => {
     }
 
     setIsSubmitting(true);
-    const res = await requestWithdrawal(parsedAmount);
-    setIsSubmitting(false);
+    try {
+      const res = await requestWithdrawal(parsedAmount);
 
-    if (res.success) {
-      setSuccess('Withdrawal requested successfully');
-      setAmount('');
-      setTimeout(() => {
-        onClose();
-        setSuccess('');
-      }, 2000);
-    } else {
-      setError(res.message || 'Failed to request withdrawal');
+      if (res.success) {
+        setSuccess('Withdrawal requested successfully');
+        setAmount('');
+        setTimeout(() => {
+          onClose();
+          setSuccess('');
+        }, 2000);
+      } else {
+        setError(res.message || 'Failed to request withdrawal');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('An unexpected error occurred');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

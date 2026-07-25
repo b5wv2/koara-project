@@ -31,31 +31,33 @@ export function useStorefront(storeId) {
   useEffect(() => {
     const load = async () => {
       setLoadingCatalog(true);
-      const [catalogResult, topupsResult] = await Promise.all([
-        fetchStoreCatalog(storeId),
-        fetchTopupsCatalog(storeId),
-      ]);
+      try {
+        const [catalogResult, topupsResult] = await Promise.all([
+          fetchStoreCatalog(storeId),
+          fetchTopupsCatalog(storeId),
+        ]);
 
-      if (catalogResult.success) {
-        setCatalog({
-          categories: catalogResult.categories,
-          products: catalogResult.products,
-          promos: catalogResult.promos,
-          platform_products: catalogResult.platform_products,
-        });
-      } else {
-        setCatalogError(catalogResult.error);
+        if (catalogResult.success) {
+          setCatalog({
+            categories: catalogResult.categories,
+            products: catalogResult.products,
+            promos: catalogResult.promos,
+            platform_products: catalogResult.platform_products,
+          });
+        } else {
+          setCatalogError(catalogResult.error);
+        }
+
+        if (topupsResult.success) {
+          setTopupsData({
+            category: topupsResult.category,
+            fields: topupsResult.fields,
+            offers: topupsResult.offers,
+          });
+        }
+      } finally {
+        setLoadingCatalog(false);
       }
-
-      if (topupsResult.success) {
-        setTopupsData({
-          category: topupsResult.category,
-          fields: topupsResult.fields,
-          offers: topupsResult.offers,
-        });
-      }
-
-      setLoadingCatalog(false);
     };
     load();
   }, [storeId]);

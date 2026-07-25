@@ -22,22 +22,29 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
     setError('');
     setLoading(true);
 
-    const result = await login(email, password);
-    setLoading(false);
-    if (result.success) {
-      if (result.isStoreRequest) {
-        onStoreStatus({ status: result.status, reason: result.rejection_reason, request: result.request });
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        if (result.isStoreRequest) {
+          onStoreStatus({ status: result.status, reason: result.rejection_reason, request: result.request });
+          onClose();
+          return result;
+        }
         onClose();
-        return result;
+        setEmail('');
+        setPassword('');
+        navigate('/admin');
+      } else {
+        setError(result.message);
       }
-      onClose();
-      setEmail('');
-      setPassword('');
-      navigate('/admin');
-    } else {
-      setError(result.message);
+      return result;
+    } catch (err) {
+      console.error(err);
+      setError(t('login_error') || 'Login failed due to an unexpected error.');
+      return { success: false };
+    } finally {
+      setLoading(false);
     }
-    return result;
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
@@ -46,7 +53,6 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
 
     try {
       const result = await googleLogin(credentialResponse.credential);
-      setLoading(false);
       
       if (result.success) {
         if (result.requires_onboarding) {
@@ -69,9 +75,10 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
         setError(result.message);
       }
     } catch (err) {
-      setLoading(false);
       console.error(err);
       setError(t('google_login_error'));
+    } finally {
+      setLoading(false);
     }
   };
 

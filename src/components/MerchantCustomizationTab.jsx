@@ -126,13 +126,19 @@ const MerchantCustomizationTab = () => {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingLogo(true);
-    const result = await uploadProductImage(file);
-    setUploadingLogo(false);
-    if (result.success) {
-      setLogoPreview(result.url);
-      setHasChanges(true);
-    } else {
-      alert(result.message || 'Logo upload failed');
+    try {
+      const result = await uploadProductImage(file);
+      if (result.success) {
+        setLogoPreview(result.url);
+        setHasChanges(true);
+      } else {
+        alert(result.message || 'Logo upload failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Logo upload failed due to an unexpected error');
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
@@ -149,7 +155,6 @@ const MerchantCustomizationTab = () => {
       });
       if (!ok) {
         alert(data?.error || 'Failed to save store customization');
-        setSaving(false);
         return { success: false };
       }
 
@@ -158,13 +163,13 @@ const MerchantCustomizationTab = () => {
       }
       setOriginalTheme(theme);
       setHasChanges(false);
-      setSaving(false);
       return { success: true };
     } catch (err) {
       console.error('Error saving store customization:', err);
       alert('Error saving store customization');
-      setSaving(false);
       return { success: false };
+    } finally {
+      setSaving(false);
     }
   };
 

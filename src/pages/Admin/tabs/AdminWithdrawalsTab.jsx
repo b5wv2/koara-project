@@ -15,30 +15,47 @@ const AdminWithdrawalsTab = () => {
 
   const loadWithdrawals = async () => {
     setLoading(true);
-    await fetchAdminWithdrawals();
-    setLoading(false);
+    try {
+      await fetchAdminWithdrawals();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleApprove = async (id) => {
     if (!window.confirm('Are you sure you want to approve this withdrawal? Ensure you have sent the funds manually.')) return { success: false };
     setProcessingId(id);
-    const res = await approveWithdrawal(id);
-    if (!res.success) {
-      alert(res.message || 'Failed to approve withdrawal');
+    try {
+      const res = await approveWithdrawal(id);
+      if (!res.success) {
+        alert(res.message || 'Failed to approve withdrawal');
+      }
+      return res;
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred while approving withdrawal');
+      return { success: false };
+    } finally {
+      setProcessingId(null);
     }
-    setProcessingId(null);
-    return res;
   };
 
   const handleReject = async (id) => {
     if (!window.confirm('Are you sure you want to reject this withdrawal? Funds will be refunded to the merchant wallet.')) return { success: false };
     setProcessingId(id);
-    const res = await rejectWithdrawal(id);
-    if (!res.success) {
-      alert(res.message || 'Failed to reject withdrawal');
+    try {
+      const res = await rejectWithdrawal(id);
+      if (!res.success) {
+        alert(res.message || 'Failed to reject withdrawal');
+      }
+      return res;
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred while rejecting withdrawal');
+      return { success: false };
+    } finally {
+      setProcessingId(null);
     }
-    setProcessingId(null);
-    return res;
   };
 
   const filteredWithdrawals = adminWithdrawals.filter(w => {

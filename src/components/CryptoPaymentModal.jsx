@@ -34,29 +34,32 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
       setError('');
       setPaymentConfirmed(false);
 
-      fetch(`${API_BASE_URL}/api/payments/nowpayments/invoice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ store_id: storeId, amount: parseFloat(amount) })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (!isMounted) return;
-        if (data.success && data.invoice_url) {
-          setInvoiceUrl(data.invoice_url);
-          setInvoiceId(data.invoice_id);
-          setLoading(false);
-          openPaymentWindow(data.invoice_url);
-        } else {
-          setError(data.error || t('err_failed_gen_invoice'));
-          setLoading(false);
+      const createInvoice = async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/payments/nowpayments/invoice`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ store_id: storeId, amount: parseFloat(amount) })
+          });
+          const data = await res.json();
+          if (!isMounted) return;
+          if (data.success && data.invoice_url) {
+            setInvoiceUrl(data.invoice_url);
+            setInvoiceId(data.invoice_id);
+            openPaymentWindow(data.invoice_url);
+          } else {
+            setError(data.error || t('err_failed_gen_invoice'));
+          }
+        } catch (err) {
+          if (!isMounted) return;
+          setError(t('err_net_gen_invoice'));
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
         }
-      })
-      .catch(err => {
-        if (!isMounted) return;
-        setError(t('err_net_gen_invoice'));
-        setLoading(false);
-      });
+      };
+      createInvoice();
     }
 
     return () => { isMounted = false; };
