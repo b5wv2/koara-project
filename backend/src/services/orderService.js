@@ -15,7 +15,8 @@ class OrderService {
     quantity = 1,
     receiptUrl,
     promoCode = null,
-    checkoutGroupId = null
+    checkoutGroupId = null,
+    skipNotifications = false
   }) {
     const client = await db.pool.connect();
     

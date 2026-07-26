@@ -4,7 +4,7 @@ const fazerCardsProvider = require('./providers/fazerCardsProvider');
 const emailService = require('./emailService');
 
 class TopupOrderService {
-  async createPendingOrder({ storeId, offerId, dynamicFields, customerInfo, receiptUrl, promoCode = null, checkoutGroupId = null }) {
+  async createPendingOrder({ storeId, offerId, dynamicFields, customerInfo, receiptUrl, promoCode = null, checkoutGroupId = null, skipNotifications = false }) {
     const client = await db.pool.connect();
     let localOrderId = null;
     
@@ -101,25 +101,32 @@ class TopupOrderService {
 
       await client.query('COMMIT');
       
-      // 5. Send Pending Emails
-      // Send to customer
-      emailService.sendEmail(customerInfo.email, 'Order Received - Pending Approval', 'topup-pending-customer.html', {
-        customerName: customerInfo.name,
-        orderId: localOrderId,
-        productName: offer.name
-      });
+      // 5. Send Pending Emails only if not part of a batch notification
+      if (!skipNotifications) {
+        // Send to customer
+        emailService.sendEmail(customerInfo.email, 'Order Received - Pending Approval', 'topup-pending-customer.html', {
+          customerName: customerInfo.name,
+          orderId: localOrderId,
+          productName: offer.name
+        });
 
-      // Send to merchant
-      emailService.sendEmail(store.email, 'New Order Received', 'topup-pending-merchant.html', {
-        storeName: store.store_name,
-        orderId: localOrderId,
-        productName: offer.name
-      });
+        // Send to merchant
+        emailService.sendEmail(store.email, 'New Order Received', 'topup-pending-merchant.html', {
+          storeName: store.store_name,
+          orderId: localOrderId,
+          productName: offer.name
+        });
+      }
 
       return {
         success: true,
         orderId: localOrderId,
-        status: 'pending'
+        status: 'pending',
+        storeId,
+        storeName: store.store_name,
+        merchantEmail: store.email,
+        productName: offer.name,
+        sellingPrice: totalSellingPrice
       };
 
     } catch (error) {

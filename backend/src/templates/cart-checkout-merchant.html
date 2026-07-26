@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Cart Orders Received - {{store_name}}</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; color: #2d3748; margin: 0; padding: 0; line-height: 1.8; -webkit-font-smoothing: antialiased; }
+        .email-wrapper { width: 100%; background-color: #f4f6f8; padding: 40px 20px; }
+        .email-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0; }
+        .email-header { background-color: #0f172a; padding: 30px; text-align: center; color: #ffffff; }
+        .store-brand { font-size: 22px; font-weight: 800; margin: 0; color: #38bdf8; }
+        .email-body { padding: 35px 35px 30px 35px; }
+        .greeting { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 15px; }
+        .intro-text { font-size: 14px; color: #4a5568; margin-bottom: 20px; }
+        .customer-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 20px; font-size: 13px; }
+        .customer-card div { margin-bottom: 4px; }
+        .customer-card strong { color: #0f172a; }
+        .summary-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 25px; }
+        .summary-title { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .order-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .order-table th { text-align: left; font-size: 12px; color: #64748b; padding-bottom: 8px; font-weight: 600; }
+        .order-table td { padding: 10px 0; border-top: 1px solid #edf2f7; font-size: 13px; color: #1e293b; }
+        .order-num { font-family: monospace; font-weight: 700; color: #2563eb; background: #eff6ff; padding: 2px 6px; border-radius: 4px; }
+        .total-row { border-top: 2px solid #e2e8f0; padding-top: 12px; font-size: 15px; font-weight: 800; color: #0f172a; display: flex; justify-content: space-between; }
+        .email-footer { background-color: #f8fafc; padding: 25px 35px; text-align: center; border-top: 1px solid #edf2f7; }
+        .footer-sub { font-size: 12px; color: #64748b; }
+        .powered-by { font-size: 11px; color: #94a3b8; margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+        .powered-by strong { color: #0f172a; }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="email-header">
+                <h1 class="store-brand">{{store_name}} Merchant Dashboard</h1>
+            </div>
+            <div class="email-body">
+                <div class="greeting">New Cart Checkout Received!</div>
+                <div class="intro-text">
+                    You have received <strong>{{order_count}} new orders</strong> from a single customer checkout.
+                </div>
+                <div class="customer-card">
+                    <div><strong>Customer Name:</strong> {{customer_name}}</div>
+                    <div><strong>Customer Email:</strong> {{customer_email}}</div>
+                    <div><strong>WhatsApp:</strong> {{whatsapp}}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-title">Orders List</div>
+                    <table class="order-table">
+                        <thead>
+                            <tr>
+                                <th>Order Number</th>
+                                <th>Item & Details</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{orders_rows}}
+                        </tbody>
+                    </table>
+                    <div class="total-row">
+                        <span>Total Checkout Value:</span>
+                        <span>${{total_amount}} USD</span>
+                    </div>
+                </div>
+            </div>
+            <div class="email-footer">
+                <div class="footer-sub">Log into your Merchant Dashboard to review the payment receipt and approve or reject each order independently.</div>
+                <div class="powered-by">Powered by <strong>Koara Platform</strong></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
