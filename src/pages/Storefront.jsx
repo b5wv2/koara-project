@@ -463,7 +463,7 @@ const StorefrontInner = ({ store }) => {
             aria-hidden="true"
           />
           {product.image_url || product.image ? (
-            <img src={product.image_url || product.image} alt={product.name} className="relative max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" />
+            <img src={(product.image_url || product.image).startsWith('http') || (product.image_url || product.image).startsWith('data:') ? (product.image_url || product.image) : `${API_BASE_URL}${(product.image_url || product.image)}`} alt={product.name} className="relative max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" />
           ) : (
             <Package size={36} className="relative" style={{ color: '#2D3748', opacity: 0.6 }} />
           )}
@@ -643,7 +643,7 @@ const StorefrontInner = ({ store }) => {
                       key={`topup-${topupCat.category.id}`}
                       name={topupCat.category.name}
                       color="#7C3AED"
-                      logoSrc={topupCat.category.image_url || null}
+                      logoSrc={topupCat.category.image_url ? (topupCat.category.image_url.startsWith('http') || topupCat.category.image_url.startsWith('data:') ? topupCat.category.image_url : `${API_BASE_URL}${topupCat.category.image_url}`) : null}
                       iconText={topupCat.category.name.charAt(0)}
                       productCount={count}
                       onClick={() => setSelectedCategoryId(topupCat.category.id)}

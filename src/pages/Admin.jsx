@@ -107,7 +107,8 @@ const AdminDashboard = () => {
   const [merchantTopups, setMerchantTopups] = useState([]);
   const [topupsLoading, setTopupsLoading] = useState(false);
   const [editingTopupPrice, setEditingTopupPrice] = useState({});
-
+  const [topupCategories, setTopupCategories] = useState([]);
+  const [uploadingTopupImage, setUploadingTopupImage] = useState(false);
   // Withdrawals
   const [withdrawalsLoading, setWithdrawalsLoading] = useState(false);
   const [withdrawalProcessingId, setWithdrawalProcessingId] = useState(null);
@@ -204,7 +205,7 @@ const AdminDashboard = () => {
         setTopupsLoading(true);
         fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' })
           .then(r => r.json())
-          .then(data => { if(data.success) setMerchantTopups(data.topups); })
+          .then(data => { if(data.success) { setMerchantTopups(data.topups); setTopupCategories(data.categories || []); } })
           .catch(console.error)
           .finally(() => setTopupsLoading(false));
       }
@@ -1315,11 +1316,65 @@ const AdminDashboard = () => {
                   title="Direct Top-ups"
                   description="Enable direct game top-ups for your customers. Prices listed under Cost are charged to your wallet."
                 />
+                <div className="p-6 pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <h4 className="text-sm font-semibold mb-4 text-white">Categories & Images</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {topupCategories.map(cat => (
+                      <div key={cat.category_id} className="dash-card p-4 text-center relative overflow-hidden flex flex-col items-center justify-center">
+                        {cat.custom_image_url ? (
+                          <div className="w-full aspect-square mb-3 relative rounded overflow-hidden bg-white/5">
+                            <img src={cat.custom_image_url.startsWith('http') || cat.custom_image_url.startsWith('/') ? cat.custom_image_url : `${API_BASE_URL}${cat.custom_image_url}`} alt={cat.name} className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="w-full aspect-square mb-3 relative rounded overflow-hidden bg-white/5 flex items-center justify-center">
+                            <ImageIcon className="text-slate-500 opacity-50" size={32} />
+                          </div>
+                        )}
+                        <h5 className="font-semibold text-xs text-white truncate w-full mb-3" title={cat.name}>{cat.name}</h5>
+                        <div className="flex w-full gap-2 mt-auto">
+                          <label className={`dash-btn dash-btn-secondary text-xs flex-1 cursor-pointer justify-center px-0 ${uploadingTopupImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                            {cat.custom_image_url ? 'Replace' : 'Upload'}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingTopupImage} onChange={async (e) => {
+                              const file = e.target.files[0]; if(!file) return;
+                              setUploadingTopupImage(true);
+                              try {
+                                const formData = new FormData(); formData.append('image', file);
+                                const uploadRes = await fetch(`${API_BASE_URL}/api/merchant/topups/upload-image`, { method: 'POST', body: formData, credentials: 'include' });
+                                const uploadData = await uploadRes.json();
+                                if(uploadData.success) {
+                                  await fetch(`${API_BASE_URL}/api/merchant/topups/category/${cat.category_id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ store_id: storeId, custom_image_url: uploadData.url }), credentials: 'include' });
+                                  const r = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
+                                  const d = await r.json(); if (d.success) { setMerchantTopups(d.topups); setTopupCategories(d.categories || []); }
+                                } else {
+                                  alert(uploadData.error || 'Upload failed');
+                                }
+                              } catch (err) {}
+                              setUploadingTopupImage(false);
+                            }} />
+                          </label>
+                          {cat.custom_image_url && (
+                            <button disabled={uploadingTopupImage} onClick={async () => {
+                              if(!confirm('Remove category image?')) return;
+                              setUploadingTopupImage(true);
+                              try {
+                                await fetch(`${API_BASE_URL}/api/merchant/topups/category/${cat.category_id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ store_id: storeId, custom_image_url: null }), credentials: 'include' });
+                                const r = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
+                                const d = await r.json(); if (d.success) { setMerchantTopups(d.topups); setTopupCategories(d.categories || []); }
+                              } catch(e) {}
+                              setUploadingTopupImage(false);
+                            }} className="dash-btn bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2 flex items-center justify-center disabled:opacity-50"><Trash2 size={14}/></button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="koara-table">
                     <thead>
                       <tr>
                         <th>Enabled</th>
+                        <th>Image</th>
                         <th>Product Name</th>
                         <th>Provider Cost ($)</th>
                         <th>Selling Price ($)</th>
@@ -1328,9 +1383,9 @@ const AdminDashboard = () => {
                     </thead>
                     <tbody>
                       {topupsLoading ? (
-                        <tr><td colSpan="5"><div className="koara-empty-state"><div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /><span>Loading topups...</span></div></td></tr>
+                        <tr><td colSpan="6"><div className="koara-empty-state"><div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /><span>Loading topups...</span></div></td></tr>
                       ) : merchantTopups.length === 0 ? (
-                        <tr><td colSpan="5"><div className="koara-empty-state"><Package size={32} /><span>No topups available.</span></div></td></tr>
+                        <tr><td colSpan="6"><div className="koara-empty-state"><Package size={32} /><span>No topups available.</span></div></td></tr>
                       ) : merchantTopups.map(topup => {
                         const currentPrice = editingTopupPrice[topup.offer_id] ?? (topup.selling_price || '');
                         return (
@@ -1354,11 +1409,58 @@ const AdminDashboard = () => {
                                     setTopupsLoading(true);
                                     const res = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
                                     const data = await res.json();
-                                    if (data.success) setMerchantTopups(data.topups);
+                                    if (data.success) { setMerchantTopups(data.topups); setTopupCategories(data.categories || []); }
                                     setTopupsLoading(false);
                                   } catch(e) {}
                                 }}
                               />
+                            </td>
+                            <td>
+                              <div className="flex items-center gap-2">
+                                <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
+                                  {topup.custom_image_url ? (
+                                    <img src={topup.custom_image_url.startsWith('http') || topup.custom_image_url.startsWith('/') ? topup.custom_image_url : `${API_BASE_URL}${topup.custom_image_url}`} alt="" className="w-full h-full object-contain" />
+                                  ) : (
+                                    <ImageIcon size={14} className="text-slate-500 opacity-50" />
+                                  )}
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  <label className={`text-[10px] text-blue-400 hover:text-blue-300 cursor-pointer flex items-center gap-1 font-medium bg-blue-500/10 px-1.5 py-0.5 rounded transition-colors w-fit ${uploadingTopupImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <UploadCloud size={10} /> {topup.custom_image_url ? 'Replace' : 'Upload'}
+                                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingTopupImage} onChange={async (e) => {
+                                      const file = e.target.files[0]; if(!file) return;
+                                      setUploadingTopupImage(true);
+                                      try {
+                                        const formData = new FormData(); formData.append('image', file);
+                                        const uploadRes = await fetch(`${API_BASE_URL}/api/merchant/topups/upload-image`, { method: 'POST', body: formData, credentials: 'include' });
+                                        const uploadData = await uploadRes.json();
+                                        if(uploadData.success) {
+                                          await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ store_id: storeId, selling_price: parseFloat(currentPrice) || 0, is_enabled: topup.is_enabled, custom_image_url: uploadData.url }), credentials: 'include' });
+                                          const r = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
+                                          const d = await r.json(); if (d.success) { setMerchantTopups(d.topups); setTopupCategories(d.categories || []); }
+                                        } else {
+                                          alert(uploadData.error || 'Upload failed');
+                                        }
+                                      } catch(err) {}
+                                      setUploadingTopupImage(false);
+                                    }} />
+                                  </label>
+                                  {topup.custom_image_url && (
+                                    <button disabled={uploadingTopupImage} onClick={async () => {
+                                      if(!confirm('Remove product image?')) return;
+                                      setUploadingTopupImage(true);
+                                      try {
+                                        await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ store_id: storeId, selling_price: parseFloat(currentPrice) || 0, is_enabled: topup.is_enabled, custom_image_url: null }), credentials: 'include' });
+                                        const r = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
+                                        const d = await r.json(); if (d.success) { setMerchantTopups(d.topups); setTopupCategories(d.categories || []); }
+                                      } catch(e) {}
+                                      setUploadingTopupImage(false);
+                                    }} className="text-[10px] text-red-400 hover:text-red-300 font-medium bg-red-500/10 px-1.5 py-0.5 rounded transition-colors text-left w-fit flex items-center gap-1 disabled:opacity-50">
+                                      <Trash2 size={10} /> Delete
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
                             </td>
                             <td className="cell-primary">{topup.name}</td>
                             <td className="font-mono text-sm text-slate-400">${parseFloat(topup.price_usd).toFixed(4)}</td>
@@ -1395,7 +1497,7 @@ const AdminDashboard = () => {
                                     setTopupsLoading(true);
                                     const res = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
                                     const data = await res.json();
-                                    if (data.success) setMerchantTopups(data.topups);
+                                    if (data.success) { setMerchantTopups(data.topups); setTopupCategories(data.categories || []); }
                                     setTopupsLoading(false);
                                   } catch (err) {
                                     alert('Failed to save');
