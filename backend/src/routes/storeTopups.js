@@ -38,33 +38,58 @@ router.get('/catalog/:storeId', async (req, res) => {
     const catalogs = topupCatalogService.getCatalogs();
 
     const merchantProductsRes = await db.query(`
-      SELECT offer_id, selling_price 
+      SELECT offer_id, selling_price, custom_image_url 
       FROM merchant_topup_products 
       WHERE store_id = $1 AND is_enabled = true
     `, [storeId]);
     
     const merchantMap = {};
     merchantProductsRes.rows.forEach(row => {
-      merchantMap[row.offer_id] = row.selling_price;
+      merchantMap[row.offer_id] = {
+        selling_price: row.selling_price,
+        custom_image_url: row.custom_image_url
+      };
+    });
+
+    const merchantCategoriesRes = await db.query(`
+      SELECT category_id, custom_image_url, custom_description
+      FROM merchant_topup_categories
+      WHERE store_id = $1
+    `, [storeId]);
+
+    const merchantCatMap = {};
+    merchantCategoriesRes.rows.forEach(row => {
+      merchantCatMap[row.category_id] = {
+        custom_image_url: row.custom_image_url,
+        custom_description: row.custom_description
+      };
     });
 
     const activeCatalogs = [];
 
     catalogs.forEach(catalog => {
+      const catMeta = merchantCatMap[catalog.category_id] || {};
+      const categoryImageUrl = catMeta.custom_image_url || catalog.image_url || null;
+
       const activeOffers = catalog.offers
         .filter(offer => merchantMap[offer.offer_id] !== undefined)
-        .map(offer => ({
-          offer_id: offer.offer_id,
-          name: offer.name,
-          selling_price: merchantMap[offer.offer_id]
-        }));
+        .map(offer => {
+          const mOffer = merchantMap[offer.offer_id];
+          return {
+            offer_id: offer.offer_id,
+            name: offer.name,
+            selling_price: mOffer.selling_price,
+            image_url: mOffer.custom_image_url || offer.image_url || categoryImageUrl || null
+          };
+        });
 
       if (activeOffers.length > 0) {
         activeCatalogs.push({
           category: {
             id: catalog.category_id,
             name: catalog.name,
-            note: catalog.note
+            note: catMeta.custom_description || catalog.note || '',
+            image_url: categoryImageUrl
           },
           fields: catalog.fields || [],
           offers: activeOffers

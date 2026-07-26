@@ -643,7 +643,7 @@ const StorefrontInner = ({ store }) => {
                       key={`topup-${topupCat.category.id}`}
                       name={topupCat.category.name}
                       color="#7C3AED"
-                      logoSrc={null}
+                      logoSrc={topupCat.category.image_url || null}
                       iconText={topupCat.category.name.charAt(0)}
                       productCount={count}
                       onClick={() => setSelectedCategoryId(topupCat.category.id)}

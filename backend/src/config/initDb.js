@@ -247,9 +247,22 @@ const createMerchantTopupProductsTableQuery = `
     offer_id VARCHAR(255) NOT NULL,
     selling_price NUMERIC(10,2) NOT NULL,
     admin_cost_price NUMERIC(10,2),
+    custom_image_url TEXT,
     is_enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(store_id, offer_id)
+  );
+`;
+
+const createMerchantTopupCategoriesTableQuery = `
+  CREATE TABLE IF NOT EXISTS merchant_topup_categories (
+    id SERIAL PRIMARY KEY,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    category_id VARCHAR(255) NOT NULL,
+    custom_image_url TEXT,
+    custom_description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(store_id, category_id)
   );
 `;
 
@@ -440,11 +453,13 @@ const initializeDatabase = async () => {
 
     // Create Direct Top-up Tables
     await client.query(createMerchantTopupProductsTableQuery);
+    await client.query(createMerchantTopupCategoriesTableQuery);
     
     // Safely migrate existing merchant_topup_products
     await client.query(`
       ALTER TABLE merchant_topup_products 
-      ADD COLUMN IF NOT EXISTS admin_cost_price NUMERIC(10,2);
+      ADD COLUMN IF NOT EXISTS admin_cost_price NUMERIC(10,2),
+      ADD COLUMN IF NOT EXISTS custom_image_url TEXT;
     `);
 
     await client.query(createTopupOrdersTableQuery);

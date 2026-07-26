@@ -16,6 +16,7 @@ export function useMerchantDashboard(activeTab) {
   const storeId = user?.storeId;
 
   const [merchantTopups, setMerchantTopups] = useState([]);
+  const [topupCategories, setTopupCategories] = useState([]);
   const [topupsLoading, setTopupsLoading] = useState(false);
   const [editingTopupPrice, setEditingTopupPrice] = useState({});
   const [editingMerchantPrice, setEditingMerchantPrice] = useState({});
@@ -30,7 +31,12 @@ export function useMerchantDashboard(activeTab) {
     if (activeTab === 'topups') {
       setTopupsLoading(true);
       topupService.fetchMerchantTopups(storeId)
-        .then(topups => setMerchantTopups(topups))
+        .then(res => {
+          const topups = Array.isArray(res) ? res : (res.topups || []);
+          const categories = Array.isArray(res) ? [] : (res.categories || []);
+          setMerchantTopups(topups);
+          setTopupCategories(categories);
+        })
         .catch(console.error)
         .finally(() => setTopupsLoading(false));
     }
@@ -41,14 +47,18 @@ export function useMerchantDashboard(activeTab) {
 
   const reloadTopups = async () => {
     setTopupsLoading(true);
-    const topups = await topupService.fetchMerchantTopups(storeId);
+    const res = await topupService.fetchMerchantTopups(storeId);
+    const topups = Array.isArray(res) ? res : (res.topups || []);
+    const categories = Array.isArray(res) ? [] : (res.categories || []);
     setMerchantTopups(topups);
+    setTopupCategories(categories);
     setTopupsLoading(false);
   };
 
   return {
     merchantTopups,
     setMerchantTopups,
+    topupCategories,
     topupsLoading,
     setTopupsLoading,
     editingTopupPrice,

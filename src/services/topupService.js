@@ -8,12 +8,15 @@ export async function fetchMerchantTopups(storeId) {
   try {
     const { ok, data } = await apiFetch(`/api/merchant/topups?store_id=${storeId}`);
     if (ok && data.success) {
-      return data.topups || [];
+      return {
+        topups: data.topups || [],
+        categories: data.categories || []
+      };
     }
-    return [];
+    return { topups: [], categories: [] };
   } catch (err) {
     console.error('Error fetching merchant topups:', err);
-    return [];
+    return { topups: [], categories: [] };
   }
 }
 
@@ -26,6 +29,38 @@ export async function updateTopup(offerId, storeId, updates) {
     return { success: true };
   } catch (err) {
     return { success: false, message: 'Failed to save' };
+  }
+}
+
+export async function updateTopupCategory(categoryId, storeId, updates) {
+  try {
+    await jsonFetch(`/api/merchant/topups/category/${categoryId}`, 'PUT', {
+      store_id: storeId,
+      ...updates,
+    });
+    return { success: true };
+  } catch (err) {
+    return { success: false, message: 'Failed to save category' };
+  }
+}
+
+export async function uploadTopupImage(file) {
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/merchant/topups/upload-image`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include'
+    });
+    const data = await response.json();
+    if (response.ok && data.success) {
+      return { success: true, url: data.url };
+    }
+    return { success: false, message: data.error || 'Image upload failed' };
+  } catch (err) {
+    return { success: false, message: 'Connection error during image upload' };
   }
 }
 

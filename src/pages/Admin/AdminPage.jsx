@@ -233,7 +233,7 @@ const AdminPage = () => {
       switch (activeTab) {
         case 'dashboard': return <MerchantDashboardTab onAddFunds={() => setMerchantActionModal({ isOpen: true, type: 'add' })} onWithdraw={() => setMerchantWithdrawalModal(true)} onInspectReceipt={setSelectedReceipt} />;
         case 'products': return <MerchantProductsTab editingMerchantPrice={merchantDash.editingMerchantPrice} setEditingMerchantPrice={merchantDash.setEditingMerchantPrice} onCustomize={(p) => setCustomizingProduct({ ...p, custom_title: p.custom_title || '', custom_description: p.custom_description || '', custom_image_url: p.custom_image_url || '', previewImage: p.custom_image_url || p.image_url || '' })} />;
-        case 'topups': return <MerchantTopupsTab merchantTopups={merchantDash.merchantTopups} topupsLoading={merchantDash.topupsLoading} editingTopupPrice={merchantDash.editingTopupPrice} setEditingTopupPrice={merchantDash.setEditingTopupPrice} reloadTopups={merchantDash.reloadTopups} />;
+        case 'topups': return <MerchantTopupsTab merchantTopups={merchantDash.merchantTopups} topupCategories={merchantDash.topupCategories} topupsLoading={merchantDash.topupsLoading} editingTopupPrice={merchantDash.editingTopupPrice} setEditingTopupPrice={merchantDash.setEditingTopupPrice} reloadTopups={merchantDash.reloadTopups} />;
         case 'promotions': return <MerchantPromotionsTab />;
         case 'customization': return <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}><MerchantCustomizationTab /></PremiumLockOverlay>;
         case 'settings': return <MerchantSettingsTab />;
