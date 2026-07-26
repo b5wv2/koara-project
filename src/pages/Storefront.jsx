@@ -650,6 +650,33 @@ const StorefrontInner = ({ store }) => {
                     />
                   );
                 })}
+
+                {/* Platform Products Categories (Gift Cards, Subscriptions, etc.) */}
+                {(() => {
+                  const platformCategoriesMap = {};
+                  platformProducts.forEach(p => {
+                    const catName = p.category || 'Gift Cards';
+                    if (!platformCategoriesMap[catName]) {
+                      platformCategoriesMap[catName] = [];
+                    }
+                    platformCategoriesMap[catName].push(p);
+                  });
+
+                  return Object.keys(platformCategoriesMap).map((catName) => {
+                    const items = platformCategoriesMap[catName];
+                    return (
+                      <CategoryCard
+                        key={`platform-${catName}`}
+                        name={catName}
+                        color="#2563EB"
+                        logoSrc={null}
+                        iconText={catName.charAt(0)}
+                        productCount={items.length}
+                        onClick={() => setSelectedCategoryId(catName)}
+                      />
+                    );
+                  });
+                })()}
               </div>
             </div>
           </div>

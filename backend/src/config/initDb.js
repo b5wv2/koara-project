@@ -747,6 +747,56 @@ const initializeDatabase = async () => {
       }
     }
 
+    // 5. Seed standard Gift Cards in platform_products and map to merchant_products
+    const defaultGiftCards = [
+      { name: 'Steam $10 Gift Card', category: 'Gift Cards', description: 'Steam Wallet $10 Digital Code', price: 10.00 },
+      { name: 'Steam $25 Gift Card', category: 'Gift Cards', description: 'Steam Wallet $25 Digital Code', price: 25.00 },
+      { name: 'Steam $50 Gift Card', category: 'Gift Cards', description: 'Steam Wallet $50 Digital Code', price: 50.00 },
+      { name: 'Steam $100 Gift Card', category: 'Gift Cards', description: 'Steam Wallet $100 Digital Code', price: 100.00 },
+      { name: 'Apple iTunes $15 Card', category: 'Gift Cards', description: 'Apple Gift Card $15 USD', price: 15.00 },
+      { name: 'Apple iTunes $25 Card', category: 'Gift Cards', description: 'Apple Gift Card $25 USD', price: 25.00 },
+      { name: 'Apple iTunes $50 Card', category: 'Gift Cards', description: 'Apple Gift Card $50 USD', price: 50.00 },
+      { name: 'Google Play $10 Card', category: 'Gift Cards', description: 'Google Play Gift Card $10 USD', price: 10.00 },
+      { name: 'Google Play $25 Card', category: 'Gift Cards', description: 'Google Play Gift Card $25 USD', price: 25.00 },
+      { name: 'Google Play $50 Card', category: 'Gift Cards', description: 'Google Play Gift Card $50 USD', price: 50.00 },
+      { name: 'PlayStation Network $20 Card', category: 'Gift Cards', description: 'PlayStation Store $20 USD Code', price: 20.00 },
+      { name: 'PlayStation Network $50 Card', category: 'Gift Cards', description: 'PlayStation Store $50 USD Code', price: 50.00 },
+      { name: 'Xbox Live $25 Card', category: 'Gift Cards', description: 'Xbox Gift Card $25 USD', price: 25.00 },
+      { name: 'Xbox Live $50 Card', category: 'Gift Cards', description: 'Xbox Gift Card $50 USD', price: 50.00 },
+      { name: 'Roblox 800 Robux Card', category: 'Gift Cards', description: 'Roblox Digital Code 800 Robux', price: 10.00 },
+      { name: 'Roblox 2000 Robux Card', category: 'Gift Cards', description: 'Roblox Digital Code 2000 Robux', price: 25.00 },
+      { name: 'Razer Gold $10 Card', category: 'Gift Cards', description: 'Razer Gold Global Pin $10 USD', price: 10.00 },
+      { name: 'Razer Gold $50 Card', category: 'Gift Cards', description: 'Razer Gold Global Pin $50 USD', price: 50.00 },
+      { name: 'Netflix $25 Subscription Card', category: 'Subscriptions', description: 'Netflix Gift Card $25', price: 25.00 },
+      { name: 'Spotify 3 Month Premium Card', category: 'Subscriptions', description: 'Spotify 3 Month Subscription', price: 30.00 }
+    ];
+
+    const activeStoresRes = await client.query("SELECT id FROM stores WHERE status = 'active'");
+    const activeStoreIds = activeStoresRes.rows.map(s => s.id);
+
+    for (const gc of defaultGiftCards) {
+      const checkGc = await client.query('SELECT id FROM platform_products WHERE name = $1', [gc.name]);
+      let gcId;
+      if (checkGc.rows.length === 0) {
+        const insGc = await client.query(`
+          INSERT INTO platform_products (name, category, image_url, description, is_active)
+          VALUES ($1, $2, NULL, $3, true)
+          RETURNING id
+        `, [gc.name, gc.category, gc.description]);
+        gcId = insGc.rows[0].id;
+      } else {
+        gcId = checkGc.rows[0].id;
+      }
+
+      for (const sId of activeStoreIds) {
+        await client.query(`
+          INSERT INTO merchant_products (store_id, catalog_product_id, selling_price, is_enabled)
+          VALUES ($1, $2, $3, true)
+          ON CONFLICT (store_id, catalog_product_id) DO NOTHING
+        `, [sId, gcId, gc.price]);
+      }
+    }
+
     await client.query('COMMIT');
 
     console.log('Database tables verified/created and seeded successfully.');
