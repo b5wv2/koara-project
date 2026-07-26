@@ -3,12 +3,13 @@ import Modal from './Modal';
 import { UploadCloud, CheckCircle2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import DashButton from './ui/DashButton';
+import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
   const { t } = useAppContext();
-  const [loading, setLoading] = useState(false);
+  const { execute, loading } = useAsyncAction();
   const [errorMsg, setErrorMsg] = useState('');
   
   // Resubmission states
@@ -34,43 +35,34 @@ const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
 
   const { status, reason, request } = storeRequestStatus;
 
-  const handleResubmit = async (e) => {
+  const handleResubmit = (e) => execute(async () => {
     if (e && e.preventDefault) e.preventDefault();
-    setLoading(true);
     setErrorMsg('');
 
-    try {
-      const formData = new FormData();
-      formData.append('store_id', request.id);
-      formData.append('bank_name', bankName.trim());
-      formData.append('account_holder_name', accountHolderName.trim());
-      formData.append('account_number', accountNumber.trim());
-      if (kycDocument) {
-        formData.append('kyc_document', kycDocument);
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/auth/resubmit`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to resubmit application.');
-      }
-
-      setResubmitted(true);
-      return { success: true };
-    } catch (err) {
-      console.error('Resubmit error:', err.message);
-      setErrorMsg(err.message);
-      return { success: false };
-    } finally {
-      setLoading(false);
+    const formData = new FormData();
+    formData.append('store_id', request.id);
+    formData.append('bank_name', bankName.trim());
+    formData.append('account_holder_name', accountHolderName.trim());
+    formData.append('account_number', accountNumber.trim());
+    if (kycDocument) {
+      formData.append('kyc_document', kycDocument);
     }
-  };
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/resubmit`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to resubmit application.');
+    }
+
+    setResubmitted(true);
+    return { success: true };
+  });
 
   if (resubmitted) {
     return (
@@ -96,7 +88,7 @@ const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
       <Modal isOpen={isOpen} onClose={onClose} title="Application Status">
         <div className="text-center py-6">
           <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 16 14"></polyline></svg>
           </div>
           <h4 className="text-xl font-semibold mb-2 text-black">Pending Review</h4>
           <p className="text-sm text-slate-500 mb-6">
@@ -192,6 +184,7 @@ const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
           <DashButton 
             type="submit"
             onClick={handleResubmit}
+            loading={loading}
             disabled={loading}
             className="w-full mt-6 bg-koara-blue text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center"
           >

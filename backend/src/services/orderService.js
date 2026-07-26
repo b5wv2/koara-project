@@ -14,7 +14,8 @@ class OrderService {
     platformProductId,
     quantity = 1,
     receiptUrl,
-    promoCode = null
+    promoCode = null,
+    checkoutGroupId = null
   }) {
     const client = await db.pool.connect();
     
@@ -120,9 +121,10 @@ class OrderService {
           receipt_url,
           status,
           promo_code,
-          discount_amount
+          discount_amount,
+          checkout_group_id
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16, $17
         ) RETURNING *
       `, [
         storeId,
@@ -140,7 +142,8 @@ class OrderService {
         totalAmount,
         receiptUrl,
         appliedPromoCode,
-        discountAmount
+        discountAmount,
+        checkoutGroupId
       ]);
 
       await client.query('COMMIT');

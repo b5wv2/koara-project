@@ -4,6 +4,7 @@ import { Loader2, ExternalLink, ShieldCheck, CheckCircle, AlertCircle, Check, Co
 import QRCode from 'react-qr-code';
 import { useAppContext } from '../context/AppContext';
 import DashButton from './ui/DashButton';
+import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const NETWORKS = [
   { id: 'usdttrc20', name: 'USDT (TRC20)', symbol: '₮' },
@@ -18,6 +19,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
   
   const [paymentData, setPaymentData] = useState(null);
   const [error, setError] = useState('');
+  const { execute: executeInvoice, loading } = useAsyncAction();
   
   const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -35,38 +37,31 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
     setSelectedNetwork(networkId);
   };
 
-  const handleCreateInvoice = async () => {
-    if (!selectedNetwork) return;
+  const handleCreateInvoice = () => executeInvoice(async () => {
+    if (!selectedNetwork) return { success: false };
     
     setStep(2); // Loading
     setError('');
 
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/subscription/upgrade/crypto-invoice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ pay_currency: selectedNetwork })
-      });
-      
-      const data = await res.json();
-      
-      if (data.success && data.pay_address) {
-        setPaymentData(data);
-        setStep(3); // Payment view
-        return { success: true };
-      } else {
-        setError(data.error || t('err_failed_gen_invoice'));
-        setStep(1); // Back to selection if error
-        return { success: false };
-      }
-    } catch (err) {
-      console.error('Error creating invoice:', err);
-      setError(t('err_net_gen_invoice'));
-      setStep(1);
+    const res = await fetch(`${API_BASE_URL}/api/subscription/upgrade/crypto-invoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ pay_currency: selectedNetwork })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success && data.pay_address) {
+      setPaymentData(data);
+      setStep(3); // Payment view
+      return { success: true };
+    } else {
+      setError(data.error || t('err_failed_gen_invoice'));
+      setStep(1); // Back to selection if error
       return { success: false };
     }
-  };
+  });
 
   // Polling for subscription status
   useEffect(() => {
@@ -97,12 +92,11 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
     };
   }, [isOpen, step, API_BASE_URL, onSuccess]);
 
-  const handleCopy = (text, type) => {
+  const handleCopy = (text) => {
     navigator.clipboard.writeText(text);
   };
 
   const handleClose = () => {
-    // If we close before payment is confirmed, do nothing special, webhook handles it
     onClose();
   };
 
@@ -143,7 +137,8 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
 
             <DashButton
               onClick={handleCreateInvoice}
-              disabled={!selectedNetwork}
+              loading={loading}
+              disabled={!selectedNetwork || loading}
               className="dash-btn dash-btn-primary w-full justify-center py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('continue_to_payment')}
@@ -191,7 +186,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
                   <div className="font-mono text-lg font-bold text-white">
                     {paymentData.pay_amount} <span className="text-sm text-slate-400">{paymentData.pay_currency?.toUpperCase()}</span>
                   </div>
-                  <button onClick={() => handleCopy(paymentData.pay_amount, 'Amount')} className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors" title="Copy Amount">
+                  <button onClick={() => handleCopy(paymentData.pay_amount)} className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors" title="Copy Amount">
                     <Copy size={16} className="text-slate-300" />
                   </button>
                 </div>
@@ -203,7 +198,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
                   <div className="font-mono text-xs text-slate-300 break-all leading-tight">
                     {paymentData.pay_address}
                   </div>
-                  <button onClick={() => handleCopy(paymentData.pay_address, 'Address')} className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors shrink-0" title="Copy Address">
+                  <button onClick={() => handleCopy(paymentData.pay_address)} className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors shrink-0" title="Copy Address">
                     <Copy size={16} className="text-slate-300" />
                   </button>
                 </div>

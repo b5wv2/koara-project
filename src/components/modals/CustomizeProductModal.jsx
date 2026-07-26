@@ -62,17 +62,22 @@ const CustomizeProductModal = ({ customizingProduct, setCustomizingProduct, onSa
                     if (!file) return;
 
                     setCustomizingProduct(p => ({ ...p, uploading: true }));
-                    const result = await uploadProductImage(file);
-                    if (result.success) {
-                      setCustomizingProduct(p => ({
-                        ...p,
-                        custom_image_url: result.url,
-                        previewImage: result.url,
-                        uploading: false,
-                      }));
-                    } else {
-                      alert(result.message);
-                      setCustomizingProduct(p => ({ ...p, uploading: false }));
+                    try {
+                      const result = await uploadProductImage(file);
+                      if (result.success) {
+                        setCustomizingProduct(p => ({
+                          ...p,
+                          custom_image_url: result.url,
+                          previewImage: result.url,
+                        }));
+                      } else {
+                        alert(result.message || 'Image upload failed');
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      alert('Image upload failed due to a network error');
+                    } finally {
+                      setCustomizingProduct(p => (p ? { ...p, uploading: false } : null));
                     }
                   }}
                 />

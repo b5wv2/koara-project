@@ -4,17 +4,18 @@ import { Copy, CheckCircle, Loader2 } from 'lucide-react';
 import { API_BASE_URL } from '../services/api';
 import { useAppContext } from '../context/AppContext';
 import DashButton from './ui/DashButton';
+import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: propStoreId }) => {
   const { user, store, t } = useAppContext();
   const [config, setConfig] = useState(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [transactionId, setTransactionId] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   
+  const { execute: executeVerify, loading: isVerifying } = useAsyncAction();
   const storeId = propStoreId || user?.storeId;
 
   useEffect(() => {
@@ -43,57 +44,44 @@ const LocalBankTransferModal = ({ isOpen, onClose, amount, onSuccess, storeId: p
     }
   };
 
-  const handleVerify = async () => {
+  const handleVerify = () => executeVerify(async () => {
     if (!transactionId.trim()) {
       setError(t('err_req_transaction_id'));
-      return;
+      return { success: false };
     }
 
-    setIsVerifying(true);
     setError('');
     setSuccessMsg('');
 
-    try {
-      if (!storeId) {
-        throw new Error(t('err_store_id_not_found'));
-      }
-
-      console.log({
-        user,
-        merchant: user,
-        store,
-        storeId
-      });
-
-      const response = await fetch(`${API_BASE_URL}/api/payments/local/verify`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          store_id: storeId,
-          transaction_id: transactionId,
-          amount: parseFloat(amount)
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('err_verification_failed'));
-      }
-
-      setSuccessMsg(t('success_wallet_credited'));
-      setTimeout(() => {
-        onSuccess();
-      }, 2000);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsVerifying(false);
+    if (!storeId) {
+      throw new Error(t('err_store_id_not_found'));
     }
-  };
+
+    const response = await fetch(`${API_BASE_URL}/api/payments/local/verify`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        store_id: storeId,
+        transaction_id: transactionId,
+        amount: parseFloat(amount)
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || t('err_verification_failed'));
+    }
+
+    setSuccessMsg(t('success_wallet_credited'));
+    setTimeout(() => {
+      onSuccess();
+    }, 2000);
+    return { success: true };
+  });
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('local_bank_transfer')}>

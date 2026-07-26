@@ -1,94 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, CheckCircle2, Package, X, Tag, ArrowLeft, ArrowRight, Loader2, ShoppingBag, ShieldCheck, Landmark, Receipt } from 'lucide-react';
+import { UploadCloud, CheckCircle2, Package, X, Tag, ArrowLeft, ArrowRight, Loader2, ShoppingBag, ShieldCheck, Landmark, Receipt, Plus, Trash2 } from 'lucide-react';
 import Modal from '../components/Modal';
+import DashButton from '../components/ui/DashButton';
 import { useAppContext } from '../context/AppContext';
+import { useAsyncAction } from '../hooks/useAsyncAction';
+import { CartProvider, useCart } from '../context/CartContext';
+import CartDrawer from '../components/CartDrawer';
+import TopupConfigModal from '../components/modals/TopupConfigModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// Scoped styles: a distinctive display face for headings, a subtle themed
-// scrollbar, and the entrance/shimmer motion used across the page. Kept in
-// one place so every early-return branch below can reuse the same block.
-// All colors here are pulled from the palette already used throughout this
-// file (#020617, #3B82F6, slate grays) — nothing new is introduced.
-// Scoped styles: a distinctive display face for headings, a subtle themed
-// scrollbar, and the entrance/shimmer motion used across the page. Kept in
-// one place so every early-return branch below can reuse the same block.
-const ScopedStyles = ({ custom = {} }) => {
-  const primaryColor = custom.primaryColor || '#3B82F6';
-  const secondaryColor = custom.secondaryColor || '#1E293B';
-  const bgColor = custom.bgColor || '#020617';
-  const textColor = custom.textColor || '#FFFFFF';
-  const fontFamily = custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif";
-  const borderRadius = custom.borderRadius || '16px';
-  const animations = custom.animations || 'smooth';
+// Scoped styles
+const ScopedStyles = ({ custom }) => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
 
-  return (
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Orbitron:wght@600;700;800&display=swap');
+    .sf-root {
+      font-family: ${custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif"};
+    }
+    .sf-display {
+      font-family: ${custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif"};
+    }
+    @keyframes sfRise {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .sf-rise {
+      animation: sfRise 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .sf-focusable:focus-visible {
+      outline: 2px solid ${custom.primaryColor || '#3B82F6'};
+      outline-offset: 2px;
+    }
+  `}</style>
+);
 
-      :root {
-        --sf-primary: ${primaryColor};
-        --sf-secondary: ${secondaryColor};
-        --sf-bg: ${bgColor};
-        --sf-text: ${textColor};
-        --sf-font: ${fontFamily};
-        --sf-radius: ${borderRadius};
-      }
-
-      .sf-display { font-family: var(--sf-font), ui-sans-serif, system-ui, sans-serif !important; letter-spacing: -0.01em; }
-
-      .sf-root { 
-        scrollbar-width: thin; 
-        scrollbar-color: var(--sf-primary) transparent; 
-        background: var(--sf-bg) !important;
-        color: var(--sf-text) !important;
-        font-family: var(--sf-font), ui-sans-serif, system-ui, sans-serif !important;
-      }
-      .sf-root::-webkit-scrollbar { width: 10px; height: 10px; }
-      .sf-root::-webkit-scrollbar-track { background: transparent; }
-      .sf-root::-webkit-scrollbar-thumb { background: var(--sf-primary); opacity: 0.35; border-radius: 999px; border: 2px solid var(--sf-bg); }
-      .sf-root::-webkit-scrollbar-thumb:hover { opacity: 0.5; }
-
-      @keyframes sf-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      .sf-rise { animation: ${animations === 'none' ? 'none' : animations === 'fast' ? 'sf-rise 0.25s cubic-bezier(0.16, 1, 0.3, 1) both' : 'sf-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both'}; }
-
-      @keyframes sf-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-      .sf-skeleton {
-        background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 37%, rgba(255,255,255,0.03) 63%);
-        background-size: 200% 100%;
-        animation: sf-shimmer 1.6s ease-in-out infinite;
-      }
-
-      .sf-focusable:focus-visible {
-        outline: 2px solid var(--sf-primary);
-        outline-offset: 3px;
-        border-radius: var(--sf-radius);
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .sf-rise { animation: none; }
-        .sf-skeleton { animation: none; }
-      }
-    `}</style>
-  );
-};
-
-// Fixed ambient backdrop shared by every screen of the storefront.
-const AmbientBackground = ({ custom = {} }) => {
-  const primaryColor = custom.primaryColor || '#2563EB';
-  return (
+const AmbientBackground = ({ custom }) => (
+  <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
     <div
-      className="fixed inset-0 pointer-events-none z-0"
-      style={{ background: `radial-gradient(ellipse 80% 40% at 50% -10%, ${primaryColor}18 0%, transparent 70%)` }}
-      aria-hidden="true"
+      className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] rounded-full opacity-20 blur-[140px]"
+      style={{ background: `radial-gradient(circle, ${custom.primaryColor || '#2563EB'} 0%, transparent 70%)` }}
     />
-  );
-};
+  </div>
+);
 
-const Storefront = ({ store }) => {
-  const { t, language, setLanguage, createOrder } = useAppContext();
+const StorefrontInner = ({ store }) => {
+  const { t, language, setLanguage } = useAppContext();
+  const { execute: executeSubmitOrder, loading: submittingOrder } = useAsyncAction();
+  const { cartItems, addToCart, clearCart, getCartSubtotal, cartCount } = useCart();
 
-  // Strictly use the ID from the dynamically loaded store
   const storeId = store.id;
   const custom = store?.customization || {};
 
@@ -96,6 +56,12 @@ const Storefront = ({ store }) => {
   const [topupsCatalogs, setTopupsCatalogs] = useState([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [catalogError, setCatalogError] = useState(null);
+
+  // Cart & Checkout UI States
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isCartCheckout, setIsCartCheckout] = useState(false);
+  const [topupConfigModal, setTopupConfigModal] = useState({ isOpen: false, product: null, fields: [] });
+  const [createdOrders, setCreatedOrders] = useState([]);
 
   useEffect(() => {
     const fetchCatalog = async () => {
@@ -135,6 +101,7 @@ const Storefront = ({ store }) => {
         setLoadingCatalog(false);
       }
     };
+
     fetchCatalog();
   }, [storeId]);
 
@@ -150,11 +117,9 @@ const Storefront = ({ store }) => {
   const [customerEmail, setCustomerEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [receiptFile, setReceiptFile] = useState(null);
-  const [submittingOrder, setSubmittingOrder] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [topupFormFields, setTopupFormFields] = useState({});
 
-  // Map the passed store to the merchant structure expected by the UI
   const merchant = store ? {
     id: store.id,
     name: store.store_name,
@@ -164,8 +129,6 @@ const Storefront = ({ store }) => {
     bankAccountName: store.account_name,
     bankAccountNumber: store.account_no
   } : null;
-
-  // ── Error states ──
 
   if (!merchant || !merchant.active) {
     return (
@@ -177,12 +140,10 @@ const Storefront = ({ store }) => {
             <X size={28} style={{ color: '#f87171' }} />
           </div>
           <h2 className="sf-display text-xl font-bold mb-2" style={{ color: custom.textColor || '#FFFFFF' }}>
-            {language === 'en' ? 'Store Suspended' : 'تم إيقاف المتجر'}
+            {language === 'en' ? 'Store Unavailable' : 'المتجر غير متاح'}
           </h2>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            {language === 'en'
-              ? 'This store is temporarily suspended by the platform administration.'
-              : 'هذا المتجر تم إيقافه مؤقتاً من قبل إدارة المنصة.'}
+          <p className="text-slate-400 text-sm">
+            {language === 'en' ? 'This store is currently not taking orders.' : 'هذا المتجر لا يستقبل الطلبات حالياً.'}
           </p>
         </div>
       </div>
@@ -191,30 +152,15 @@ const Storefront = ({ store }) => {
 
   if (loadingCatalog) {
     return (
-      <div className="sf-root min-h-screen flex flex-col" style={{ background: custom.bgColor || '#020617', color: custom.textColor || '#FFFFFF', fontFamily: custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif" }}>
+      <div className="sf-root min-h-screen flex flex-col" style={{ background: custom.bgColor || '#020617', color: custom.textColor || '#FFFFFF' }}>
         <ScopedStyles custom={custom} />
         <AmbientBackground custom={custom} />
-        <header className="relative z-10 py-4 px-4 sm:px-8 flex justify-between items-center shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 sf-skeleton" style={{ borderRadius: custom.borderRadius || '12px' }} />
-            <div className="w-28 h-4 rounded sf-skeleton" />
-          </div>
-        </header>
-        <main className="flex-1 relative z-10 max-w-5xl mx-auto w-full px-4 sm:px-8 py-10 sm:py-14">
-          <div className="space-y-8">
-            <div className="space-y-2">
-              <div className="w-20 h-3 rounded sf-skeleton" />
-              <div className="w-56 h-7 rounded sf-skeleton" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: custom.borderRadius || '16px' }}>
-                  <div className="h-32 sf-skeleton" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }} />
-                  <div className="p-5 space-y-2">
-                    <div className="w-2/3 h-3.5 rounded sf-skeleton" />
-                    <div className="w-1/3 h-2.5 rounded sf-skeleton" />
-                  </div>
-                </div>
+        <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-8 py-12 flex flex-col items-center justify-center">
+          <div className="w-full space-y-8">
+            <div className="h-44 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="h-48 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} />
               ))}
             </div>
           </div>
@@ -229,7 +175,7 @@ const Storefront = ({ store }) => {
 
   if (catalogError) {
     return (
-      <div className="sf-root min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: custom.bgColor || '#020617', color: custom.textColor || '#FFFFFF', fontFamily: custom.fontFamily || "'Sora', ui-sans-serif, system-ui, sans-serif" }}>
+      <div className="sf-root min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: custom.bgColor || '#020617', color: custom.textColor || '#FFFFFF' }}>
         <ScopedStyles custom={custom} />
         <AmbientBackground custom={custom} />
         <div className="relative z-10 sf-rise">
@@ -244,7 +190,6 @@ const Storefront = ({ store }) => {
 
   const storeProducts = catalog.products;
   const platformProducts = catalog.platform_products || [];
-  const platformCategories = [...new Set(platformProducts.map(p => p.category))];
 
   const activeCategoryProducts = selectedCategoryId
     ? (topupsCatalogs.some(c => c.category.id === selectedCategoryId)
@@ -254,7 +199,9 @@ const Storefront = ({ store }) => {
           : storeProducts.filter(p => p.category_id === selectedCategoryId || p.categoryId === selectedCategoryId))
     : [];
 
-  const handleProductClick = (product) => {
+  // Direct 1-Click Buy Now
+  const handleBuyNow = (product) => {
+    setIsCartCheckout(false);
     setSelectedProduct(product);
     setCheckoutStep(1);
     setPromoCode('');
@@ -266,10 +213,57 @@ const Storefront = ({ store }) => {
     setReceiptFile(null);
     setSubmitError('');
     setTopupFormFields({});
+    setCreatedOrders([]);
+  };
+
+  // Add to Cart handler
+  const handleAddToCart = (product) => {
+    const isTopup = !!product.isTopup || !!product.offer_id || !!product.offerId;
+    if (isTopup) {
+      // Find dynamic fields config from topup catalog
+      const catalogObj = topupsCatalogs.find(c => c.category.id === product.category || c.offers.some(o => o.offer_id === product.id));
+      const fields = catalogObj?.fields || [];
+      setTopupConfigModal({ isOpen: true, product, fields });
+    } else {
+      addToCart(product, 1);
+      setIsCartDrawerOpen(true);
+    }
+  };
+
+  // Confirm Top-Up addition from modal
+  const handleConfirmTopupAddToCart = (product, quantity, fieldsData) => {
+    addToCart(product, quantity, fieldsData);
+    setIsCartDrawerOpen(true);
+  };
+
+  // Open Cart Checkout
+  const handleProceedToCartCheckout = () => {
+    setIsCartCheckout(true);
+    setCheckoutStep(1);
+    setCustomerName('');
+    setCustomerEmail('');
+    setWhatsapp('');
+    setReceiptFile(null);
+    setSubmitError('');
+    setCreatedOrders([]);
   };
 
   const calculateTotal = () => {
-    if (!selectedProduct) return 0;
+    if (isCartCheckout) {
+      const sub = getCartSubtotal();
+      let disc = 0;
+      if (appliedPromo) {
+        if (appliedPromo.discount_type === 'percentage') {
+          disc = sub * (parseFloat(appliedPromo.value) / 100);
+        } else if (appliedPromo.discount_type === 'fixed') {
+          disc = parseFloat(appliedPromo.value);
+        }
+        if (disc > sub) disc = sub;
+      }
+      return Math.max(0, sub - disc).toFixed(2);
+    }
+
+    if (!selectedProduct) return '0.00';
     let basePrice = selectedProduct.selling_price
       ? parseFloat(selectedProduct.selling_price)
       : (selectedProduct.salePrice !== null && selectedProduct.salePrice !== undefined ? selectedProduct.salePrice : selectedProduct.price);
@@ -286,6 +280,7 @@ const Storefront = ({ store }) => {
 
   const handleApplyPromo = () => {
     setPromoError('');
+    if (!promoCode.trim()) return;
     const foundPromo = catalog.promos.find(p => p.code.toUpperCase() === promoCode.toUpperCase());
 
     if (foundPromo) {
@@ -296,96 +291,111 @@ const Storefront = ({ store }) => {
     }
   };
 
-  const handleSubmitOrder = async (e) => {
-    e.preventDefault();
+  // Submit Order (Single Product or Cart Multi-Order)
+  const handleSubmitOrder = (e) => executeSubmitOrder(async () => {
+    if (e && e.preventDefault) e.preventDefault();
     setSubmitError('');
 
     if (!receiptFile) {
       setSubmitError(t('upload_receipt_required') || 'Please upload a payment receipt.');
-      return;
+      return { success: false };
     }
 
-    if (selectedProduct.isTopup) {
-      setSubmittingOrder(true);
-      try {
-        const formData = new FormData();
-        formData.append('offerId', selectedProduct.id);
-        formData.append('customerName', customerName);
-        formData.append('customerEmail', customerEmail);
-        formData.append('whatsapp', whatsapp);
-        formData.append('fields', JSON.stringify(topupFormFields));
-        formData.append('receipt', receiptFile);
-        if (appliedPromo) formData.append('promoCode', appliedPromo.code);
-
-        const response = await fetch(`${API_BASE_URL}/api/store/topups/order/${storeId}`, {
-          method: 'POST',
-          body: formData
-        });
-        const data = await response.json();
-        if (response.ok && data.success) {
-          setCurrentOrderId(data.order.orderId);
-          setCheckoutStep(2);
-        } else {
-          setSubmitError(data.error || 'Failed to submit top-up order.');
-        }
-      } catch (err) {
-        setSubmitError('Connection error. Please try again.');
-      } finally {
-        setSubmittingOrder(false);
-      }
-      return;
-    }
-
-
-    setSubmittingOrder(true);
-    try {
+    // MULTI-ITEM CART CHECKOUT
+    if (isCartCheckout) {
       const formData = new FormData();
       formData.append('customerName', customerName);
       formData.append('customerEmail', customerEmail);
       formData.append('whatsapp', whatsapp);
-      formData.append('platformProductId', selectedProduct.id);
+      formData.append('cartItems', JSON.stringify(cartItems));
       formData.append('receipt', receiptFile);
       if (appliedPromo) formData.append('promoCode', appliedPromo.code);
 
-      const response = await fetch(`${API_BASE_URL}/api/store/${storeId}/orders`, {
+      const response = await fetch(`${API_BASE_URL}/api/store/${storeId}/cart/checkout`, {
         method: 'POST',
         body: formData
       });
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setCurrentOrderId(data.order.order_number);
+        setCreatedOrders(data.orders || []);
+        clearCart();
         setCheckoutStep(2);
+        return { success: true };
       } else {
-        setSubmitError(data.error || 'Failed to submit order.');
+        setSubmitError(data.error || 'Failed to submit cart order.');
+        return { success: false };
       }
-    } catch (err) {
-      setSubmitError('Connection error. Please try again.');
-    } finally {
-      setSubmittingOrder(false);
     }
-  };
+
+    // SINGLE PRODUCT FAST CHECKOUT
+    if (selectedProduct.isTopup) {
+      const formData = new FormData();
+      formData.append('offerId', selectedProduct.id);
+      formData.append('customerName', customerName);
+      formData.append('customerEmail', customerEmail);
+      formData.append('whatsapp', whatsapp);
+      formData.append('fields', JSON.stringify(topupFormFields));
+      formData.append('receipt', receiptFile);
+      if (appliedPromo) formData.append('promoCode', appliedPromo.code);
+
+      const response = await fetch(`${API_BASE_URL}/api/store/topups/order/${storeId}`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setCurrentOrderId(data.order.orderId);
+        setCheckoutStep(2);
+        return { success: true };
+      } else {
+        setSubmitError(data.error || 'Failed to submit top-up order.');
+        return { success: false };
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('customerName', customerName);
+    formData.append('customerEmail', customerEmail);
+    formData.append('whatsapp', whatsapp);
+    formData.append('platformProductId', selectedProduct.id);
+    formData.append('receipt', receiptFile);
+    if (appliedPromo) formData.append('promoCode', appliedPromo.code);
+
+    const response = await fetch(`${API_BASE_URL}/api/store/${storeId}/orders`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      setCurrentOrderId(data.order.order_number);
+      setCheckoutStep(2);
+      return { success: true };
+    } else {
+      setSubmitError(data.error || 'Failed to submit order.');
+      return { success: false };
+    }
+  });
 
   const closeCheckout = () => {
     setSelectedProduct(null);
+    setIsCartCheckout(false);
     setCheckoutStep(0);
+    setCreatedOrders([]);
   };
 
-  // ── Category card component ──
+  // Category card component
   const CategoryCard = ({ onClick, color, logoSrc, iconText, name, productCount }) => (
     <div
       onClick={onClick}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       role="button"
       tabIndex={0}
-      className="sf-focusable group overflow-hidden cursor-pointer flex flex-col transition-all duration-300"
-      style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: custom.borderRadius || '16px'
-      }}
+      className="sf-focusable group overflow-hidden cursor-pointer flex flex-col transition-all duration-300 relative"
+      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: custom.borderRadius || '16px' }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = `${color}55`;
+        e.currentTarget.style.borderColor = color;
         e.currentTarget.style.background = `rgba(255,255,255,0.05)`;
         e.currentTarget.style.transform = 'translateY(-3px)';
         e.currentTarget.style.boxShadow = `0 20px 40px -14px ${color}40, 0 8px 20px -10px rgba(0,0,0,0.5)`;
@@ -397,32 +407,18 @@ const Storefront = ({ store }) => {
         e.currentTarget.style.boxShadow = '';
       }}
     >
-      {/* Color bar */}
       <div className="h-1 w-full" style={{ background: color }} />
-
-      {/* Image / Icon area */}
-      <div
-        className="flex-1 flex items-center justify-center p-8 relative"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-      >
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ background: `radial-gradient(circle at 50% 30%, ${color}14 0%, transparent 65%)` }}
-          aria-hidden="true"
-        />
+      <div className="flex-1 flex items-center justify-center p-8 relative" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: `radial-gradient(circle at 50% 30%, ${color}14 0%, transparent 65%)` }} aria-hidden="true" />
         {logoSrc ? (
           <img src={logoSrc} alt={name} className="relative max-h-20 max-w-full object-contain transition-transform duration-300 group-hover:scale-105" />
         ) : (
-          <div
-            className="relative w-16 h-16 rounded-2xl flex items-center justify-center font-extrabold text-xl transition-transform duration-300 group-hover:scale-105"
-            style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}
-          >
+          <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center font-extrabold text-xl transition-transform duration-300 group-hover:scale-105" style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
             {iconText || name.charAt(0)}
           </div>
         )}
       </div>
 
-      {/* Info */}
       <div className="p-5 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h3 className="sf-display font-bold text-white text-sm truncate" style={{ color: custom.textColor || '#FFFFFF' }}>{name}</h3>
@@ -437,16 +433,14 @@ const Storefront = ({ store }) => {
     </div>
   );
 
-  // ── Product card component ──
-  const ProductCard = ({ product, onClick }) => {
+  // Product Card with Dual Buttons ("Add to Cart" and "Buy Now")
+  const ProductCard = ({ product, onBuyNow, onAddToCart }) => {
     const hasDiscount = product.sale_price !== null && !product.selling_price;
+    const isTopup = !!product.isTopup || !!product.offer_id || !!product.offerId;
+
     return (
       <div
-        onClick={onClick}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
-        role="button"
-        tabIndex={0}
-        className="sf-focusable group overflow-hidden cursor-pointer flex flex-col transition-all duration-300"
+        className="sf-focusable group overflow-hidden flex flex-col transition-all duration-300 relative"
         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: custom.borderRadius || '16px' }}
         onMouseEnter={e => {
           e.currentTarget.style.borderColor = custom.primaryColor || 'rgba(59,130,246,0.35)';
@@ -483,12 +477,13 @@ const Storefront = ({ store }) => {
           )}
         </div>
 
-        {/* Info */}
+        {/* Info & Dual Buttons */}
         <div className="p-4 flex-1 flex flex-col">
           <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 mb-3 group-hover:text-blue-300 transition-colors" style={{ color: custom.textColor || '#FFFFFF' }}>
             {product.name}
           </h3>
-          <div className="mt-auto flex items-end justify-between gap-2">
+          
+          <div className="mt-auto flex items-center justify-between gap-2 mb-3">
             {product.selling_price ? (
               <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.selling_price).toFixed(2)}</span>
             ) : product.sale_price !== null && product.sale_price !== undefined ? (
@@ -499,9 +494,29 @@ const Storefront = ({ store }) => {
             ) : (
               <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.price).toFixed(2)}</span>
             )}
-            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors" style={{ background: `${custom.primaryColor || '#3B82F6'}20`, color: custom.primaryColor || '#60A5FA' }}>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/5 uppercase">
+              {isTopup ? (language === 'en' ? 'Top-Up' : 'شحن') : (language === 'en' ? 'Gift Card' : 'بطاقة')}
+            </span>
+          </div>
+
+          {/* Dual Actions: Add to Cart vs Buy Now */}
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+              className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 text-white border border-white/10"
+            >
+              <ShoppingBag size={13} className="text-blue-400" />
+              {language === 'en' ? 'Add' : 'إضافة'}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onBuyNow(product); }}
+              className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20"
+            >
+              {language === 'en' ? 'Buy Now' : 'شراء'}
               {language === 'ar' ? <ArrowLeft size={12} /> : <ArrowRight size={12} />}
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -547,7 +562,23 @@ const Storefront = ({ store }) => {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Cart Icon Button with Badge */}
+          <button
+            onClick={() => setIsCartDrawerOpen(true)}
+            className="sf-focusable relative flex items-center justify-center p-2.5 rounded-xl transition-all hover:bg-white/10"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }}
+            title="Shopping Cart"
+          >
+            <ShoppingBag size={18} className="text-blue-400" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#020617] animate-pulse">
+                {cartCount}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
             className="sf-focusable text-xs font-bold tracking-wide transition-colors px-3 py-2"
@@ -583,111 +614,44 @@ const Storefront = ({ store }) => {
               </div>
             )}
 
-            {custom.showFeaturedProducts !== false && storeProducts.length > 0 && (
-              <div className="sf-rise">
-                <div className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: custom.primaryColor || '#60A5FA' }}>
-                  <ShoppingBag size={12} />
-                  {language === 'en' ? 'Featured Products' : 'منتجات مميزة'}
-                </div>
-                <h2 className="sf-display text-xl sm:text-2xl font-bold tracking-tight mb-4" style={{ color: custom.textColor || '#FFFFFF' }}>
-                  {language === 'en' ? 'Top Picks For You' : 'أفضل الاختيارات لك'}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                  {storeProducts.slice(0, 3).map((product, idx) => (
-                    <ProductCard key={`featured-${product.id}`} product={product} onClick={() => handleProductClick(product)} />
-                  ))}
-                </div>
+            {/* Categories & Topup Catalogs Grid */}
+            <div className="space-y-8">
+              <h2 className="sf-display text-xl font-bold tracking-tight" style={{ color: custom.textColor || '#FFFFFF' }}>
+                {language === 'en' ? 'Browse Categories' : 'تصفح الفئات'}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {catalog.categories.map((cat) => {
+                  const count = storeProducts.filter(p => p.category_id === cat.id || p.categoryId === cat.id).length;
+                  return (
+                    <CategoryCard
+                      key={cat.id}
+                      name={cat.name}
+                      color={cat.color || custom.primaryColor || '#3B82F6'}
+                      logoSrc={cat.logo_url || cat.logoUrl}
+                      iconText={cat.icon_text || cat.iconText}
+                      productCount={count}
+                      onClick={() => setSelectedCategoryId(cat.id)}
+                    />
+                  );
+                })}
+
+                {/* Direct Topup Catalogs */}
+                {topupsCatalogs.map((topupCat) => {
+                  const count = topupCat.offers ? topupCat.offers.length : 0;
+                  return (
+                    <CategoryCard
+                      key={`topup-${topupCat.category.id}`}
+                      name={topupCat.category.name}
+                      color="#7C3AED"
+                      logoSrc={null}
+                      iconText={topupCat.category.name.charAt(0)}
+                      productCount={count}
+                      onClick={() => setSelectedCategoryId(topupCat.category.id)}
+                    />
+                  );
+                })}
               </div>
-            )}
-
-            {custom.showCategories !== false ? (
-              <div className="space-y-8">
-                <div className="sf-rise">
-                  <div className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: custom.primaryColor || '#60A5FA' }}>
-                    <ShoppingBag size={12} />
-                    {language === 'en' ? 'Catalog' : 'الكتالوج'}
-                  </div>
-                  <h2 className="sf-display text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: custom.textColor || '#FFFFFF' }}>
-                    {language === 'en' ? 'Browse by category' : 'تصفح حسب الفئة'}
-                  </h2>
-                  <p className="text-sm mt-1.5" style={{ color: '#64748B' }}>
-                    {language === 'en' ? 'Pick a category to see what\u2019s in stock' : 'اختر فئة لعرض المنتجات المتوفرة'}
-                  </p>
-                </div>
-
-                {/* Category grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                  {catalog.categories.filter(c => storeProducts.some(p => p.category_id === c.id || p.categoryId === c.id)).map((category, idx) => {
-                    const count = storeProducts.filter(p => p.category_id === category.id || p.categoryId === category.id).length;
-                    return (
-                      <div key={category.id} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
-                        <CategoryCard
-                          onClick={() => setSelectedCategoryId(category.id)}
-                          color={category.color || custom.primaryColor || '#3b82f6'}
-                          logoSrc={category.logo_url || category.logoUrl}
-                          iconText={category.icon_text || category.iconText}
-                          name={category.name}
-                          productCount={count}
-                        />
-                      </div>
-                    );
-                  })}
-
-                  {platformCategories.map((catName, idx) => {
-                    const colors = { 'Free Fire': '#FF4C29', 'PUBG Mobile': '#F2A154' };
-                    const color = colors[catName] || custom.primaryColor || '#3b82f6';
-                    const count = platformProducts.filter(p => p.category === catName).length;
-                    return (
-                      <div key={`platform-${catName}`} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
-                        <CategoryCard
-                          onClick={() => setSelectedCategoryId(catName)}
-                          color={color}
-                          logoSrc={null}
-                          iconText={catName.charAt(0)}
-                          name={catName}
-                          productCount={count}
-                        />
-                      </div>
-                    );
-                  })}
-
-                  {topupsCatalogs.map((tc, idx) => (
-                    tc.offers.length > 0 && (
-                      <div key={`topups-${tc.category.id}`} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
-                        <CategoryCard
-                          onClick={() => setSelectedCategoryId(tc.category.id)}
-                          color={'#8b5cf6'}
-                          logoSrc={null}
-                          iconText={tc.category.name.charAt(0)}
-                          name={tc.category.name}
-                          productCount={tc.offers.length}
-                        />
-                      </div>
-                    )
-                  ))}
-                </div>
-              </div>
-            ) : (
-              /* If showCategories is false, display all products directly */
-              <div className="space-y-8">
-                <div className="sf-rise">
-                  <div className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: custom.primaryColor || '#60A5FA' }}>
-                    <ShoppingBag size={12} />
-                    {language === 'en' ? 'All Products' : 'جميع المنتجات'}
-                  </div>
-                  <h2 className="sf-display text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: custom.textColor || '#FFFFFF' }}>
-                    {language === 'en' ? 'Explore Our Catalog' : 'تصفح كتالوج المنتجات'}
-                  </h2>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                  {storeProducts.map((product, idx) => (
-                    <div key={`all-cat-off-${product.id}`} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
-                      <ProductCard product={product} onClick={() => handleProductClick(product)} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         ) : (
           /* Products Sub-Grid View */
@@ -697,8 +661,6 @@ const Storefront = ({ store }) => {
                 onClick={() => setSelectedCategoryId(null)}
                 className="sf-focusable w-9 h-9 flex items-center justify-center transition-colors shrink-0"
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94A3B8', borderRadius: custom.borderRadius || '12px' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#94A3B8'; }}
                 aria-label={language === 'en' ? 'Back to catalog' : 'العودة للكتالوج'}
               >
                 {language === 'ar' ? <ArrowRight size={16} /> : <ArrowLeft size={16} />}
@@ -733,7 +695,8 @@ const Storefront = ({ store }) => {
                 <div key={product.id} className="sf-rise" style={{ animationDelay: `${Math.min(idx, 8) * 45}ms` }}>
                   <ProductCard
                     product={product}
-                    onClick={() => handleProductClick(product)}
+                    onBuyNow={handleBuyNow}
+                    onAddToCart={handleAddToCart}
                   />
                 </div>
               ))}
@@ -742,132 +705,100 @@ const Storefront = ({ store }) => {
         )}
       </main>
 
-      {/* ── Testimonials Section (when enabled in customization) ── */}
-      {custom.showTestimonials && (
-        <section className="relative z-10 max-w-5xl mx-auto w-full px-4 sm:px-8 pb-14 sf-rise">
-          <div
-            className="p-8 sm:p-10"
-            style={{
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: custom.borderRadius || '16px'
-            }}
-          >
-            <h3 className="sf-display text-lg sm:text-xl font-bold mb-6 text-center" style={{ color: custom.textColor || '#FFFFFF' }}>
-              {language === 'en' ? 'What Our Customers Say' : 'ماذا يقول عملاؤنا'}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {[
-                { name: language === 'en' ? 'Ahmed K.' : 'أحمد ك.', comment: language === 'en' ? 'Fast delivery and very reliable service. Highly recommended!' : 'تسليم سريع وخدمة موثوقة جداً. أنصح بهم بشدة!' },
-                { name: language === 'en' ? 'Sara M.' : 'سارة م.', comment: language === 'en' ? 'Best store for top-ups and digital cards!' : 'أفضل متجر لشحن الألعاب والبطاقات الرقمية!' },
-                { name: language === 'en' ? 'Omar T.' : 'عمر ت.', comment: language === 'en' ? 'Instant delivery and great support team.' : 'تسليم فوري وفريق دعم رائع جداً.' }
-              ].map((t, i) => (
-                <div key={i} className="p-5 flex flex-col justify-between" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: custom.borderRadius || '12px' }}>
-                  <p className="text-sm italic mb-4" style={{ color: '#94A3B8' }}>"{t.comment}"</p>
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs" style={{ background: `${custom.primaryColor || '#3B82F6'}20`, color: custom.primaryColor || '#3B82F6' }}>
-                      {t.name.charAt(0)}
-                    </div>
-                    <span className="text-xs font-semibold" style={{ color: custom.textColor || '#FFFFFF' }}>{t.name}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── Footer ── */}
-      <footer className="relative z-10 w-full py-7" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex flex-col items-center gap-3 px-4">
-          <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#475569' }}>
-            <ShieldCheck size={13} style={{ color: '#3B82F6' }} />
-            {language === 'en' ? 'Every order is manually verified before delivery' : 'يتم التحقق من كل طلب يدويًا قبل التسليم'}
-          </div>
-          <div className="text-sm" style={{ color: '#334155' }}>
-            {merchant.name} · {language === 'en' ? 'Powered by' : 'بواسطة'}{' '}
-            <span className="font-semibold" style={{ color: '#475569' }}>Koara</span>
+      {/* Footer */}
+      <footer className="relative z-10 py-8 px-4 sm:px-8 border-t border-white/5 mt-auto text-center">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+          <p>© {new Date().getFullYear()} {merchant.name}. All rights reserved.</p>
+          <div className="flex items-center gap-2">
+            <span>Powered by</span>
+            <span className="font-semibold text-slate-400">Koara</span>
           </div>
         </div>
       </footer>
 
-      {/* ── Checkout Modal ── */}
+      {/* ── Slide-Over Cart Drawer ── */}
+      <CartDrawer
+        isOpen={isCartDrawerOpen}
+        onClose={() => setIsCartDrawerOpen(false)}
+        onProceedToCheckout={handleProceedToCartCheckout}
+        catalogPromos={catalog.promos}
+        appliedPromo={appliedPromo}
+        setAppliedPromo={setAppliedPromo}
+        language={language}
+      />
+
+      {/* ── Top-Up Config Modal ── */}
+      <TopupConfigModal
+        isOpen={topupConfigModal.isOpen}
+        onClose={() => setTopupConfigModal({ isOpen: false, product: null, fields: [] })}
+        product={topupConfigModal.product}
+        fields={topupConfigModal.fields}
+        onConfirmAddToCart={handleConfirmTopupAddToCart}
+        language={language}
+      />
+
+      {/* ── Checkout Modal (Single Product or Multi-Item Cart) ── */}
       <Modal
         isOpen={checkoutStep > 0 && checkoutStep < 3}
         onClose={closeCheckout}
-        title={checkoutStep === 1 ? (language === 'en' ? 'Checkout' : 'إتمام الشراء') : (language === 'en' ? 'Order status' : 'حالة الطلب')}
+        title={checkoutStep === 1 
+          ? (isCartCheckout ? (language === 'en' ? 'Cart Checkout' : 'دفع السلة') : (language === 'en' ? 'Checkout' : 'إتمام الشراء'))
+          : (language === 'en' ? 'Order status' : 'حالة الطلب')}
       >
-        {checkoutStep === 1 && selectedProduct && (() => {
-          const parentCategory = catalog.categories.find(c => c.id === selectedProduct.categoryId);
-          const displayPrice = selectedProduct.selling_price
-            ? parseFloat(selectedProduct.selling_price).toFixed(2)
-            : (selectedProduct.salePrice ?? selectedProduct.sale_price ?? selectedProduct.price)?.toFixed
-              ? parseFloat(selectedProduct.salePrice ?? selectedProduct.sale_price ?? selectedProduct.price).toFixed(2)
-              : '0.00';
-
+        {checkoutStep === 1 && (() => {
           return (
             <form onSubmit={handleSubmitOrder} className="space-y-5">
-              {/* Step indicator — purely visual, mirrors the existing checkoutStep state */}
               <div className="flex items-center gap-2 -mt-1 mb-1">
                 <StepDot active label={language === 'en' ? 'Details' : 'التفاصيل'} />
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
                 <StepDot label={language === 'en' ? 'Confirmed' : 'التأكيد'} />
               </div>
 
-              {/* Product summary card */}
-              {parentCategory && (
-                <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    {parentCategory.logoUrl ? (
-                      <img src={parentCategory.logoUrl} alt={parentCategory.name} className="w-full h-full object-contain p-1" />
-                    ) : (
-                      <span className="font-extrabold text-xs" style={{ color: parentCategory.color }}>{parentCategory.iconText}</span>
-                    )}
+              {/* Multi-Item Cart Summary */}
+              {isCartCheckout ? (
+                <div className="space-y-2">
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    {language === 'en' ? 'Cart Order Summary' : 'ملخص طلبات السلة'} ({cartItems.length})
                   </div>
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-sm text-white leading-tight truncate">{selectedProduct.name}</h4>
-                    <span className="text-xs font-medium" style={{ color: '#475569' }}>{parentCategory.name}</span>
+                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1 scrollbar-none">
+                    {cartItems.map((item) => (
+                      <div key={item.cartItemId} className="flex justify-between items-center p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs">
+                        <div className="truncate pr-2">
+                          <span className="font-semibold text-white block truncate">{item.name}</span>
+                          {item.isTopup && item.dynamicFields && Object.values(item.dynamicFields).length > 0 && (
+                            <span className="text-[10px] text-slate-400 font-mono" dir="ltr">
+                              ID: {Object.values(item.dynamicFields)[0]}
+                            </span>
+                          )}
+                        </div>
+                        <div className="font-mono text-blue-400 font-bold shrink-0" dir="ltr">
+                          {item.quantity}x ${item.selling_price.toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
+              ) : (
+                /* Single Product summary card */
+                selectedProduct && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      {selectedProduct.image_url ? (
+                        <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <span className="font-extrabold text-xs text-blue-400">{selectedProduct.name.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-sm text-white leading-tight truncate">{selectedProduct.name}</h4>
+                      <span className="text-xs font-mono text-blue-400" dir="ltr">${calculateTotal()}</span>
+                    </div>
+                  </div>
+                )
               )}
-
-              {/* Promo Code */}
-              <div>
-                <div className="flex gap-2 rounded-xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <input
-                    type="text"
-                    placeholder={t('promo_code')}
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
-                    className="flex-1 px-4 py-2.5 text-sm bg-transparent outline-none uppercase font-mono text-white placeholder-slate-600"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyPromo}
-                    className="sf-focusable px-4 text-xs font-bold transition-colors"
-                    style={{ color: '#60A5FA' }}
-                  >
-                    {t('apply')}
-                  </button>
-                </div>
-                {promoError && <p className="text-xs font-medium mt-1.5" style={{ color: '#f87171' }}>{promoError}</p>}
-              </div>
 
               {/* Price breakdown */}
               <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div className="flex justify-between items-center text-sm">
-                  <span style={{ color: '#64748B' }}>{selectedProduct.name}</span>
-                  <span className="font-medium text-white" dir="ltr">${displayPrice}</span>
-                </div>
-                {appliedPromo && (
-                  <div className="flex justify-between items-center text-sm" style={{ color: '#60A5FA' }}>
-                    <span className="flex items-center gap-1"><Tag size={12} /> {appliedPromo.code}</span>
-                    <span className="font-medium" dir="ltr">
-                      -{appliedPromo.discount_type === 'percentage' ? `${parseFloat(appliedPromo.value)}%` : `$${parseFloat(appliedPromo.value).toFixed(2)}`}
-                    </span>
-                  </div>
-                )}
-                <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-white text-sm">{t('total')}:</span>
                   <span className="sf-display text-xl font-black" style={{ color: '#3B82F6' }} dir="ltr">${calculateTotal()}</span>
@@ -892,30 +823,30 @@ const Storefront = ({ store }) => {
                 </div>
               </div>
 
-              {/* Dynamic Top-up Fields */}
-              {selectedProduct.isTopup && (() => {
+              {/* Dynamic Top-up Fields for Single Product */}
+              {!isCartCheckout && selectedProduct && selectedProduct.isTopup && (() => {
                  const currentCatalog = topupsCatalogs.find(c => c.category.id === selectedProduct.category);
                  return currentCatalog && currentCatalog.fields && currentCatalog.fields.length > 0 && (
-                   <div className="space-y-3 mt-4">
-                     <h4 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>
-                       {language === 'en' ? 'Top-up details' : 'تفاصيل الشحن'}
-                     </h4>
-                     {currentCatalog.fields.map(field => (
-                       <div key={field.key}>
-                         <label className="koara-label">{field.label}</label>
-                         <input
-                           required
-                           type={field.type === 'text' ? 'text' : field.type}
-                           placeholder={field.label}
-                           className="koara-input"
-                           value={topupFormFields[field.key] || ''}
-                           onChange={e => setTopupFormFields(prev => ({...prev, [field.key]: e.target.value}))}
-                         />
-                       </div>
-                     ))}
-                   </div>
-                 );
-              })()}
+                    <div className="space-y-3 mt-4">
+                      <h4 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>
+                        {language === 'en' ? 'Top-up details' : 'تفاصيل الشحن'}
+                      </h4>
+                      {currentCatalog.fields.map(field => (
+                        <div key={field.key}>
+                          <label className="koara-label">{field.label}</label>
+                          <input
+                            required
+                            type={field.type === 'text' ? 'text' : field.type}
+                            placeholder={field.label}
+                            className="koara-input"
+                            value={topupFormFields[field.key] || ''}
+                            onChange={e => setTopupFormFields(prev => ({...prev, [field.key]: e.target.value}))}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  );
+               })()}
 
               {/* Payment Details */}
               <div>
@@ -966,81 +897,89 @@ const Storefront = ({ store }) => {
                 </div>
               )}
 
-              <button
+              <DashButton
                 type="submit"
-                disabled={submittingOrder}
+                loading={submittingOrder}
+                onClick={handleSubmitOrder}
                 className="dash-btn dash-btn-primary w-full justify-center py-3 text-sm font-bold rounded-xl"
               >
-                {submittingOrder ? <Loader2 size={18} className="animate-spin" /> : t('complete_purchase')}
-              </button>
+                {t('complete_purchase')}
+              </DashButton>
             </form>
           );
         })()}
 
-        {checkoutStep === 2 && (() => {
-          const parentCategory = selectedProduct ? catalog.categories.find(c => c.id === selectedProduct.categoryId) : null;
-          return (
-            <div className="text-center py-8 flex flex-col items-center">
-              <div className="flex items-center gap-2 mb-6">
-                <StepDot done label={language === 'en' ? 'Details' : 'التفاصيل'} />
-                <div className="w-8 h-px" style={{ background: 'rgba(74,222,128,0.4)' }} />
-                <StepDot active success label={language === 'en' ? 'Confirmed' : 'التأكيد'} />
-              </div>
+        {/* Success Screen */}
+        {checkoutStep === 2 && (
+          <div className="text-center py-8 flex flex-col items-center">
+            <div className="flex items-center gap-2 mb-6">
+              <StepDot done label={language === 'en' ? 'Details' : 'التفاصيل'} />
+              <div className="w-8 h-px" style={{ background: 'rgba(74,222,128,0.4)' }} />
+              <StepDot active success label={language === 'en' ? 'Confirmed' : 'التأكيد'} />
+            </div>
 
-              <div className="relative w-20 h-20 mb-6">
-                <div className="absolute inset-0 rounded-full animate-ping" style={{ background: 'rgba(74,222,128,0.15)' }} />
-                <div className="relative w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)' }}>
-                  <CheckCircle2 size={36} style={{ color: '#4ade80' }} />
-                </div>
+            <div className="relative w-20 h-20 mb-6">
+              <div className="absolute inset-0 rounded-full animate-ping" style={{ background: 'rgba(74,222,128,0.15)' }} />
+              <div className="relative w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)' }}>
+                <CheckCircle2 size={36} style={{ color: '#4ade80' }} />
               </div>
-              <h4 className="sf-display text-xl font-bold text-white mb-2">{t('order_success')}</h4>
+            </div>
+
+            <h4 className="sf-display text-xl font-bold text-white mb-2">
+              {isCartCheckout ? (language === 'en' ? 'Cart Orders Submitted!' : 'تم تقديم طلبات السلة بنجاح!') : t('order_success')}
+            </h4>
+
+            {isCartCheckout && createdOrders.length > 0 ? (
+              <div className="w-full max-w-xs space-y-2 mb-6 text-left">
+                <div className="text-xs font-semibold text-slate-400 text-center mb-2">
+                  {language === 'en' ? 'Generated Independent Orders:' : 'أرقام الطلبات المستقلة:'}
+                </div>
+                {createdOrders.map((ord) => (
+                  <div key={ord.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-bold text-blue-400">
+                    <span className="truncate">{ord.productName}</span>
+                    <span dir="ltr">{ord.orderNumber}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
               <div className="flex items-center gap-2 text-base font-mono font-bold mb-6 px-4 py-2 rounded-lg" style={{ color: '#60A5FA', background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)' }} dir="ltr">
                 <Receipt size={15} />
                 {language === 'en' ? 'Order' : ''} {currentOrderId}
               </div>
+            )}
 
-              {selectedProduct && parentCategory && (
-                <div className="flex items-center gap-3 p-3 rounded-xl mb-6 max-w-xs w-full text-left rtl:text-right" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    {parentCategory.logoUrl ? (
-                      <img src={parentCategory.logoUrl} alt={parentCategory.name} className="w-full h-full object-contain p-1" />
-                    ) : (
-                      <span className="font-bold text-[10px]" style={{ color: parentCategory.color }}>{parentCategory.iconText}</span>
-                    )}
-                  </div>
-                  <div className="truncate">
-                    <div className="font-bold text-xs text-white truncate">{selectedProduct.name}</div>
-                    <div className="text-[10px]" style={{ color: '#475569' }}>{parentCategory.name}</div>
-                  </div>
-                </div>
-              )}
+            <p className="text-sm mb-8 max-w-xs mx-auto leading-relaxed" style={{ color: '#64748B' }}>
+              {isCartCheckout 
+                ? (language === 'en' ? 'Each item has been converted into an independent order for the merchant to process.' : 'تم تحويل كل عنصر إلى طلب مستقل ليعالجه التاجر.')
+                : t('awaiting_verification')}
+            </p>
 
-              <p className="text-sm mb-8 max-w-xs mx-auto leading-relaxed" style={{ color: '#64748B' }}>
-                {t('awaiting_verification')}
-              </p>
-              <button
-                onClick={closeCheckout}
-                className="dash-btn dash-btn-secondary py-2.5 px-8 rounded-full text-sm font-bold"
-              >
-                {language === 'en' ? 'Close' : 'إغلاق'}
-              </button>
-            </div>
-          );
-        })()}
+            <button
+              onClick={closeCheckout}
+              className="dash-btn dash-btn-secondary py-2.5 px-8 rounded-full text-sm font-bold"
+            >
+              {language === 'en' ? 'Close' : 'إغلاق'}
+            </button>
+          </div>
+        )}
       </Modal>
     </div>
   );
 };
 
-// Small breadcrumb divider — purely presentational.
+// Wrapper Component that supplies CartProvider to Storefront
+const Storefront = ({ store }) => (
+  <CartProvider storeId={store?.id}>
+    <StorefrontInner store={store} />
+  </CartProvider>
+);
+
 const ChevronDivider = ({ language }) => (
   language === 'ar'
     ? <ArrowLeft size={10} style={{ color: '#334155' }} />
     : <ArrowRight size={10} style={{ color: '#334155' }} />
 );
 
-// Two-dot progress indicator for the checkout modal. Visual only — reads
-// nothing from and writes nothing to application state.
 const StepDot = ({ active, done, success, label }) => (
   <div className="flex items-center gap-1.5">
     <div

@@ -49,12 +49,18 @@ const MerchantSettingsTab = () => {
                       const file = e.target.files[0];
                       if (file && storeId) {
                         setUploading(true);
-                        const res = await uploadProductImage(file);
-                        setUploading(false);
-                        if (res.success) {
-                          await updateStoreLogo(storeId, res.url);
-                        } else {
-                          alert(res.message || 'Error uploading image');
+                        try {
+                          const res = await uploadProductImage(file);
+                          if (res.success) {
+                            await updateStoreLogo(storeId, res.url);
+                          } else {
+                            alert(res.message || 'Error uploading image');
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          alert('Error uploading image');
+                        } finally {
+                          setUploading(false);
                         }
                       }
                     }}

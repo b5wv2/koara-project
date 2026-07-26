@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Modal from '../Modal';
 import { useAppContext } from '../../context/AppContext';
 import DashButton from '../ui/DashButton';
+import { useAsyncAction } from '../../hooks/useAsyncAction';
 
 /**
  * Merchant Withdrawal Modal - specific to manual withdrawals.
@@ -9,45 +10,40 @@ import DashButton from '../ui/DashButton';
 const MerchantWithdrawalModal = ({ isOpen, onClose }) => {
   const { store, requestWithdrawal } = useAppContext();
   const [amount, setAmount] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const { execute, loading: isSubmitting } = useAsyncAction();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = (e) => execute(async () => {
+    if (e && e.preventDefault) e.preventDefault();
     setError('');
     setSuccess('');
     
     const parsedAmount = parseFloat(amount);
     if (!parsedAmount || parsedAmount <= 0) {
-      return setError('Amount must be greater than zero');
+      setError('Amount must be greater than zero');
+      return { success: false };
     }
     
     if (parsedAmount > parseFloat(store?.balance || 0)) {
-      return setError('Insufficient wallet balance');
+      setError('Insufficient wallet balance');
+      return { success: false };
     }
 
-    setIsSubmitting(true);
-    try {
-      const res = await requestWithdrawal(parsedAmount);
+    const res = await requestWithdrawal(parsedAmount);
 
-      if (res.success) {
-        setSuccess('Withdrawal requested successfully');
-        setAmount('');
-        setTimeout(() => {
-          onClose();
-          setSuccess('');
-        }, 2000);
-      } else {
-        setError(res.message || 'Failed to request withdrawal');
-      }
-    } catch (err) {
-      console.error(err);
-      setError('An unexpected error occurred');
-    } finally {
-      setIsSubmitting(false);
+    if (res.success) {
+      setSuccess('Withdrawal requested successfully');
+      setAmount('');
+      setTimeout(() => {
+        onClose();
+        setSuccess('');
+      }, 2000);
+    } else {
+      setError(res.message || 'Failed to request withdrawal');
     }
-  };
+    return res;
+  });
 
   const handleClose = () => {
     setAmount('');

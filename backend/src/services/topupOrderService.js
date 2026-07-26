@@ -4,7 +4,7 @@ const fazerCardsProvider = require('./providers/fazerCardsProvider');
 const emailService = require('./emailService');
 
 class TopupOrderService {
-  async createPendingOrder({ storeId, offerId, dynamicFields, customerInfo, receiptUrl, promoCode = null }) {
+  async createPendingOrder({ storeId, offerId, dynamicFields, customerInfo, receiptUrl, promoCode = null, checkoutGroupId = null }) {
     const client = await db.pool.connect();
     let localOrderId = null;
     
@@ -89,14 +89,14 @@ class TopupOrderService {
       await client.query(`
         INSERT INTO topup_orders (
           local_order_id, store_id, category_id, offer_id, dynamic_fields, 
-          customer_name, customer_email, whatsapp, cost_price, admin_cost_price, selling_price, merchant_profit, status, receipt_url, promo_code, discount_amount
+          customer_name, customer_email, whatsapp, cost_price, admin_cost_price, selling_price, merchant_profit, status, receipt_url, promo_code, discount_amount, checkout_group_id
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending', $13, $14, $15
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending', $13, $14, $15, $16
         )
       `, [
         localOrderId, storeId, offer.category_id, offerId, JSON.stringify(dynamicFields),
         customerInfo.name, customerInfo.email, customerInfo.whatsapp, 
-        costPrice, adminCostPrice, sellingPrice, merchantProfit, receiptUrl, appliedPromoCode, discountAmount
+        costPrice, adminCostPrice, sellingPrice, merchantProfit, receiptUrl, appliedPromoCode, discountAmount, checkoutGroupId
       ]);
 
       await client.query('COMMIT');

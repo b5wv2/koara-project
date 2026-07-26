@@ -340,14 +340,20 @@ const AdminDashboard = () => {
   };
 
   const handleProcessOrder = async (id, action, isTopup = false) => {
-    const res = await updateOrderStatus(id, storeId, action, isTopup);
-    if (res.success) {
-      setSelectedReceipt(null);
-      syncWalletBalance(storeId);
-    } else {
-      alert(res.message);
+    try {
+      const res = await updateOrderStatus(id, storeId, action, isTopup);
+      if (res.success) {
+        setSelectedReceipt(null);
+        syncWalletBalance(storeId);
+      } else {
+        alert(res.message);
+      }
+      return res;
+    } catch (err) {
+      console.error(err);
+      alert('Error processing order');
+      return { success: false };
     }
-    return res;
   };
 
   const handleLogout = () => {
@@ -356,21 +362,28 @@ const AdminDashboard = () => {
   };
 
   const handleAdminBalanceUpdate = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setBalanceModal(prev => ({ ...prev, error: '' }));
     const amount = Number(balanceModal.amount);
-    let result;
-    if (balanceModal.type === 'add') {
-      result = await adminAddCredit(balanceModal.storeId, amount, 'Admin Manual Credit');
-    } else {
-      result = await adminDeduct(balanceModal.storeId, amount, 'Admin Manual Debit');
-    }
-    if (result.success) {
-      setBalanceModal({ isOpen: false, type: '', storeId: null, amount: 0, error: '' });
-      if (activeTab === 'merchants' || activeTab === 'dashboard') fetchAllStoresAdmin();
-      if (activeTab === 'ledger' || activeTab === 'dashboard') fetchGlobalTransactions();
-    } else {
-      setBalanceModal(prev => ({ ...prev, error: result.message }));
+    try {
+      let result;
+      if (balanceModal.type === 'add') {
+        result = await adminAddCredit(balanceModal.storeId, amount, 'Admin Manual Credit');
+      } else {
+        result = await adminDeduct(balanceModal.storeId, amount, 'Admin Manual Debit');
+      }
+      if (result.success) {
+        setBalanceModal({ isOpen: false, type: '', storeId: null, amount: 0, error: '' });
+        if (activeTab === 'merchants' || activeTab === 'dashboard') fetchAllStoresAdmin();
+        if (activeTab === 'ledger' || activeTab === 'dashboard') fetchGlobalTransactions();
+      } else {
+        setBalanceModal(prev => ({ ...prev, error: result.message }));
+      }
+      return result;
+    } catch (err) {
+      console.error(err);
+      setBalanceModal(prev => ({ ...prev, error: 'Failed to update balance due to network error' }));
+      return { success: false };
     }
   };
 
@@ -389,26 +402,40 @@ const AdminDashboard = () => {
   };
 
   const handleApproveKyc = async (storeId) => {
-    const success = await approveKyc(storeId);
-    if (success) {
-      alert('Application approved successfully!');
-      fetchPendingKyc().then(data => setKycApplications(data || []));
-      fetchAllStoresAdmin();
-    } else {
+    try {
+      const success = await approveKyc(storeId);
+      if (success) {
+        alert('Application approved successfully!');
+        fetchPendingKyc().then(data => setKycApplications(data || []));
+        fetchAllStoresAdmin();
+      } else {
+        alert('Failed to approve application.');
+      }
+      return { success: !!success };
+    } catch (err) {
+      console.error(err);
       alert('Failed to approve application.');
+      return { success: false };
     }
   };
 
   const handleRejectKycSubmit = async (e) => {
-    if (e) e.preventDefault();
-    const success = await rejectKyc(rejectKycModal.storeId, rejectReason);
-    if (success) {
-      alert('Application rejected successfully.');
-      setRejectKycModal({ isOpen: false, storeId: null });
-      setRejectReason('');
-      fetchPendingKyc().then(data => setKycApplications(data || []));
-    } else {
+    if (e && e.preventDefault) e.preventDefault();
+    try {
+      const success = await rejectKyc(rejectKycModal.storeId, rejectReason);
+      if (success) {
+        alert('Application rejected successfully.');
+        setRejectKycModal({ isOpen: false, storeId: null });
+        setRejectReason('');
+        fetchPendingKyc().then(data => setKycApplications(data || []));
+      } else {
+        alert('Failed to reject application.');
+      }
+      return { success: !!success };
+    } catch (err) {
+      console.error(err);
       alert('Failed to reject application.');
+      return { success: false };
     }
   };
 

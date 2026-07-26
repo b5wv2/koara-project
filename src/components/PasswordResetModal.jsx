@@ -3,6 +3,7 @@ import Modal from './Modal';
 import OTPInput from './OTPInput';
 import DashButton from './ui/DashButton';
 import { useAppContext } from '../context/AppContext';
+import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -15,20 +16,19 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
   
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // Resend cooldown
   const [cooldown, setCooldown] = useState(0);
-
   const [globalLockUntil, setGlobalLockUntil] = useState(null);
   const [lockCountdown, setLockCountdown] = useState('');
 
   const { t } = useAppContext();
+  const { execute, loading } = useAsyncAction();
 
   useEffect(() => {
     let timer;
     if (cooldown > 0) {
-      timer = setInterval(() => setCooldown((prev) => prev - 1), 1000);
+      timer = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
     }
     return () => clearInterval(timer);
   }, [cooldown]);
@@ -56,145 +56,114 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
     return () => clearInterval(timer);
   }, [globalLockUntil]);
 
-  const handleRequestCode = async (e) => {
+  const handleRequestCode = (e) => execute(async () => {
     if (e && e.preventDefault) e.preventDefault();
-    if (!email) {
-      setErrorMsg(t('err_enter_email'));
-      return;
-    }
-
-    setLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const data = await response.json();
-      
-      if (!response.ok) {
-        if (data.blocked_until) {
-          setGlobalLockUntil(data.blocked_until);
-        }
-        throw new Error(data.error || t('err_failed_request_code'));
-      }
-      
-      setStep(2);
-      setCooldown(60);
-      setSuccessMsg(data.message || t('success_code_sent'));
-      return { success: true };
-    } catch (err) {
-      setErrorMsg(err.message);
+    if (!email || !email.trim()) {
+      setErrorMsg(t('err_enter_email') || 'Please enter a valid email address.');
       return { success: false };
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const handleResendCode = async () => {
-    if (cooldown > 0) return;
+    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    const data = await response.json();
     
-    setLoading(true);
+    if (!response.ok) {
+      if (data.blocked_until) {
+        setGlobalLockUntil(data.blocked_until);
+      }
+      throw new Error(data.error || t('err_failed_request_code'));
+    }
+    
+    setStep(2);
+    setCooldown(60);
+    setSuccessMsg(data.message || t('success_code_sent'));
+    return { success: true };
+  });
+
+  const handleResendCode = () => execute(async () => {
+    if (cooldown > 0 || loading) return { success: false };
     setErrorMsg('');
     setSuccessMsg('');
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const data = await response.json();
-      
-      if (!response.ok) {
-        if (data.blocked_until) {
-          setGlobalLockUntil(data.blocked_until);
-        }
-        throw new Error(data.error || t('err_failed_resend'));
+    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    const data = await response.json();
+    
+    if (!response.ok) {
+      if (data.blocked_until) {
+        setGlobalLockUntil(data.blocked_until);
       }
-      
-      setCooldown(60);
-      setSuccessMsg(t('success_new_code'));
-    } catch (err) {
-      setErrorMsg(err.message);
-    } finally {
-      setLoading(false);
+      throw new Error(data.error || t('err_failed_resend'));
     }
-  };
+    
+    setCooldown(60);
+    setSuccessMsg(t('success_new_code'));
+    return { success: true };
+  });
 
-  const handleVerifyCode = async (codeFromParam) => {
+  const handleVerifyCode = (codeFromParam) => execute(async () => {
     const codeToVerify = typeof codeFromParam === 'string' ? codeFromParam : code;
-    if (!codeToVerify || codeToVerify.length < 6) {
-      setErrorMsg(t('err_enter_6_digit'));
-      return;
-    }
-
-    setLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify-reset-code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), code: codeToVerify.trim() }),
-      });
-      const data = await response.json();
-      
-      if (!response.ok) {
-        if (data.blocked_until) {
-          setGlobalLockUntil(data.blocked_until);
-        }
-        throw new Error(data.error || t('err_invalid_expired'));
-      }
-      
-      setStep(3);
-      return { success: true };
-    } catch (err) {
-      setErrorMsg(err.message);
+    if (!codeToVerify || codeToVerify.trim().length < 6) {
+      setErrorMsg(t('err_enter_6_digit') || 'Please enter the 6-digit verification code.');
       return { success: false };
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const handleResetPassword = async (e) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-reset-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), code: codeToVerify.trim() }),
+    });
+    const data = await response.json();
+    
+    if (!response.ok) {
+      if (data.blocked_until) {
+        setGlobalLockUntil(data.blocked_until);
+      }
+      throw new Error(data.error || t('err_invalid_expired'));
+    }
+    
+    setStep(3);
+    return { success: true };
+  });
+
+  const handleResetPassword = (e) => execute(async () => {
     if (e && e.preventDefault) e.preventDefault();
-    if (password.length < 8) {
-      setErrorMsg(t('err_pass_length'));
-      return;
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (!password || password.length < 8) {
+      setErrorMsg(t('err_pass_length') || 'Password must be at least 8 characters long.');
+      return { success: false };
     }
     if (password !== confirmPassword) {
-      setErrorMsg(t('err_pass_mismatch'));
-      return;
-    }
-
-    setLoading(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), code: code.trim(), password }),
-      });
-      const data = await response.json();
-      
-      if (!response.ok) throw new Error(data.error || t('err_failed_reset'));
-      
-      setStep(4);
-      return { success: true };
-    } catch (err) {
-      setErrorMsg(err.message);
+      setErrorMsg(t('err_pass_mismatch') || 'Passwords do not match.');
       return { success: false };
-    } finally {
-      setLoading(false);
     }
-  };
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), code: code.trim(), password }),
+    });
+    const data = await response.json();
+    
+    if (!response.ok) throw new Error(data.error || t('err_failed_reset'));
+    
+    setStep(4);
+    return { success: true };
+  });
 
   const resetState = () => {
     setStep(1);
@@ -239,7 +208,13 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
               {t('verification_locked')} {lockCountdown}
             </div>
           )}
-          <DashButton onClick={handleRequestCode} disabled={loading || !!globalLockUntil} type="submit" className="dash-btn dash-btn-primary w-full mt-4 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50">
+          <DashButton
+            loading={loading}
+            onClick={handleRequestCode}
+            disabled={loading || !!globalLockUntil}
+            type="submit"
+            className="dash-btn dash-btn-primary w-full mt-4 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
+          >
             {t('send_verification_code')}
           </DashButton>
         </form>
@@ -263,6 +238,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
             </div>
           )}
           <DashButton 
+            loading={loading}
             onClick={() => handleVerifyCode()}
             disabled={loading || code.length < 6 || !!globalLockUntil} 
             type="button" 
@@ -272,14 +248,15 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
           </DashButton>
           
           <div className="mt-4 text-center">
-            <button 
+            <DashButton
               type="button" 
+              loading={loading}
               onClick={handleResendCode}
               disabled={cooldown > 0 || loading || !!globalLockUntil}
-              className="text-sm text-koara-blue hover:underline disabled:text-slate-400 disabled:no-underline font-medium"
+              className="text-sm text-koara-blue hover:underline disabled:text-slate-400 disabled:no-underline font-medium bg-transparent border-none"
             >
               {cooldown > 0 ? `${t('resend_available_in')} ${cooldown}s` : t('resend_code')}
-            </button>
+            </DashButton>
           </div>
         </div>
       )}
@@ -311,7 +288,13 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
               minLength={8}
             />
           </div>
-          <DashButton onClick={handleResetPassword} disabled={loading} type="submit" className="dash-btn dash-btn-primary w-full mt-4 bg-koara-blue text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
+          <DashButton
+            loading={loading}
+            onClick={handleResetPassword}
+            disabled={loading}
+            type="submit"
+            className="dash-btn dash-btn-primary w-full mt-4 bg-koara-blue text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
             {t('reset_password_btn')}
           </DashButton>
         </form>

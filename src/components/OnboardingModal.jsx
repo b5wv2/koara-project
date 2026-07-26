@@ -5,6 +5,7 @@ import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, Building2, User, Shie
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import DashButton from './ui/DashButton';
+import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -31,6 +32,8 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
   const navigate = useNavigate();
   const { t } = useAppContext();
 
+  const { execute, loading } = useAsyncAction();
+
   // Onboarding Form States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,7 +55,6 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [globalLockUntil, setGlobalLockUntil] = useState(null);
   const [lockCountdown, setLockCountdown] = useState('');
@@ -60,14 +62,12 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
   useEffect(() => {
     if (isOpen && initialData?.isGoogleAuth) {
       setEmail(initialData.email);
-      // Generate a highly secure random password for the user since they authenticate via Google
       const randomPassword = crypto.randomUUID 
         ? crypto.randomUUID() 
         : Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
       setPassword(randomPassword);
-      setStep(2); // Skip Step 1 and jump to OTP verification
+      setStep(2);
     } else if (!isOpen) {
-      // Clean up when modal closes, reset everything
       setStep(1);
       setEmail('');
       setPassword('');
@@ -116,99 +116,77 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
     return () => clearInterval(timer);
   }, [globalLockUntil]);
 
-  const handleSendRegistrationCode = async () => {
+  const handleSendRegistrationCode = () => execute(async () => {
     if (!email.trim() || !password) {
       setErrorMsg(t('err_enter_email_pass'));
-      return;
-    }
-    setLoading(true);
-    setErrorMsg('');
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/send-registration-code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        if (data.blocked_until) {
-          setGlobalLockUntil(data.blocked_until);
-        }
-        throw new Error(data.error || t('err_failed_send_code'));
-      }
-
-      setStep(2);
-      setCooldown(60);
-      setSuccessMsg(t('success_verify_code_sent'));
-      return { success: true };
-    } catch (err) {
-      setErrorMsg(err.message);
       return { success: false };
-    } finally {
-      setLoading(false);
     }
-  };
+    setErrorMsg('');
+    const response = await fetch(`${API_BASE_URL}/api/auth/send-registration-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      if (data.blocked_until) {
+        setGlobalLockUntil(data.blocked_until);
+      }
+      throw new Error(data.error || t('err_failed_send_code'));
+    }
 
-  const handleVerifyRegistrationCode = async (codeFromParam) => {
+    setStep(2);
+    setCooldown(60);
+    setSuccessMsg(t('success_verify_code_sent'));
+    return { success: true };
+  });
+
+  const handleVerifyRegistrationCode = (codeFromParam) => execute(async () => {
     const codeToVerify = typeof codeFromParam === 'string' ? codeFromParam : verificationCode;
     if (!codeToVerify || codeToVerify.length < 6) {
       setErrorMsg(t('err_enter_6_digit'));
-      return;
-    }
-    setLoading(true);
-    setErrorMsg('');
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify-registration-code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), code: codeToVerify.trim() }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        if (data.blocked_until) {
-          setGlobalLockUntil(data.blocked_until);
-        }
-        throw new Error(data.error || t('err_invalid_code'));
-      }
-
-      setSuccessMsg('');
-      setStep(3);
-      return { success: true };
-    } catch (err) {
-      setErrorMsg(err.message);
       return { success: false };
-    } finally {
-      setLoading(false);
     }
-  };
+    setErrorMsg('');
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-registration-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), code: codeToVerify.trim() }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      if (data.blocked_until) {
+        setGlobalLockUntil(data.blocked_until);
+      }
+      throw new Error(data.error || t('err_invalid_code'));
+    }
 
-  const handleResendCode = async () => {
-    if (cooldown > 0) return;
-    setLoading(true);
+    setSuccessMsg('');
+    setStep(3);
+    return { success: true };
+  });
+
+  const handleResendCode = () => execute(async () => {
+    if (cooldown > 0 || loading) return { success: false };
     setErrorMsg('');
     setSuccessMsg('');
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/send-registration-code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        if (data.blocked_until) {
-          setGlobalLockUntil(data.blocked_until);
-        }
-        throw new Error(data.error || t('err_failed_resend'));
+    const response = await fetch(`${API_BASE_URL}/api/auth/send-registration-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      if (data.blocked_until) {
+        setGlobalLockUntil(data.blocked_until);
       }
-
-      setCooldown(60);
-      setSuccessMsg(t('success_new_verify_code'));
-    } catch (err) {
-      setErrorMsg(err.message);
-    } finally {
-      setLoading(false);
+      throw new Error(data.error || t('err_failed_resend'));
     }
-  };
+
+    setCooldown(60);
+    setSuccessMsg(t('success_new_verify_code'));
+    return { success: true };
+  });
 
   const handleNext = () => {
     setErrorMsg('');
@@ -217,12 +195,12 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
         setErrorMsg(t('err_req_store_fields'));
         return;
       }
-      if (subdomainStatus === 'unavailable') {
-        setErrorMsg(t('err_subdomain_unavailable'));
+      if (subdomainStatus === 'checking') {
+        setErrorMsg(t('err_checking_subdomain'));
         return;
       }
-      if (subdomainStatus === 'checking') {
-        setErrorMsg(t('err_subdomain_checking'));
+      if (subdomainStatus === 'unavailable') {
+        setErrorMsg(subdomainError || t('err_subdomain_unavailable'));
         return;
       }
     } else if (step === 4) {
@@ -246,7 +224,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
     }
   };
 
-  const handleSubdomainChange = async (val) => {
+  const handleSubdomainChange = (val) => execute(async () => {
     const cleanVal = val.toLowerCase().replace(/[^a-z0-9-]+/g, '');
     setSubdomain(cleanVal);
 
@@ -272,105 +250,77 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       setSubdomainStatus('unavailable');
       setSubdomainError(t('err_check_avail_failed'));
     }
-  };
+  });
 
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
-    setLoading(true);
+  const handleSubmit = (e) => execute(async () => {
+    if (e && e.preventDefault) e.preventDefault();
     setErrorMsg('');
 
-    try {
-      if (!kycDocument) {
-        throw new Error(t('err_req_kyc'));
-      }
-
-      const formData = new FormData();
-      formData.append('name', `${firstName.trim()} ${lastName.trim()}`);
-      formData.append('email', email.trim());
-      formData.append('password', password);
-      formData.append('store_name', storeName.trim());
-      formData.append('subdomain', subdomain.trim());
-      formData.append('bank_name', bankName.trim());
-      formData.append('account_holder_name', accountHolderName.trim());
-      formData.append('account_number', accountNumber.trim());
-      formData.append('kyc_document', kycDocument);
-
-      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
-        method: 'POST',
-        body: formData
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('err_init_onboarding'));
-      }
-
-      setStep(6);
-      return { success: true };
-    } catch (err) {
-      console.error('Onboarding submit error:', err.message);
-      setErrorMsg(err.message || t('err_conn_failed'));
+    if (!kycDocument) {
+      setErrorMsg(t('err_req_kyc'));
       return { success: false };
-    } finally {
-      setLoading(false);
     }
-  };
+
+    const formData = new FormData();
+    formData.append('name', `${firstName.trim()} ${lastName.trim()}`);
+    formData.append('email', email.trim());
+    formData.append('password', password);
+    formData.append('store_name', storeName.trim());
+    formData.append('subdomain', subdomain.trim());
+    formData.append('bank_name', bankName.trim());
+    formData.append('account_holder_name', accountHolderName.trim());
+    formData.append('account_number', accountNumber.trim());
+    formData.append('kyc_document', kycDocument);
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || t('err_init_onboarding'));
+    }
+
+    setStep(6);
+    return { success: true };
+  });
 
   const resetStateAndClose = () => {
     onClose();
-    setStep(1);
-    setEmail('');
-    setPassword('');
-    setVerificationCode('');
-    setFirstName('');
-    setLastName('');
-    setStoreName('');
-    setSubdomain('');
-    setBankName('');
-    setAccountHolderName('');
-    setAccountNumber('');
-    setKycDocument(null);
-    setErrorMsg('');
-    setSuccessMsg('');
-    setCooldown(0);
   };
 
-  // Shared step label
-  const stepLabels = [t('step_account'), t('step_verify'), t('step_store'), t('step_banking'), t('step_kyc')];
-
   return (
-    <Modal isOpen={isOpen} onClose={resetStateAndClose} title={t('onboarding_title')}>
-      {/* Step indicator for steps 1-5 */}
-      {step <= 5 && <StepIndicator current={step} total={5} />}
+    <Modal
+      isOpen={isOpen}
+      onClose={resetStateAndClose}
+      title={step === 6 ? t('modal_title_complete') : t('modal_title_create_store')}
+    >
+      {step < 6 && <StepIndicator current={step} total={5} />}
 
-      {/* Step label */}
-      {step <= 5 && (
-        <div className="flex items-center gap-2 mb-5">
-          {step === 1 && <Mail size={14} className="text-koara-accent" />}
-          {step === 2 && <Mail size={14} className="text-koara-accent" />}
-          {step === 3 && <Building2 size={14} className="text-koara-accent" />}
-          {step === 4 && <User size={14} className="text-koara-accent" />}
-          {step === 5 && <ShieldCheck size={14} className="text-koara-accent" />}
-          <span className="text-xs font-bold uppercase tracking-widest text-koara-accent">
-            {stepLabels[step - 1]}
-          </span>
+      {errorMsg && (
+        <div className="koara-error-msg mb-4">
+          {errorMsg}
         </div>
       )}
 
-      {/* Error / Success Messages */}
-      {errorMsg && <div className="koara-error-msg mb-4">{errorMsg}</div>}
-      {successMsg && <div className="koara-success-msg mb-4">{successMsg}</div>}
+      {successMsg && (
+        <div className="p-3 bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-semibold rounded-lg mb-4">
+          {successMsg}
+        </div>
+      )}
 
-      {/* ── Step 1: Account ── */}
+      {/* ── Step 1: Account Creation ── */}
       {step === 1 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">{t('desc_create_merchant')}</p>
+          <p className="text-sm text-slate-400 mb-2">{t('desc_enter_email_pass')}</p>
           <div className="space-y-3">
             <div>
               <label className="koara-label">{t('email_address')}</label>
               <input
-                required type="email"
+                required
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="merchant@example.com"
@@ -381,7 +331,8 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             <div>
               <label className="koara-label">{t('password')}</label>
               <input
-                required type="password"
+                required
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -396,6 +347,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
           )}
           <DashButton
             onClick={handleSendRegistrationCode}
+            loading={loading}
             disabled={loading || !!globalLockUntil}
             className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-4"
           >
@@ -426,6 +378,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
           )}
           <DashButton
             onClick={() => handleVerifyRegistrationCode()}
+            loading={loading}
             disabled={loading || verificationCode.length < 6 || !!globalLockUntil}
             className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-2"
           >
@@ -550,6 +503,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             </button>
             <DashButton
               onClick={handleSubmit}
+              loading={loading}
               disabled={loading || !kycDocument}
               className="dash-btn dash-btn-primary flex-1 justify-center py-2.5 rounded-xl text-sm font-semibold"
             >
@@ -572,11 +526,8 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
           <p className="text-sm text-slate-400 mb-8 leading-relaxed max-w-xs mx-auto">
             {t('desc_under_review')}
           </p>
-          <button
-            onClick={() => { resetStateAndClose(); navigate('/'); }}
-            className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl"
-          >
-            {t('done')}
+          <button onClick={resetStateAndClose} className="dash-btn dash-btn-primary w-full justify-center py-3 font-semibold rounded-xl cursor-pointer">
+            {t('close')}
           </button>
         </div>
       )}

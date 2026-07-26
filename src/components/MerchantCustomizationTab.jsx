@@ -4,6 +4,7 @@ import DashButton from './ui/DashButton';
 import { useAppContext } from '../context/AppContext';
 import { uploadProductImage } from '../services/merchantProductService';
 import { apiFetch, jsonFetch } from '../services/api';
+import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const PRESETS = {
   default: {
@@ -70,11 +71,12 @@ const MerchantCustomizationTab = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [activeSection, setActiveSection] = useState('presets');
   const [previewMode, setPreviewMode] = useState('desktop');
-  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState(currentLogoUrl);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [plusActive, setPlusActive] = useState(contextIsPlusActive !== undefined ? contextIsPlusActive : false);
+
+  const { execute: executeSave, loading: saving } = useAsyncAction();
+  const { execute: executeLogoUpload, loading: uploadingLogo } = useAsyncAction();
 
   useEffect(() => {
     if (contextIsPlusActive !== undefined) {
@@ -121,57 +123,42 @@ const MerchantCustomizationTab = () => {
     setHasChanges(isChanged);
   }, [theme, originalTheme, logoPreview, currentLogoUrl, store?.logo_url]);
 
-  const handleLogoUpload = async (e) => {
-    if (!plusActive) return;
+  const handleLogoUpload = (e) => executeLogoUpload(async () => {
+    if (!plusActive) return { success: false };
     const file = e.target.files[0];
-    if (!file) return;
-    setUploadingLogo(true);
-    try {
-      const result = await uploadProductImage(file);
-      if (result.success) {
-        setLogoPreview(result.url);
-        setHasChanges(true);
-      } else {
-        alert(result.message || 'Logo upload failed');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Logo upload failed due to an unexpected error');
-    } finally {
-      setUploadingLogo(false);
+    if (!file) return { success: false };
+    const result = await uploadProductImage(file);
+    if (result.success) {
+      setLogoPreview(result.url);
+      setHasChanges(true);
+      return { success: true };
+    } else {
+      alert(result.message || 'Logo upload failed');
+      return { success: false };
     }
-  };
+  });
 
-  const handleSave = async () => {
+  const handleSave = () => executeSave(async () => {
     if (!plusActive) {
       alert('Koara Plus subscription required to save customization.');
       return { success: false };
     }
-    setSaving(true);
-    try {
-      const { ok, data } = await jsonFetch('/api/merchant/store/customization', 'PUT', {
-        customization: theme,
-        logo_url: logoPreview
-      });
-      if (!ok) {
-        alert(data?.error || 'Failed to save store customization');
-        return { success: false };
-      }
-
-      if (store?.id && logoPreview !== (store?.logo_url || null)) {
-        await updateStoreLogo(store.id, logoPreview);
-      }
-      setOriginalTheme(theme);
-      setHasChanges(false);
-      return { success: true };
-    } catch (err) {
-      console.error('Error saving store customization:', err);
-      alert('Error saving store customization');
+    const { ok, data } = await jsonFetch('/api/merchant/store/customization', 'PUT', {
+      customization: theme,
+      logo_url: logoPreview
+    });
+    if (!ok) {
+      alert(data?.error || 'Failed to save store customization');
       return { success: false };
-    } finally {
-      setSaving(false);
     }
-  };
+
+    if (store?.id && logoPreview !== (store?.logo_url || null)) {
+      await updateStoreLogo(store.id, logoPreview);
+    }
+    setOriginalTheme(theme);
+    setHasChanges(false);
+    return { success: true };
+  });
 
   const handleDiscard = () => {
     setTheme(originalTheme);

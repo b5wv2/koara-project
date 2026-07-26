@@ -2,87 +2,67 @@ import React, { useState } from 'react';
 import Modal from './Modal';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { Eye, EyeOff, LogIn, ArrowLeft, Mail } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
-import OTPInput from './OTPInput';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import DashButton from './ui/DashButton';
+import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboarding }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  
+
   const navigate = useNavigate();
   const { login, googleLogin, t } = useAppContext();
+  const { execute, loading } = useAsyncAction();
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => execute(async () => {
     if (e && e.preventDefault) e.preventDefault();
     setError('');
-    setLoading(true);
 
-    try {
-      const result = await login(email, password);
-      if (result.success) {
-        if (result.isStoreRequest) {
-          onStoreStatus({ status: result.status, reason: result.rejection_reason, request: result.request });
-          onClose();
-          return result;
-        }
+    const result = await login(email, password);
+    if (result.success) {
+      if (result.isStoreRequest) {
+        onStoreStatus({ status: result.status, reason: result.rejection_reason, request: result.request });
         onClose();
-        setEmail('');
-        setPassword('');
-        navigate('/admin');
-      } else {
-        setError(result.message);
+        return result;
       }
-      return result;
-    } catch (err) {
-      console.error(err);
-      setError(t('login_error') || 'Login failed due to an unexpected error.');
-      return { success: false };
-    } finally {
-      setLoading(false);
+      onClose();
+      setEmail('');
+      setPassword('');
+      navigate('/admin');
+    } else {
+      setError(result.message);
     }
-  };
+    return result;
+  });
 
-  const handleGoogleSuccess = async (credentialResponse) => {
+  const handleGoogleSuccess = (credentialResponse) => execute(async () => {
     setError('');
-    setLoading(true);
 
-    try {
-      const result = await googleLogin(credentialResponse.credential);
-      
-      if (result.success) {
-        if (result.requires_onboarding) {
-          onClose();
-          if (onGoogleOnboarding) onGoogleOnboarding(result.email);
-          return;
-        }
-
-        if (result.isStoreRequest) {
-          onStoreStatus({ status: result.status, reason: result.rejection_reason, request: result.request });
-          onClose();
-          return;
-        }
-        
+    const result = await googleLogin(credentialResponse.credential);
+    
+    if (result.success) {
+      if (result.requires_onboarding) {
         onClose();
-        setEmail('');
-        setPassword('');
-        navigate('/admin');
-      } else {
-        setError(result.message);
+        if (onGoogleOnboarding) onGoogleOnboarding(result.email);
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      setError(t('google_login_error'));
-    } finally {
-      setLoading(false);
+
+      if (result.isStoreRequest) {
+        onStoreStatus({ status: result.status, reason: result.rejection_reason, request: result.request });
+        onClose();
+        return;
+      }
+      
+      onClose();
+      setEmail('');
+      setPassword('');
+      navigate('/admin');
+    } else {
+      setError(result.message);
     }
-  };
-
-
+  });
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('sign_in_account')}>
@@ -140,36 +120,13 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
         <DashButton
           type="submit"
           onClick={handleLogin}
+          loading={loading}
           disabled={loading}
           className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <LogIn size={16} />
           {t('sign_in')}
         </DashButton>
-
-        {/* Temporarily hidden Google Login
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/10"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-[#0b0c10] px-2 text-slate-400">{t('continue_with')}</span>
-          </div>
-        </div>
-
-        <div className="flex justify-center w-full">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => {
-              setError('Google Login failed. Please try again.');
-            }}
-            theme="filled_black"
-            text="continue_with"
-            shape="rectangular"
-          />
-        </div>
-        */}
-
       </form>
     </Modal>
   );

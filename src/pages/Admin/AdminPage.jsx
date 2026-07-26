@@ -103,17 +103,23 @@ const AdminPage = () => {
     if (e && e.preventDefault) e.preventDefault();
     setBalanceModal(prev => ({ ...prev, error: '' }));
     const amount = Number(balanceModal.amount);
-    const result = balanceModal.type === 'add'
-      ? await adminAddCredit(balanceModal.storeId, amount, 'Admin Manual Credit')
-      : await adminDeduct(balanceModal.storeId, amount, 'Admin Manual Debit');
-    if (result.success) {
-      setBalanceModal({ isOpen: false, type: '', storeId: null, amount: 0, error: '' });
-      if (activeTab === 'merchants' || activeTab === 'dashboard') fetchAllStoresAdmin();
-      if (activeTab === 'ledger' || activeTab === 'dashboard') fetchGlobalTransactions();
-    } else {
-      setBalanceModal(prev => ({ ...prev, error: result.message }));
+    try {
+      const result = balanceModal.type === 'add'
+        ? await adminAddCredit(balanceModal.storeId, amount, 'Admin Manual Credit')
+        : await adminDeduct(balanceModal.storeId, amount, 'Admin Manual Debit');
+      if (result.success) {
+        setBalanceModal({ isOpen: false, type: '', storeId: null, amount: 0, error: '' });
+        if (activeTab === 'merchants' || activeTab === 'dashboard') fetchAllStoresAdmin();
+        if (activeTab === 'ledger' || activeTab === 'dashboard') fetchGlobalTransactions();
+      } else {
+        setBalanceModal(prev => ({ ...prev, error: result.message }));
+      }
+      return result;
+    } catch (err) {
+      console.error(err);
+      setBalanceModal(prev => ({ ...prev, error: 'Network error updating balance' }));
+      return { success: false };
     }
-    return result;
   };
 
   const handleMerchantAction = (e) => {
@@ -131,31 +137,49 @@ const AdminPage = () => {
   };
 
   const handleProcessOrder = async (id, action, isTopup = false) => {
-    const res = await updateOrderStatus(id, storeId, action, isTopup);
-    if (res.success) { setSelectedReceipt(null); } else { alert(res.message); }
-    return res;
+    try {
+      const res = await updateOrderStatus(id, storeId, action, isTopup);
+      if (res.success) { setSelectedReceipt(null); } else { alert(res.message); }
+      return res;
+    } catch (err) {
+      console.error(err);
+      alert('Error processing order');
+      return { success: false };
+    }
   };
 
   const handleApproveKyc = async (kycStoreId) => {
-    const success = await approveKyc(kycStoreId);
-    if (success) {
-      alert('Application approved successfully!');
-      fetchPendingKyc().then(data => setKycApplications(data || []));
-      fetchAllStoresAdmin();
-    } else { alert('Failed to approve application.'); }
-    return { success: !!success };
+    try {
+      const success = await approveKyc(kycStoreId);
+      if (success) {
+        alert('Application approved successfully!');
+        fetchPendingKyc().then(data => setKycApplications(data || []));
+        fetchAllStoresAdmin();
+      } else { alert('Failed to approve application.'); }
+      return { success: !!success };
+    } catch (err) {
+      console.error(err);
+      alert('Error approving KYC application');
+      return { success: false };
+    }
   };
 
   const handleRejectKycSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const success = await rejectKyc(rejectKycModal.storeId, rejectReason);
-    if (success) {
-      alert('Application rejected successfully.');
-      setRejectKycModal({ isOpen: false, storeId: null });
-      setRejectReason('');
-      fetchPendingKyc().then(data => setKycApplications(data || []));
-    } else { alert('Failed to reject application.'); }
-    return { success: !!success };
+    try {
+      const success = await rejectKyc(rejectKycModal.storeId, rejectReason);
+      if (success) {
+        alert('Application rejected successfully.');
+        setRejectKycModal({ isOpen: false, storeId: null });
+        setRejectReason('');
+        fetchPendingKyc().then(data => setKycApplications(data || []));
+      } else { alert('Failed to reject application.'); }
+      return { success: !!success };
+    } catch (err) {
+      console.error(err);
+      alert('Error rejecting KYC application');
+      return { success: false };
+    }
   };
 
   const handleSaveCustomization = async () => {
@@ -177,13 +201,19 @@ const AdminPage = () => {
   };
 
   const handleDeleteStore = async () => {
-    const res = await deleteStore(deleteModal.storeId);
-    setDeleteModal({ isOpen: false, storeId: null, storeName: '' });
-    if (res.success) {
-      if (activeTab === 'merchants' || activeTab === 'dashboard') fetchAllStoresAdmin();
-      if (activeTab === 'ledger' || activeTab === 'dashboard') fetchGlobalTransactions();
-    } else { alert(res.message || 'Failed to delete store'); }
-    return res;
+    try {
+      const res = await deleteStore(deleteModal.storeId);
+      setDeleteModal({ isOpen: false, storeId: null, storeName: '' });
+      if (res.success) {
+        if (activeTab === 'merchants' || activeTab === 'dashboard') fetchAllStoresAdmin();
+        if (activeTab === 'ledger' || activeTab === 'dashboard') fetchGlobalTransactions();
+      } else { alert(res.message || 'Failed to delete store'); }
+      return res;
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting store');
+      return { success: false };
+    }
   };
 
   // ── Render ──

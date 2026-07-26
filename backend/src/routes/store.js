@@ -5,6 +5,7 @@ const { validateSubdomainFormat } = require('../utils/subdomainValidation');
 const multer = require('multer');
 const path = require('path');
 const orderService = require('../services/orderService');
+const cartService = require('../services/cartService');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -209,6 +210,47 @@ router.post('/:storeId/orders', upload.single('receipt'), async (req, res) => {
     res.status(201).json({ success: true, order });
   } catch (error) {
     console.error('Order creation failed:', error.message);
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/store/:storeId/cart/checkout
+router.post('/:storeId/cart/checkout', upload.single('receipt'), async (req, res) => {
+  const { storeId } = req.params;
+  let { customerName, customerEmail, whatsapp, cartItems, promoCode } = req.body;
+
+  if (!customerName || !customerEmail || !whatsapp || !cartItems) {
+    return res.status(400).json({ error: 'Missing required checkout fields' });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'Payment receipt is required' });
+  }
+
+  if (typeof cartItems === 'string') {
+    try {
+      cartItems = JSON.parse(cartItems);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid cartItems format' });
+    }
+  }
+
+  const receiptUrl = `/uploads/${req.file.filename}`;
+
+  try {
+    const result = await cartService.processCartCheckout({
+      storeId,
+      customerName,
+      customerEmail,
+      whatsapp,
+      cartItems,
+      receiptUrl,
+      promoCode
+    });
+
+    res.status(201).json({ success: true, ...result });
+  } catch (error) {
+    console.error('Cart checkout failed:', error.message);
     res.status(400).json({ success: false, error: error.message });
   }
 });

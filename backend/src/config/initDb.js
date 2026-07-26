@@ -454,6 +454,7 @@ const initializeDatabase = async () => {
       ALTER TABLE topup_orders 
       ADD COLUMN IF NOT EXISTS admin_cost_price NUMERIC(10,2),
       ADD COLUMN IF NOT EXISTS last_sync_time TIMESTAMP WITH TIME ZONE,
+      ADD COLUMN IF NOT EXISTS checkout_group_id VARCHAR(255),
       ADD COLUMN IF NOT EXISTS receipt_url TEXT;
       
       ALTER TABLE topup_orders ALTER COLUMN status SET DEFAULT 'pending';
@@ -492,6 +493,7 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS provider_name VARCHAR(255),
       ADD COLUMN IF NOT EXISTS provider_status VARCHAR(50),
       ADD COLUMN IF NOT EXISTS encrypted_card_code TEXT,
+      ADD COLUMN IF NOT EXISTS checkout_group_id VARCHAR(255),
       ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE,
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
     `);
