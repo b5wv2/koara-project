@@ -1,6 +1,5 @@
 export const translations = {
-  en: {
-    // Header
+  "en": {
     "signin": "Sign in",
     "start_selling": "Start Now",
     "logout": "Logout",
@@ -8,8 +7,6 @@ export const translations = {
     "nav_wallet": "Wallet",
     "nav_merchants": "Merchants",
     "nav_terms": "Terms",
-    
-    // Landing
     "hero_title": "The easiest way to start selling digital products in MENA.",
     "hero_subtitle": "Start selling in minutes with Koara. No coding required.",
     "start_store_free": "Start your store for free",
@@ -20,8 +17,6 @@ export const translations = {
     "feature_2_desc": "Accept cards, Apple Pay, and local MENA payment methods.",
     "feature_3_title": "Automated Delivery",
     "feature_3_desc": "Deliver digital codes and products automatically upon purchase.",
-
-    // Dashboard common
     "dashboard": "Dashboard",
     "overview": "Overview",
     "sales": "Sales",
@@ -30,16 +25,12 @@ export const translations = {
     "total_balance": "Total Balance",
     "total_revenue": "Total Revenue",
     "total_sales": "Total Sales",
-
-    // Platform Admin
     "platform_admin_title": "Platform Admin Dashboard",
     "applications": "Applications",
     "merchants": "Merchants",
     "active_merchants": "Active Merchants",
     "approve": "Approve",
     "reject": "Reject",
-
-    // Merchant Admin
     "merchant_admin_title": "Store Admin Dashboard",
     "products": "Products",
     "promo_codes": "Promo Codes",
@@ -62,8 +53,6 @@ export const translations = {
     "product": "Product",
     "amount": "Amount",
     "date": "Date",
-
-    // Storefront
     "all_products": "All Products",
     "search_products": "Search products...",
     "buy_now": "Buy Now",
@@ -72,7 +61,7 @@ export const translations = {
     "whatsapp_number": "WhatsApp Number",
     "email_address": "Email Address",
     "name": "Name",
-    "promo_code": "Promo Code (Optional)",
+    "promo_code": "Promo code",
     "apply": "Apply",
     "subtotal": "Subtotal",
     "discount": "Discount",
@@ -80,8 +69,6 @@ export const translations = {
     "complete_purchase": "Complete Purchase",
     "order_success": "Your order has been created successfully.",
     "awaiting_verification": "Awaiting merchant verification. Once verified, your digital product will be delivered via WhatsApp and Email.",
-
-    // Modals
     "welcome_back": "Welcome back",
     "sign_in_account": "Sign in to your account",
     "email": "Email",
@@ -214,10 +201,54 @@ export const translations = {
     "verify_payment": "Verify Payment",
     "desc_verifying_payment": "Verifying your payment...",
     "desc_verifying_payment_sub": "This may take up to one minute while we wait for the bank statement to update.",
-    "err_failed_load_bank": "Failed to load bank configuration."
+    "err_failed_load_bank": "Failed to load bank configuration.",
+    "invalid_or_inactive_promo_code": "Invalid or inactive promo code.",
+    "shopping_cart": "Shopping Cart",
+    "your_cart_is_empty": "Your cart is empty",
+    "explore_our_digital_products_a": "Explore our digital products and top-ups to add items to your cart.",
+    "top_up": "Top-Up",
+    "gift_card": "Gift Card",
+    "proceed_to_checkout": "Proceed to Checkout",
+    "clear_cart": "Clear cart",
+    "ar": "ar",
+    "ar_1": "AR",
+    "configure_top_up_details": "Configure Top-Up Details",
+    "please_enter_your_account_deta": "Please enter your account details for this top-up before adding to cart.",
+    "add_to_cart": "Add to Cart",
+    "ltr": "ltr",
+    "store_unavailable": "Store Unavailable",
+    "this_store_is_currently_not_ta": "This store is currently not taking orders.",
+    "loading_catalog": "Loading catalog…",
+    "item": "item",
+    "items": "items",
+    "add": "Add",
+    "store_open": "Store open",
+    "discover_top_tier_digital_prod": "Discover top-tier digital products, game top-ups, and exclusive offers tailored just for you.",
+    "browse_categories": "Browse Categories",
+    "back_to_catalog": "Back to catalog",
+    "catalog": "Catalog",
+    "no_active_products_in_this_cat": "No active products in this category yet.",
+    "cart_checkout": "Cart Checkout",
+    "order_status": "Order status",
+    "details": "Details",
+    "confirmed": "Confirmed",
+    "cart_order_summary": "Cart Order Summary",
+    "top_up_details": "Top-up details",
+    "payment_details": "Payment details",
+    "bank": "Bank",
+    "account_name": "Account name",
+    "account_no": "Account no.",
+    "upload_transfer_receipt": "Upload transfer receipt",
+    "image_or_pdf_max_10mb": "Image or PDF · Max 10MB",
+    "cart_orders_submitted": "Cart Orders Submitted!",
+    "generated_independent_orders": "Generated Independent Orders:",
+    "each_item_has_been_converted_i": "Each item has been converted into an independent order for the merchant to process.",
+    "sale": "Sale",
+    "store_not_found": "Store Not Found",
+    "the_store_you_are_trying_to_ac": "The store you are trying to access does not exist or has been suspended.",
+    "return_to_homepage": "Return to Homepage"
   },
-  ar: {
-    // Header
+  "ar": {
     "signin": "تسجيل الدخول",
     "start_selling": "ابدأ الآن",
     "logout": "تسجيل الخروج",
@@ -225,8 +256,6 @@ export const translations = {
     "nav_wallet": "المحفظة",
     "nav_merchants": "التجار",
     "nav_terms": "الشروط",
-    
-    // Landing
     "hero_title": "أسهل طريقة لبدء بيع المنتجات الرقمية في الشرق الأوسط.",
     "hero_subtitle": "ابدأ البيع في دقائق مع كوارا. لا حاجة للبرمجة.",
     "start_store_free": "ابدأ متجرك مجاناً",
@@ -237,8 +266,6 @@ export const translations = {
     "feature_2_desc": "اقبل البطاقات، Apple Pay، وطرق الدفع المحلية في الشرق الأوسط.",
     "feature_3_title": "تسليم تلقائي",
     "feature_3_desc": "قم بتسليم الأكواد الرقمية والمنتجات تلقائياً عند الشراء.",
-
-    // Dashboard common
     "dashboard": "لوحة القيادة",
     "overview": "نظرة عامة",
     "sales": "المبيعات",
@@ -247,16 +274,12 @@ export const translations = {
     "total_balance": "إجمالي الرصيد",
     "total_revenue": "إجمالي الإيرادات",
     "total_sales": "إجمالي المبيعات",
-
-    // Platform Admin
     "platform_admin_title": "لوحة إدارة المنصة",
     "applications": "الطلبات",
     "merchants": "التجار",
     "active_merchants": "التجار النشطين",
     "approve": "موافقة",
     "reject": "رفض",
-
-    // Merchant Admin
     "merchant_admin_title": "لوحة إدارة المتجر",
     "products": "المنتجات",
     "promo_codes": "أكواد الخصم",
@@ -279,26 +302,22 @@ export const translations = {
     "product": "المنتج",
     "amount": "المبلغ",
     "date": "التاريخ",
-
-    // Storefront
     "all_products": "جميع المنتجات",
     "search_products": "ابحث عن المنتجات...",
-    "buy_now": "شراء الآن",
-    "checkout": "الدفع",
+    "buy_now": "شراء",
+    "checkout": "إتمام الشراء",
     "continue_shopping": "مواصلة التسوق",
     "whatsapp_number": "رقم الواتساب",
     "email_address": "البريد الإلكتروني",
     "name": "الاسم",
-    "promo_code": "كود الخصم (اختياري)",
+    "promo_code": "رمز الخصم",
     "apply": "تطبيق",
     "subtotal": "المجموع الفرعي",
     "discount": "الخصم",
-    "total": "المجموع",
+    "total": "الإجمالي",
     "complete_purchase": "إتمام الشراء",
     "order_success": "تم إنشاء طلبك بنجاح.",
     "awaiting_verification": "في انتظار تحقق التاجر. بمجرد التحقق، سيتم تسليم منتجك الرقمي عبر الواتساب والبريد الإلكتروني.",
-
-    // Modals
     "welcome_back": "مرحباً بعودتك",
     "sign_in_account": "سجل الدخول إلى حسابك",
     "email": "البريد الإلكتروني",
@@ -431,6 +450,51 @@ export const translations = {
     "verify_payment": "التحقق من الدفع",
     "desc_verifying_payment": "جاري التحقق من الدفع...",
     "desc_verifying_payment_sub": "قد يستغرق هذا دقيقة واحدة أثناء انتظارنا لتحديث كشف الحساب البنكي.",
-    "err_failed_load_bank": "فشل في تحميل إعدادات البنك."
+    "err_failed_load_bank": "فشل في تحميل إعدادات البنك.",
+    "invalid_or_inactive_promo_code": "رمز ترويجي غير صالح.",
+    "shopping_cart": "سلة التسوق",
+    "your_cart_is_empty": "سلتك فارغة",
+    "explore_our_digital_products_a": "استكشف منتجاتنا الرقمية وشحن الألعاب لإضافة عناصر إلى سلتك.",
+    "top_up": "شحن",
+    "gift_card": "بطاقة",
+    "proceed_to_checkout": "متابعة الدفع",
+    "clear_cart": "إفراغ السلة",
+    "ar": "en",
+    "ar_1": "EN",
+    "configure_top_up_details": "إدخال تفاصيل الشحن",
+    "please_enter_your_account_deta": "يرجى إدخال بيانات حسابك لشحن هذا المنتج قبل الإضافة إلى السلة.",
+    "add_to_cart": "إضافة إلى السلة",
+    "ltr": "rtl",
+    "store_unavailable": "المتجر غير متاح",
+    "this_store_is_currently_not_ta": "هذا المتجر لا يستقبل الطلبات حالياً.",
+    "loading_catalog": "جارٍ تحميل الكتالوج…",
+    "item": "منتج",
+    "items": "منتجات",
+    "add": "إضافة",
+    "store_open": "المتجر متاح الآن",
+    "discover_top_tier_digital_prod": "اكتشف أفضل المنتجات الرقمية وشحن الألعاب والعروض الحصرية المصممة خصيصاً لك.",
+    "browse_categories": "تصفح الفئات",
+    "back_to_catalog": "العودة للكتالوج",
+    "catalog": "الكتالوج",
+    "no_active_products_in_this_cat": "لا توجد منتجات نشطة في هذه الفئة بعد.",
+    "cart_checkout": "دفع السلة",
+    "order_status": "حالة الطلب",
+    "details": "التفاصيل",
+    "confirmed": "التأكيد",
+    "cart_order_summary": "ملخص طلبات السلة",
+    "top_up_details": "تفاصيل الشحن",
+    "payment_details": "تفاصيل الدفع",
+    "bank": "البنك",
+    "account_name": "اسم الحساب",
+    "account_no": "رقم الحساب",
+    "upload_transfer_receipt": "ارفع إيصال التحويل",
+    "image_or_pdf_max_10mb": "صورة أو PDF · بحد أقصى 10 ميجابايت",
+    "cart_orders_submitted": "تم تقديم طلبات السلة بنجاح!",
+    "generated_independent_orders": "أرقام الطلبات المستقلة:",
+    "each_item_has_been_converted_i": "تم تحويل كل عنصر إلى طلب مستقل ليعالجه التاجر.",
+    "sale": "تخفيض",
+    "store_not_found": "المتجر غير موجود",
+    "the_store_you_are_trying_to_ac": "المتجر الذي تحاول الوصول إليه غير موجود أو تم إيقافه.",
+    "return_to_homepage": "العودة للصفحة الرئيسية"
   }
 };

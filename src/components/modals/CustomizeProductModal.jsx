@@ -92,7 +92,7 @@ const CustomizeProductModal = ({ customizingProduct, setCustomizingProduct, onSa
               {customizingProduct.custom_image_url && (
                 <button
                   onClick={() => setCustomizingProduct(p => ({ ...p, custom_image_url: '', previewImage: p.image_url || '' }))}
-                  className="text-xs font-medium w-full text-left transition-colors"
+                  className="text-xs font-medium w-full text-start transition-colors"
                   style={{ color: '#F87171' }}
                 >
                   Remove Custom Image

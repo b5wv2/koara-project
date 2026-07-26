@@ -18,12 +18,12 @@ const ReceiptReviewModal = ({ selectedReceipt, setSelectedReceipt, onProcessOrde
               <span style={{ color: '#475569' }}>No receipt uploaded</span>
             )}
           </div>
-          <div className="flex justify-between text-left text-sm p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex justify-between text-start text-sm p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div>
               <div className="text-xs mb-1" style={{ color: '#475569' }}>Customer</div>
               <div className="font-semibold text-white">{selectedReceipt.customer_name}</div>
             </div>
-            <div className="text-right" dir="ltr">
+            <div className="text-end" dir="ltr">
               <div className="text-xs mb-1" style={{ color: '#475569' }}>Amount</div>
               <div className="font-semibold" style={{ color: '#4ade80' }}>${parseFloat(selectedReceipt.total_amount || 0).toFixed(2)}</div>
             </div>

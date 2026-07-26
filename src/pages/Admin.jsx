@@ -627,7 +627,7 @@ const AdminDashboard = () => {
           </div>
           <button
             onClick={handleLogout}
-            className="koara-sidebar-nav-item w-full text-left"
+            className="koara-sidebar-nav-item w-full text-start"
             style={{ color: '#ef4444' }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -653,11 +653,11 @@ const AdminDashboard = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+              onClick={() => setLanguage(t('ar'))}
               className="text-xs font-bold transition-colors px-2.5 py-1.5 rounded-lg"
               style={{ color: '#94A3B8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              {language === 'en' ? 'AR' : 'EN'}
+              {t('ar_1')}
             </button>
           </div>
         </header>
@@ -686,7 +686,7 @@ const AdminDashboard = () => {
                           <th>Date</th>
                           <th>Store</th>
                           <th>Type</th>
-                          <th className="text-right">Amount</th>
+                          <th className="text-end">Amount</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -698,7 +698,7 @@ const AdminDashboard = () => {
                             <td>
                               <StatusBadge status={txn.transaction_type === 'credit' ? 'approved' : 'rejected'} />
                             </td>
-                            <td className="text-right font-mono font-semibold" dir="ltr" style={{ color: txn.transaction_type === 'credit' ? '#4ade80' : '#f87171' }}>
+                            <td className="text-end font-mono font-semibold" dir="ltr" style={{ color: txn.transaction_type === 'credit' ? '#4ade80' : '#f87171' }}>
                               {txn.transaction_type === 'credit' ? '+' : '-'}{txn.amount.toFixed(2)}
                             </td>
                           </tr>
@@ -729,7 +729,7 @@ const AdminDashboard = () => {
                         <th>Bank Information</th>
                         <th>Document</th>
                         <th>Status</th>
-                        <th className="text-right">Actions</th>
+                        <th className="text-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -764,7 +764,7 @@ const AdminDashboard = () => {
                             )}
                           </td>
                           <td><StatusBadge status={app.status} /></td>
-                          <td className="text-right">
+                          <td className="text-end">
                             {app.status === 'pending' && (
                               <div className="flex justify-end gap-2">
                                 <button onClick={() => handleApproveKyc(app.id)} className="dash-btn dash-btn-success">Approve</button>
@@ -793,7 +793,7 @@ const AdminDashboard = () => {
                         <th>Email</th>
                         <th>Wallet</th>
                         <th>Status</th>
-                        <th className="text-right">Actions</th>
+                        <th className="text-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -815,7 +815,7 @@ const AdminDashboard = () => {
                               : 'suspended'
                             } />
                           </td>
-                          <td className="text-right">
+                          <td className="text-end">
                             <div className="flex justify-end gap-2">
                               <button onClick={() => setBalanceModal({ isOpen: true, type: 'add', storeId: merchant.id, amount: '' })} className="dash-btn dash-btn-success">
                                 <ArrowUpRight size={13} /> Add
@@ -848,7 +848,7 @@ const AdminDashboard = () => {
                         <th>Date</th>
                         <th>Store</th>
                         <th>Type</th>
-                        <th className="text-right">Amount</th>
+                        <th className="text-end">Amount</th>
                         <th>Reason</th>
                       </tr>
                     </thead>
@@ -863,7 +863,7 @@ const AdminDashboard = () => {
                           <td>
                             <StatusBadge status={txn.transaction_type === 'credit' ? 'approved' : 'rejected'} />
                           </td>
-                          <td className="text-right font-mono font-semibold" dir="ltr" style={{ color: txn.transaction_type === 'credit' ? '#4ade80' : '#f87171' }}>
+                          <td className="text-end font-mono font-semibold" dir="ltr" style={{ color: txn.transaction_type === 'credit' ? '#4ade80' : '#f87171' }}>
                             {txn.transaction_type === 'credit' ? '+' : '-'}{txn.amount.toFixed(2)}
                           </td>
                           <td className="max-w-[180px] truncate" style={{ color: '#64748B' }} title={txn.reason}>{txn.reason}</td>
@@ -907,9 +907,9 @@ const AdminDashboard = () => {
                           <th>Request ID</th>
                           <th>Store</th>
                           <th>Bank Details</th>
-                          <th className="text-right">Amount</th>
+                          <th className="text-end">Amount</th>
                           <th className="text-center">Status</th>
-                          <th className="text-right">Actions</th>
+                          <th className="text-end">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -922,14 +922,14 @@ const AdminDashboard = () => {
                             <td className="cell-mono text-xs" style={{ color: '#64748B' }}>#{w.id}</td>
                             <td>
                               <div className="font-semibold text-white">{w.store_name}</div>
-                              <div className="text-xs text-slate-400">{new Date(w.created_at).toLocaleString()}</div>
+                              <div className="text-xs text-slate-400">{formatDate()}</div>
                             </td>
                             <td>
                               <div className="font-medium text-white">{w.bank_name}</div>
                               <div className="text-xs text-slate-400">{w.bank_holder_name}</div>
                               <div className="text-xs text-slate-500 font-mono mt-0.5">{w.account_number}</div>
                             </td>
-                            <td className="text-right font-mono font-semibold text-white" dir="ltr">
+                            <td className="text-end font-mono font-semibold text-white" dir="ltr">
                               ${parseFloat(w.amount).toFixed(2)}
                             </td>
                             <td className="text-center">
@@ -937,14 +937,14 @@ const AdminDashboard = () => {
                               {w.status === 'approved' && <span className="koara-badge koara-badge-approved">Approved</span>}
                               {w.status === 'rejected' && <span className="koara-badge koara-badge-rejected">Rejected</span>}
                             </td>
-                            <td className="text-right">
+                            <td className="text-end">
                               {w.status === 'pending' ? (
                                 <div className="flex items-center justify-end gap-2">
                                   <button onClick={() => handleAdminWithdrawalApprove(w.id)} disabled={withdrawalProcessingId !== null} className="dash-btn dash-btn-primary py-1.5 px-3 text-xs">Approve</button>
                                   <button onClick={() => handleAdminWithdrawalReject(w.id)} disabled={withdrawalProcessingId !== null} className="dash-btn dash-btn-secondary py-1.5 px-3 text-xs" style={{ color: '#f87171', background: 'rgba(248,113,113,0.1)' }}>Reject</button>
                                 </div>
                               ) : (
-                                <span className="text-xs text-slate-500">{new Date(w.processed_at).toLocaleDateString()}</span>
+                                <span className="text-xs text-slate-500">{formatDate()}</span>
                               )}
                             </td>
                           </tr>
@@ -979,7 +979,7 @@ const AdminDashboard = () => {
                           <th>Product Name</th>
                           <th>Category</th>
                           <th>Providers</th>
-                          <th className="text-right">Actions</th>
+                          <th className="text-end">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1004,7 +1004,7 @@ const AdminDashboard = () => {
                                 Manage Providers
                               </button>
                             </td>
-                            <td className="text-right">
+                            <td className="text-end">
                               <div className="flex justify-end gap-2">
                                 <button onClick={() => setCatalogEditModal({ isOpen: true, product: { ...product } })} className="dash-btn dash-btn-secondary">Edit</button>
                                 {product.is_active && (
@@ -1073,7 +1073,7 @@ const AdminDashboard = () => {
                           <th>Provider</th>
                           <th>Category ID (Code)</th>
                           <th>Display Name</th>
-                          <th className="text-right">Actions</th>
+                          <th className="text-end">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1085,7 +1085,7 @@ const AdminDashboard = () => {
                             <td className="cell-primary font-semibold">{cat.provider_name || `Provider #${cat.provider_id}`}</td>
                             <td className="cell-mono text-sky-400 font-mono">{cat.category_id}</td>
                             <td className="text-white">{cat.name}</td>
-                            <td className="text-right">
+                            <td className="text-end">
                               <button
                                 onClick={async () => {
                                   if (!window.confirm(`Are you sure you want to delete category "${cat.name}"?`)) return;
@@ -1120,7 +1120,7 @@ const AdminDashboard = () => {
                   <div className="lg:col-span-1">
                     <div className="dash-card p-6 relative overflow-hidden">
                       {/* Blue accent bar */}
-                      <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: 'linear-gradient(90deg,#2563EB,#60A5FA)' }} />
+                      <div className="absolute top-0 start-0 end-0 h-0.5" style={{ background: 'linear-gradient(90deg,#2563EB,#60A5FA)' }} />
                       <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#475569' }}>Live Wallet Balance</div>
                       <div className="text-4xl font-extrabold text-white tracking-tight mb-6" dir="ltr">
                         ${parseFloat(store?.balance || 0).toFixed(2)}
@@ -1223,8 +1223,8 @@ const AdminDashboard = () => {
                         <th>Product Name</th>
                         <th>Category</th>
                         <th>Selling Price ($)</th>
-                        <th className="text-right">Customize</th>
-                        <th className="text-right">Save</th>
+                        <th className="text-end">Customize</th>
+                        <th className="text-end">Save</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1263,7 +1263,7 @@ const AdminDashboard = () => {
                                 placeholder="0.00"
                               />
                             </td>
-                            <td className="text-right">
+                            <td className="text-end">
                               <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)} compact>
                                 <button
                                   onClick={() => {
@@ -1277,11 +1277,11 @@ const AdminDashboard = () => {
                                   }}
                                   className="dash-btn dash-btn-secondary"
                                 >
-                                  <Edit2 size={14} className="mr-1 inline" /> Customize
+                                  <Edit2 size={14} className="me-1 inline" /> Customize
                                 </button>
                               </PremiumLockOverlay>
                             </td>
-                            <td className="text-right">
+                            <td className="text-end">
                               <button
                                 onClick={async () => {
                                   const price = parseFloat(editingMerchantPrice[product.id] ?? product.selling_price);
@@ -1379,7 +1379,7 @@ const AdminDashboard = () => {
                         <th>Product Name</th>
                         <th>Provider Cost ($)</th>
                         <th>Selling Price ($)</th>
-                        <th className="text-right">Save</th>
+                        <th className="text-end">Save</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1456,7 +1456,7 @@ const AdminDashboard = () => {
                                         const d = await r.json(); if (d.success) { setMerchantTopups(d.topups); setTopupCategories(d.categories || []); }
                                       } catch(e) {}
                                       setUploadingTopupImage(false);
-                                    }} className="text-[10px] text-red-400 hover:text-red-300 font-medium bg-red-500/10 px-1.5 py-0.5 rounded transition-colors text-left w-fit flex items-center gap-1 disabled:opacity-50">
+                                    }} className="text-[10px] text-red-400 hover:text-red-300 font-medium bg-red-500/10 px-1.5 py-0.5 rounded transition-colors text-start w-fit flex items-center gap-1 disabled:opacity-50">
                                       <Trash2 size={10} /> Delete
                                     </button>
                                   )}
@@ -1477,7 +1477,7 @@ const AdminDashboard = () => {
                                 placeholder="0.00"
                               />
                             </td>
-                            <td className="text-right">
+                            <td className="text-end">
                               <button
                                 onClick={async () => {
                                   const price = parseFloat(editingTopupPrice[topup.offer_id] ?? topup.selling_price);
@@ -1542,7 +1542,7 @@ const AdminDashboard = () => {
                           <th>Type</th>
                           <th>Value</th>
                           <th>Usage</th>
-                          <th className="text-right">Actions</th>
+                          <th className="text-end">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1563,7 +1563,7 @@ const AdminDashboard = () => {
                             <td className="text-sm" style={{ color: '#94A3B8' }}>
                               {promo.used_count} {promo.usage_limit ? `/ ${promo.usage_limit}` : 'uses'}
                             </td>
-                            <td className="text-right">
+                            <td className="text-end">
                               <div className="flex justify-end gap-2">
                                 <button onClick={() => setPromoModal({ isOpen: true, promoId: promo.id, code: promo.code, discount_type: promo.discount_type, value: promo.value, usage_limit: promo.usage_limit || '', status: promo.status })} className="dash-btn dash-btn-secondary">
                                   Edit
@@ -1702,7 +1702,7 @@ const AdminDashboard = () => {
                           type="text"
                           value={store?.subdomain || merchants.find(m => m.id === storeId)?.subdomain || ''}
                           disabled
-                          className="koara-input rounded-r-none border-r-0 flex-1"
+                          className="koara-input rounded-e-none border-e-0 flex-1"
                         />
                         <span className="inline-flex items-center px-3 text-sm rounded-r-[10px]" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#475569' }}>
                           .getkoara.com
@@ -1779,11 +1779,11 @@ const AdminDashboard = () => {
                       <div className="mt-6 flex flex-wrap gap-6">
                         <div>
                           <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#475569' }}>Started</div>
-                          <div className="text-sm text-white">{new Date(subscription.starts_at).toLocaleDateString()}</div>
+                          <div className="text-sm text-white">{formatDate()}</div>
                         </div>
                         <div>
                           <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#475569' }}>Renews</div>
-                          <div className="text-sm text-white">{new Date(subscription.expires_at).toLocaleDateString()}</div>
+                          <div className="text-sm text-white">{formatDate()}</div>
                         </div>
                       </div>
                     )}
@@ -1824,7 +1824,7 @@ const AdminDashboard = () => {
                         ) : (
                           billingHistory.map((item) => (
                             <tr key={item.id}>
-                              <td>{new Date(item.timestamp).toLocaleDateString()}</td>
+                              <td>{formatDate()}</td>
                               <td>{item.transaction_id || '-'}</td>
                               <td className="font-semibold text-white">${parseFloat(item.amount).toFixed(2)}</td>
                               <td>
@@ -1881,7 +1881,7 @@ const AdminDashboard = () => {
               <div className="text-sm font-bold text-white">Koara Plus</div>
               <div className="text-xs text-blue-400">Monthly Subscription</div>
             </div>
-            <div className="text-right">
+            <div className="text-end">
               <div className="text-2xl font-extrabold text-white">$4.99</div>
               <div className="text-xs text-slate-400">/ month</div>
             </div>
@@ -2109,7 +2109,7 @@ const AdminDashboard = () => {
                   {customizingProduct.custom_image_url && (
                     <button 
                       onClick={() => setCustomizingProduct(p => ({ ...p, custom_image_url: '', previewImage: p.image_url || '' }))}
-                      className="text-xs font-medium w-full text-left transition-colors"
+                      className="text-xs font-medium w-full text-start transition-colors"
                       style={{ color: '#F87171' }}
                     >
                       Remove Custom Image
@@ -2158,12 +2158,12 @@ const AdminDashboard = () => {
                 <span style={{ color: '#475569' }}>No receipt uploaded</span>
               )}
             </div>
-            <div className="flex justify-between text-left text-sm p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex justify-between text-start text-sm p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
               <div>
                 <div className="text-xs mb-1" style={{ color: '#475569' }}>Customer</div>
                 <div className="font-semibold text-white">{selectedReceipt.customer_name}</div>
               </div>
-              <div className="text-right" dir="ltr">
+              <div className="text-end" dir="ltr">
                 <div className="text-xs mb-1" style={{ color: '#475569' }}>Amount</div>
                 <div className="font-semibold" style={{ color: '#4ade80' }}>${parseFloat(selectedReceipt.total_amount || 0).toFixed(2)}</div>
               </div>

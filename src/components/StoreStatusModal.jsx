@@ -94,7 +94,7 @@ const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
           <p className="text-sm text-slate-500 mb-6">
             Your store application has been submitted successfully and is currently under review by the Koara administration team.
           </p>
-          <div className="bg-slate-50 p-4 rounded-lg text-left text-sm mb-8">
+          <div className="bg-slate-50 p-4 rounded-lg text-start text-sm mb-8">
             <p className="mb-1"><span className="font-semibold text-slate-700">Store Name:</span> {request.store_name}</p>
             <p className="mb-1"><span className="font-semibold text-slate-700">Subdomain:</span> {request.store_name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}</p>
             <p className="mb-1"><span className="font-semibold text-slate-700">Submitted:</span> {new Date(request.created_at).toLocaleDateString()}</p>
@@ -115,7 +115,7 @@ const StoreStatusModal = ({ isOpen, onClose, storeRequestStatus }) => {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
           </div>
           <h4 className="text-lg font-semibold text-black">Application Rejected</h4>
-          <div className="mt-3 p-3 bg-red-50 text-red-700 rounded-lg text-sm text-left font-medium">
+          <div className="mt-3 p-3 bg-red-50 text-red-700 rounded-lg text-sm text-start font-medium">
             <div className="font-bold mb-1">Reason for Rejection:</div>
             {reason || 'No reason provided.'}
           </div>

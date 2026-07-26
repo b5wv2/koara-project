@@ -16,11 +16,11 @@ const DashboardHeader = ({ navItems, activeTab, language, setLanguage, setIsSide
     </div>
     <div className="flex items-center gap-3">
       <button
-        onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+        onClick={() => setLanguage(t('ar'))}
         className="text-xs font-bold transition-colors px-2.5 py-1.5 rounded-lg"
         style={{ color: '#94A3B8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
       >
-        {language === 'en' ? 'AR' : 'EN'}
+        {t('ar_1')}
       </button>
     </div>
   </header>

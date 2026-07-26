@@ -25,7 +25,14 @@ const generateOTP = () => {
  * @param {string|object} data - The 6-digit code or a dictionary of placeholders
  * @returns {string} Rendered HTML
  */
-const getTemplate = (templateName, data = {}) => {
+const getTemplate = (templateName, data = {}, language = 'en') => {
+  let originalName = templateName;
+  if (language === 'ar') {
+    let arName = templateName.replace('.html', '-ar.html');
+    if (fs.existsSync(path.join(__dirname, '../templates', arName)) || fs.existsSync(path.join(__dirname, '../../../templates', arName))) {
+      templateName = arName;
+    }
+  }
   let templatePath = path.join(__dirname, '../templates', templateName);
   if (!fs.existsSync(templatePath)) {
     templatePath = path.join(__dirname, '../../../templates', templateName);
@@ -58,13 +65,13 @@ const getTemplate = (templateName, data = {}) => {
  * @param {string} templateName - Template to use
  * @param {string|object} data - The code or data to render
  */
-const sendEmail = async (to, subject, templateName, data) => {
+const sendEmail = async (to, subject, templateName, data, language = 'en') => {
   if (!resendApiKey) {
     console.warn('[EMAIL] RESEND_API_KEY is not set. Email not sent. Data generated was:', data);
     return true; // Pretend it succeeded for dev mode without key
   }
 
-  const html = getTemplate(templateName, data);
+  const html = getTemplate(templateName, data, language);
 
   try {
     const resData = await resend.emails.send({

@@ -30,7 +30,7 @@ const AdminCatalogTab = ({ onCreateProduct, onEditProduct, onDeactivateProduct, 
                 <th>Product Name</th>
                 <th>Category</th>
                 <th>Providers</th>
-                <th className="text-right">Actions</th>
+                <th className="text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -46,7 +46,7 @@ const AdminCatalogTab = ({ onCreateProduct, onEditProduct, onDeactivateProduct, 
                       Manage Providers
                     </DashButton>
                   </td>
-                  <td className="text-right">
+                  <td className="text-end">
                     <div className="flex justify-end gap-2">
                       <DashButton onClick={() => onEditProduct(product)} className="dash-btn dash-btn-secondary">Edit</DashButton>
                       {product.is_active && (

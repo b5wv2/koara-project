@@ -229,7 +229,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="flex flex-col items-center py-8 w-full">
             <div className="relative mb-5 flex items-center justify-center">
               <div
-                className="absolute top-1/2 left-1/2 w-20 h-20 rounded-full"
+                className="absolute top-1/2 start-1/2 w-20 h-20 rounded-full"
                 style={{ background: 'rgba(74,222,128,0.18)', filter: 'blur(10px)', transform: 'translate(-50%, -50%)' }}
               />
               <div className="relative w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(74,222,128,0.1)' }}>

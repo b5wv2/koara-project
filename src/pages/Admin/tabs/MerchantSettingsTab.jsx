@@ -97,7 +97,7 @@ const MerchantSettingsTab = () => {
                 type="text"
                 value={store?.subdomain || currentMerchant?.subdomain || ''}
                 disabled
-                className="koara-input rounded-r-none border-r-0 flex-1"
+                className="koara-input rounded-e-none border-e-0 flex-1"
               />
               <span className="inline-flex items-center px-3 text-sm rounded-r-[10px]" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#475569' }}>
                 .getkoara.com

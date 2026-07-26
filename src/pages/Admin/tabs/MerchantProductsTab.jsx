@@ -26,8 +26,8 @@ const MerchantProductsTab = ({ editingMerchantPrice, setEditingMerchantPrice, on
               <th>Product Name</th>
               <th>Category</th>
               <th>Selling Price ($)</th>
-              <th className="text-right">Customize</th>
-              <th className="text-right">Save</th>
+              <th className="text-end">Customize</th>
+              <th className="text-end">Save</th>
             </tr>
           </thead>
           <tbody>
@@ -62,12 +62,12 @@ const MerchantProductsTab = ({ editingMerchantPrice, setEditingMerchantPrice, on
                       dir="ltr" placeholder="0.00"
                     />
                   </td>
-                  <td className="text-right">
+                  <td className="text-end">
                     <DashButton onClick={() => onCustomize(product)} className="dash-btn dash-btn-secondary">
-                      <Edit2 size={14} className="mr-1 inline" /> Customize
+                      <Edit2 size={14} className="me-1 inline" /> Customize
                     </DashButton>
                   </td>
-                  <td className="text-right">
+                  <td className="text-end">
                     <DashButton
                       onClick={async () => {
                         const price = parseFloat(editingMerchantPrice[product.id] ?? product.selling_price);

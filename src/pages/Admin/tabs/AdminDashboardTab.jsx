@@ -29,7 +29,7 @@ const AdminDashboardTab = () => {
                 <th>Date</th>
                 <th>Store</th>
                 <th>Type</th>
-                <th className="text-right">Amount</th>
+                <th className="text-end">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -41,7 +41,7 @@ const AdminDashboardTab = () => {
                   <td>
                     <StatusBadge status={txn.transaction_type === 'credit' ? 'approved' : 'rejected'} />
                   </td>
-                  <td className="text-right font-mono font-semibold" dir="ltr" style={{ color: txn.transaction_type === 'credit' ? '#4ade80' : '#f87171' }}>
+                  <td className="text-end font-mono font-semibold" dir="ltr" style={{ color: txn.transaction_type === 'credit' ? '#4ade80' : '#f87171' }}>
                     {txn.transaction_type === 'credit' ? '+' : '-'}{txn.amount.toFixed(2)}
                   </td>
                 </tr>

@@ -18,7 +18,7 @@ const MerchantDashboardTab = ({ onAddFunds, onWithdraw, onInspectReceipt }) => {
         {/* Wallet Card */}
         <div className="lg:col-span-1">
           <div className="dash-card p-6 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: 'linear-gradient(90deg,#2563EB,#60A5FA)' }} />
+            <div className="absolute top-0 start-0 end-0 h-0.5" style={{ background: 'linear-gradient(90deg,#2563EB,#60A5FA)' }} />
             <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#475569' }}>Live Wallet Balance</div>
             <div className="text-4xl font-extrabold text-white tracking-tight mb-6" dir="ltr">
               ${merchants.find(m => m.id === storeId)?.balance.toFixed(2) || '0.00'}

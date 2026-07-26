@@ -295,7 +295,7 @@ const LandingPage = () => {
             {/* Koara Plus */}
             <div className="glass-card p-10 flex flex-col relative transform md:-translate-y-4 shadow-2xl" style={{ border: '1px solid rgba(59,130,246,0.4)', background: 'rgba(15,23,42,0.8)' }}>
               {/* Most Popular Badge */}
-              <div className="absolute top-0 right-8 transform -translate-y-1/2">
+              <div className="absolute top-0 end-8 transform -translate-y-1/2">
                 <div className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', color: 'white', boxShadow: '0 4px 15px rgba(37,99,235,0.4)' }}>
                   Most Popular
                 </div>
@@ -346,7 +346,7 @@ const LandingPage = () => {
           <div className="rounded-[2rem] p-12 sm:p-16 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0B1220 0%, #080D18 50%, #0B1220 100%)', border: '1px solid rgba(255,255,255,0.04)' }}>
             {/* Background glow */}
             <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-gradient-to-br from-[#2563EB]/20 via-[#4F46E5]/10 to-transparent blur-[80px] rounded-full"></div>
+              <div className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-gradient-to-br from-[#2563EB]/20 via-[#4F46E5]/10 to-transparent blur-[80px] rounded-full"></div>
             </div>
 
             <div className="relative z-10">

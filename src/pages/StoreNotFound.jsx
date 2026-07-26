@@ -44,12 +44,10 @@ const StoreNotFound = () => {
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-3 tracking-tight">
-          {language === 'ar' ? 'المتجر غير موجود' : 'Store Not Found'}
+          {t('store_not_found')}
         </h1>
         <p className="text-slate-400 mb-8 leading-relaxed text-sm">
-          {language === 'ar'
-            ? 'المتجر الذي تحاول الوصول إليه غير موجود أو تم إيقافه.'
-            : 'The store you are trying to access does not exist or has been suspended.'}
+          {t('the_store_you_are_trying_to_ac')}
         </p>
 
         <a
@@ -61,7 +59,7 @@ const StoreNotFound = () => {
             boxShadow: '0 4px 20px -4px rgba(37,99,235,0.5)'
           }}
         >
-          {language === 'ar' ? 'العودة للصفحة الرئيسية' : 'Return to Homepage'}
+          {t('return_to_homepage')}
           <ArrowRight size={15} />
         </a>
       </div>

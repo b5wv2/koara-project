@@ -424,12 +424,12 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
                   value={subdomain}
                   onChange={(e) => handleSubdomainChange(e.target.value)}
                   placeholder="acme"
-                  className={`koara-input rounded-r-none border-r-0 flex-1 ${
+                  className={`koara-input rounded-e-none border-e-0 flex-1 ${
                     subdomainStatus === 'unavailable' ? 'border-red-500/50 focus:border-red-500' :
                     subdomainStatus === 'available' ? 'border-green-500/50 focus:border-green-500' : ''
                   }`}
                 />
-                <span className="inline-flex items-center px-3 border border-white/10 border-l-0 bg-white/5 text-slate-500 text-sm rounded-r-[10px] whitespace-nowrap">
+                <span className="inline-flex items-center px-3 border border-white/10 border-s-0 bg-white/5 text-slate-500 text-sm rounded-r-[10px] whitespace-nowrap">
                   .getkoara.com
                 </span>
               </div>

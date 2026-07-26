@@ -116,7 +116,7 @@ const MerchantTopupsTab = ({ merchantTopups, topupCategories = [], topupsLoading
                     onClick={() => catInputRefs.current[cat.category_id]?.click()}
                     className="dash-btn dash-btn-secondary flex-1 text-xs py-1.5 justify-center"
                   >
-                    <Upload size={13} className="mr-1 inline" />
+                    <Upload size={13} className="me-1 inline" />
                     {hasCustomImage ? 'Replace' : 'Upload'}
                   </DashButton>
 
@@ -152,7 +152,7 @@ const MerchantTopupsTab = ({ merchantTopups, topupCategories = [], topupsLoading
                 <th>Category</th>
                 <th>Provider Cost ($)</th>
                 <th>Selling Price ($)</th>
-                <th className="text-right">Save</th>
+                <th className="text-end">Save</th>
               </tr>
             </thead>
             <tbody>
@@ -232,7 +232,7 @@ const MerchantTopupsTab = ({ merchantTopups, topupCategories = [], topupsLoading
                         dir="ltr" placeholder="0.00"
                       />
                     </td>
-                    <td className="text-right">
+                    <td className="text-end">
                       <DashButton
                         onClick={async () => {
                           const price = parseFloat(editingTopupPrice[topup.offer_id] ?? topup.selling_price);

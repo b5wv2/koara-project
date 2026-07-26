@@ -198,7 +198,7 @@ const MerchantCustomizationTab = () => {
           <p className="text-xs text-slate-400 mt-0.5">Design your storefront exactly how you want it.</p>
         </div>
         <div className="flex items-center gap-3">
-          {hasChanges && <span className="text-amber-400 text-xs font-medium animate-pulse flex items-center gap-1.5 mr-2"><div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div> Unsaved Changes</span>}
+          {hasChanges && <span className="text-amber-400 text-xs font-medium animate-pulse flex items-center gap-1.5 me-2"><div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div> Unsaved Changes</span>}
           <button onClick={handleReset} disabled={!plusActive || saving} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-colors">Reset</button>
           <button onClick={handleDiscard} disabled={!hasChanges || !plusActive || saving} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-colors">Discard</button>
           <DashButton onClick={handleSave} disabled={!hasChanges || !plusActive || saving} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-lg shadow-blue-900/20">
@@ -237,8 +237,8 @@ const MerchantCustomizationTab = () => {
                   {Object.keys(PRESETS).map(preset => (
                     <button key={preset} onClick={() => applyPreset(preset)} className={`aspect-video rounded-lg border overflow-hidden relative group transition-all ${JSON.stringify(theme) === JSON.stringify(PRESETS[preset]) ? 'border-blue-500 ring-1 ring-blue-500/50' : 'border-white/10 hover:border-white/30'}`}>
                       <div className="absolute inset-0 opacity-50" style={{ background: `linear-gradient(135deg, ${PRESETS[preset].bgColor} 0%, ${PRESETS[preset].secondaryColor} 100%)` }}></div>
-                      <div className="absolute bottom-1.5 left-1.5 text-[10px] font-bold capitalize z-10 drop-shadow-md text-white">{preset}</div>
-                      <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full z-10 shadow-sm" style={{ backgroundColor: PRESETS[preset].primaryColor }}></div>
+                      <div className="absolute bottom-1.5 start-1.5 text-[10px] font-bold capitalize z-10 drop-shadow-md text-white">{preset}</div>
+                      <div className="absolute top-1.5 end-1.5 w-2 h-2 rounded-full z-10 shadow-sm" style={{ backgroundColor: PRESETS[preset].primaryColor }}></div>
                     </button>
                   ))}
                 </div>
@@ -371,7 +371,7 @@ const MerchantCustomizationTab = () => {
                 <div className="w-2 h-2 rounded-full bg-green-500/80"></div>
               </div>
               <div className="flex-1 mx-4 bg-black/30 rounded-sm text-[9px] text-slate-400 px-2 py-0.5 flex items-center justify-center font-mono">
-                <Lock size={8} className="mr-1" /> my-store.koara.app
+                <Lock size={8} className="me-1" /> my-store.koara.app
               </div>
             </div>
             

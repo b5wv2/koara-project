@@ -105,7 +105,7 @@ const LoginModal = ({ isOpen, onClose, onStoreStatus, onForgot, onGoogleOnboardi
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <div className="mt-2 text-right">
+            <div className="mt-2 text-end">
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); onClose(); if (onForgot) onForgot(); }}

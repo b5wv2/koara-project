@@ -24,7 +24,7 @@ const AdminMerchantsTab = ({ onAddBalance, onDeductBalance, onDeleteStore }) => 
               <th>Email</th>
               <th>Wallet</th>
               <th>Status</th>
-              <th className="text-right">Actions</th>
+              <th className="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -46,7 +46,7 @@ const AdminMerchantsTab = ({ onAddBalance, onDeductBalance, onDeleteStore }) => 
                     : 'suspended'
                   } />
                 </td>
-                <td className="text-right">
+                <td className="text-end">
                   <div className="flex justify-end gap-2">
                     <DashButton onClick={() => onAddBalance(merchant.id)} className="dash-btn dash-btn-success">
                       <ArrowUpRight size={13} /> Add

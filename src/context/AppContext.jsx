@@ -114,7 +114,7 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.dir = language === 'ar' ? 'rtl' : 'ltr';
+    root.dir = t('ltr');
   }, [language]);
 
   // A browser tab can be inactive while a payment or admin action completes.
@@ -133,6 +133,18 @@ export const AppProvider = ({ children }) => {
     return translations[language][key] || key;
   };
 
+  const formatCurrency = (amount) => {
+    const locale = language === 'ar' ? 'ar-EG' : 'en-US';
+    return new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    const locale = language === 'ar' ? 'ar-EG' : 'en-US';
+    return new Date(dateString).toLocaleString(locale);
+  };
 
   const [merchants, setMerchants] = useState([]);
   const [adminWithdrawals, setAdminWithdrawals] = useState([]);
@@ -938,7 +950,7 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       user, store, isAuthLoading, login, googleLogin, googleRegister, logout,
       language, setLanguage,
-      t,
+      t, formatCurrency, formatDate,
       merchants, setMerchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, toggleStoreActive, updateMerchantBanking,
       adminWithdrawals, setAdminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, requestWithdrawal,
       kycApplications, setKycApplications,

@@ -45,7 +45,7 @@ const PaymentProviderModal = ({ isOpen, onClose, amount, onSelectProvider }) => 
                   />
                 </div>
               </div>
-              <div className="text-left">
+              <div className="text-start">
                 <div className="text-sm font-bold text-white mb-0.5">NOWPayments</div>
                 <div className="text-xs" style={{ color: '#94A3B8' }}>Pay with Crypto</div>
               </div>
@@ -81,7 +81,7 @@ const PaymentProviderModal = ({ isOpen, onClose, amount, onSelectProvider }) => 
               >
                 <Landmark size={26} color="white" strokeWidth={2} />
               </div>
-              <div className="text-left">
+              <div className="text-start">
                 <div className="text-sm font-bold text-white mb-0.5">Local Bank Transfer</div>
                 <div className="text-xs" style={{ color: '#94A3B8' }}>Direct Transfer to our Bank</div>
               </div>

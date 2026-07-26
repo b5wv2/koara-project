@@ -42,7 +42,7 @@ const TopupConfigModal = ({ isOpen, onClose, product, fields = [], onConfirmAddT
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={language === 'en' ? 'Configure Top-Up Details' : 'إدخال تفاصيل الشحن'}
+      title={t('configure_top_up_details')}
     >
       <div className="space-y-4">
         <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
@@ -58,9 +58,7 @@ const TopupConfigModal = ({ isOpen, onClose, product, fields = [], onConfirmAddT
         </div>
 
         <p className="text-xs text-slate-400">
-          {language === 'en' 
-            ? 'Please enter your account details for this top-up before adding to cart.' 
-            : 'يرجى إدخال بيانات حسابك لشحن هذا المنتج قبل الإضافة إلى السلة.'}
+          {t('please_enter_your_account_deta')}
         </p>
 
         {errorMsg && (
@@ -96,7 +94,7 @@ const TopupConfigModal = ({ isOpen, onClose, product, fields = [], onConfirmAddT
             className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl"
           >
             <ShoppingBag size={16} />
-            {language === 'en' ? 'Add to Cart' : 'إضافة إلى السلة'}
+            {t('add_to_cart')}
           </DashButton>
         </div>
       </div>

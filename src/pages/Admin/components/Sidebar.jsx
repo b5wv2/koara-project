@@ -59,7 +59,7 @@ const Sidebar = ({ role, store, user, navItems, activeTab, setActiveTab, isSideb
       </div>
       <button
         onClick={onLogout}
-        className="koara-sidebar-nav-item w-full text-left"
+        className="koara-sidebar-nav-item w-full text-start"
         style={{ color: '#ef4444' }}
         onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}

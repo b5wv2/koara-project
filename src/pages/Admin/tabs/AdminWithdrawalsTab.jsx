@@ -81,13 +81,13 @@ const AdminWithdrawalsTab = () => {
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
               placeholder="Search store, bank..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="koara-input pl-10 text-sm"
+              className="koara-input ps-10 text-sm"
             />
           </div>
           <button 
@@ -102,14 +102,14 @@ const AdminWithdrawalsTab = () => {
 
       <div className="dash-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
+          <table className="w-full text-start text-sm text-slate-300">
             <thead className="text-xs uppercase bg-slate-800/50 text-slate-400 border-b border-white/10">
               <tr>
                 <th className="px-6 py-4 font-semibold">Store</th>
                 <th className="px-6 py-4 font-semibold">Bank Details</th>
-                <th className="px-6 py-4 font-semibold text-right">Amount</th>
+                <th className="px-6 py-4 font-semibold text-end">Amount</th>
                 <th className="px-6 py-4 font-semibold text-center">Status</th>
-                <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                <th className="px-6 py-4 font-semibold text-end">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -133,7 +133,7 @@ const AdminWithdrawalsTab = () => {
                       <div className="text-xs text-slate-400">{w.bank_holder_name}</div>
                       <div className="text-xs text-slate-500 font-mono mt-0.5">{w.account_number}</div>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-end">
                       <span className="font-bold text-white">${parseFloat(w.amount).toFixed(2)}</span>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -141,7 +141,7 @@ const AdminWithdrawalsTab = () => {
                       {w.status === 'approved' && <span className="inline-block px-2.5 py-1 rounded bg-green-500/20 text-green-400 text-xs font-semibold">Approved</span>}
                       {w.status === 'rejected' && <span className="inline-block px-2.5 py-1 rounded bg-red-500/20 text-red-400 text-xs font-semibold">Rejected</span>}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-end">
                       {w.status === 'pending' ? (
                         <div className="flex items-center justify-end gap-2">
                           <DashButton

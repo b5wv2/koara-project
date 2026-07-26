@@ -39,14 +39,14 @@ const ScopedStyles = ({ custom }) => (
 const AmbientBackground = ({ custom }) => (
   <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
     <div
-      className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] rounded-full opacity-20 blur-[140px]"
+      className="absolute top-0 start-1/2 -translate-x-1/2 w-[1000px] h-[500px] rounded-full opacity-20 blur-[140px]"
       style={{ background: `radial-gradient(circle, ${custom.primaryColor || '#2563EB'} 0%, transparent 70%)` }}
     />
   </div>
 );
 
 const StorefrontInner = ({ store }) => {
-  const { t, language, setLanguage } = useAppContext();
+  const { t, language, formatCurrency, formatDate, setLanguage } = useAppContext();
   const { execute: executeSubmitOrder, loading: submittingOrder } = useAsyncAction();
   const { cartItems, addToCart, clearCart, getCartSubtotal, cartCount } = useCart();
 
@@ -141,10 +141,10 @@ const StorefrontInner = ({ store }) => {
             <X size={28} style={{ color: '#f87171' }} />
           </div>
           <h2 className="sf-display text-xl font-bold mb-2" style={{ color: custom.textColor || '#FFFFFF' }}>
-            {language === 'en' ? 'Store Unavailable' : 'المتجر غير متاح'}
+            {t('store_unavailable')}
           </h2>
           <p className="text-slate-400 text-sm">
-            {language === 'en' ? 'This store is currently not taking orders.' : 'هذا المتجر لا يستقبل الطلبات حالياً.'}
+            {t('this_store_is_currently_not_ta')}
           </p>
         </div>
       </div>
@@ -168,7 +168,7 @@ const StorefrontInner = ({ store }) => {
         </main>
         <div className="relative z-10 flex items-center justify-center gap-2 pb-8 text-xs font-medium" style={{ color: '#475569' }}>
           <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: custom.primaryColor || '#3B82F6' }} />
-          {language === 'en' ? 'Loading catalog…' : 'جارٍ تحميل الكتالوج…'}
+          {t('loading_catalog')}
         </div>
       </div>
     );
@@ -408,14 +408,16 @@ const StorefrontInner = ({ store }) => {
         e.currentTarget.style.boxShadow = '';
       }}
     >
-      <div className="h-1 w-full" style={{ background: color }} />
-      <div className="flex-1 flex items-center justify-center p-8 relative" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: `radial-gradient(circle at 50% 30%, ${color}14 0%, transparent 65%)` }} aria-hidden="true" />
+      <div className="h-1 w-full relative z-20" style={{ background: color }} />
+      <div className="w-full relative overflow-hidden" style={{ height: '180px', borderRadius: 'inherit', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none" style={{ background: `radial-gradient(circle at 50% 30%, ${color}14 0%, transparent 65%)` }} aria-hidden="true" />
         {logoSrc ? (
-          <img src={logoSrc} alt={name} className="relative max-h-20 max-w-full object-contain transition-transform duration-300 group-hover:scale-105" />
+          <img src={logoSrc} alt={name} className="w-full h-full object-cover object-center block transition-transform duration-300 group-hover:scale-105" />
         ) : (
-          <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center font-extrabold text-xl transition-transform duration-300 group-hover:scale-105" style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
-            {iconText || name.charAt(0)}
+          <div className="w-full h-full flex items-center justify-center bg-white/5">
+            <div className="relative z-10 w-16 h-16 rounded-2xl flex items-center justify-center font-extrabold text-xl transition-transform duration-300 group-hover:scale-105" style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
+              {iconText || name.charAt(0)}
+            </div>
           </div>
         )}
       </div>
@@ -424,7 +426,7 @@ const StorefrontInner = ({ store }) => {
         <div className="min-w-0">
           <h3 className="sf-display font-bold text-white text-sm truncate" style={{ color: custom.textColor || '#FFFFFF' }}>{name}</h3>
           <div className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: `${color}14`, color }}>
-            {productCount} {productCount === 1 ? (language === 'en' ? 'item' : 'منتج') : (language === 'en' ? 'items' : 'منتجات')}
+            {productCount} {productCount === 1 ? (t('item')) : (t('items'))}
           </div>
         </div>
         <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" style={{ background: 'rgba(255,255,255,0.05)', color: '#64748B' }}>
@@ -470,10 +472,10 @@ const StorefrontInner = ({ store }) => {
           )}
           {hasDiscount && (
             <div
-              className="absolute top-0 right-0 rtl:right-auto rtl:left-0 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+              className="absolute top-0 end-0 rtl:end-auto rtl:start-0 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
               style={{ background: custom.primaryColor || '#ef4444', borderBottomLeftRadius: '0.75rem', borderBottomRightRadius: language === 'ar' ? '0.75rem' : 0 }}
             >
-              {language === 'ar' ? 'تخفيض' : 'Sale'}
+              {t('sale')}
             </div>
           )}
         </div>
@@ -496,7 +498,7 @@ const StorefrontInner = ({ store }) => {
               <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.price).toFixed(2)}</span>
             )}
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/5 uppercase">
-              {isTopup ? (language === 'en' ? 'Top-Up' : 'شحن') : (language === 'en' ? 'Gift Card' : 'بطاقة')}
+              {isTopup ? (t('top_up')) : (t('gift_card'))}
             </span>
           </div>
 
@@ -508,14 +510,14 @@ const StorefrontInner = ({ store }) => {
               className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 text-white border border-white/10"
             >
               <ShoppingBag size={13} className="text-blue-400" />
-              {language === 'en' ? 'Add' : 'إضافة'}
+              {t('add')}
             </button>
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onBuyNow(product); }}
               className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20"
             >
-              {language === 'en' ? 'Buy Now' : 'شراء'}
+              {t('buy_now')}
               {language === 'ar' ? <ArrowLeft size={12} /> : <ArrowRight size={12} />}
             </button>
           </div>
@@ -559,7 +561,7 @@ const StorefrontInner = ({ store }) => {
             <h1 className="sf-display font-bold text-base tracking-tight truncate" style={{ color: custom.textColor || '#FFFFFF' }}>{merchant.name}</h1>
             <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#4ade80' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-              {language === 'en' ? 'Store open' : 'المتجر متاح الآن'}
+              {t('store_open')}
             </div>
           </div>
         </div>
@@ -581,11 +583,11 @@ const StorefrontInner = ({ store }) => {
           </button>
 
           <button
-            onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+            onClick={() => setLanguage(t('ar'))}
             className="sf-focusable text-xs font-bold tracking-wide transition-colors px-3 py-2"
             style={{ color: custom.textColor || '#94A3B8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: custom.borderRadius || '8px' }}
           >
-            {language === 'en' ? 'AR' : 'EN'}
+            {t('ar_1')}
           </button>
         </div>
       </header>
@@ -610,7 +612,7 @@ const StorefrontInner = ({ store }) => {
                   {language === 'en' ? `Welcome to ${merchant.name}` : `مرحباً بك في ${merchant.name}`}
                 </h1>
                 <p className="text-sm sm:text-base opacity-80 max-w-xl mx-auto mb-6 relative z-10">
-                  {language === 'en' ? 'Discover top-tier digital products, game top-ups, and exclusive offers tailored just for you.' : 'اكتشف أفضل المنتجات الرقمية وشحن الألعاب والعروض الحصرية المصممة خصيصاً لك.'}
+                  {t('discover_top_tier_digital_prod')}
                 </p>
               </div>
             )}
@@ -618,7 +620,7 @@ const StorefrontInner = ({ store }) => {
             {/* Categories & Topup Catalogs Grid */}
             <div className="space-y-8">
               <h2 className="sf-display text-xl font-bold tracking-tight" style={{ color: custom.textColor || '#FFFFFF' }}>
-                {language === 'en' ? 'Browse Categories' : 'تصفح الفئات'}
+                {t('browse_categories')}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {catalog.categories.map((cat) => {
@@ -689,13 +691,13 @@ const StorefrontInner = ({ store }) => {
                 onClick={() => setSelectedCategoryId(null)}
                 className="sf-focusable w-9 h-9 flex items-center justify-center transition-colors shrink-0"
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94A3B8', borderRadius: custom.borderRadius || '12px' }}
-                aria-label={language === 'en' ? 'Back to catalog' : 'العودة للكتالوج'}
+                aria-label={t('back_to_catalog')}
               >
                 {language === 'ar' ? <ArrowRight size={16} /> : <ArrowLeft size={16} />}
               </button>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold mb-0.5" style={{ color: '#475569' }}>
-                  <span>{language === 'en' ? 'Catalog' : 'الكتالوج'}</span>
+                  <span>{t('catalog')}</span>
                   <ChevronDivider language={language} />
                   <span style={{ color: custom.primaryColor || '#60A5FA' }} className="truncate">
                     {typeof selectedCategoryId === 'string'
@@ -716,7 +718,7 @@ const StorefrontInner = ({ store }) => {
                 <div className="col-span-full koara-empty-state">
                   <Package size={40} />
                   <p className="text-sm font-medium">
-                    {language === 'en' ? 'No active products in this category yet.' : 'لا توجد منتجات نشطة في هذه الفئة بعد.'}
+                    {t('no_active_products_in_this_cat')}
                   </p>
                 </div>
               ) : activeCategoryProducts.map((product, idx) => (
@@ -770,28 +772,28 @@ const StorefrontInner = ({ store }) => {
         isOpen={checkoutStep > 0 && checkoutStep < 3}
         onClose={closeCheckout}
         title={checkoutStep === 1 
-          ? (isCartCheckout ? (language === 'en' ? 'Cart Checkout' : 'دفع السلة') : (language === 'en' ? 'Checkout' : 'إتمام الشراء'))
-          : (language === 'en' ? 'Order status' : 'حالة الطلب')}
+          ? (isCartCheckout ? (t('cart_checkout')) : (t('checkout')))
+          : (t('order_status'))}
       >
         {checkoutStep === 1 && (() => {
           return (
             <form onSubmit={handleSubmitOrder} className="space-y-5">
               <div className="flex items-center gap-2 -mt-1 mb-1">
-                <StepDot active label={language === 'en' ? 'Details' : 'التفاصيل'} />
+                <StepDot active label={t('details')} />
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                <StepDot label={language === 'en' ? 'Confirmed' : 'التأكيد'} />
+                <StepDot label={t('confirmed')} />
               </div>
 
               {/* Multi-Item Cart Summary */}
               {isCartCheckout ? (
                 <div className="space-y-2">
                   <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    {language === 'en' ? 'Cart Order Summary' : 'ملخص طلبات السلة'} ({cartItems.length})
+                    {t('cart_order_summary')} ({cartItems.length})
                   </div>
-                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1 scrollbar-none">
+                  <div className="max-h-48 overflow-y-auto space-y-2 pe-1 scrollbar-none">
                     {cartItems.map((item) => (
                       <div key={item.cartItemId} className="flex justify-between items-center p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs">
-                        <div className="truncate pr-2">
+                        <div className="truncate pe-2">
                           <span className="font-semibold text-white block truncate">{item.name}</span>
                           {item.isTopup && item.dynamicFields && Object.values(item.dynamicFields).length > 0 && (
                             <span className="text-[10px] text-slate-400 font-mono" dir="ltr">
@@ -857,7 +859,7 @@ const StorefrontInner = ({ store }) => {
                  return currentCatalog && currentCatalog.fields && currentCatalog.fields.length > 0 && (
                     <div className="space-y-3 mt-4">
                       <h4 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>
-                        {language === 'en' ? 'Top-up details' : 'تفاصيل الشحن'}
+                        {t('top_up_details')}
                       </h4>
                       {currentCatalog.fields.map(field => (
                         <div key={field.key}>
@@ -880,19 +882,19 @@ const StorefrontInner = ({ store }) => {
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-1.5" style={{ color: '#94A3B8' }}>
                   <Landmark size={12} />
-                  {language === 'en' ? 'Payment details' : 'تفاصيل الدفع'}
+                  {t('payment_details')}
                 </h4>
                 <div className="rounded-xl p-4 text-sm space-y-2.5 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                   <div className="flex justify-between gap-3">
-                    <span style={{ color: '#64748B' }}>{language === 'en' ? 'Bank' : 'البنك'}</span>
-                    <span className="font-medium text-white text-right">{merchant.bankName || 'Chase Bank'}</span>
+                    <span style={{ color: '#64748B' }}>{t('bank')}</span>
+                    <span className="font-medium text-white text-end">{merchant.bankName || 'Chase Bank'}</span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span style={{ color: '#64748B' }}>{language === 'en' ? 'Account name' : 'اسم الحساب'}</span>
-                    <span className="font-medium text-white text-right">{merchant.bankAccountName || 'Alfa Store LLC'}</span>
+                    <span style={{ color: '#64748B' }}>{t('account_name')}</span>
+                    <span className="font-medium text-white text-end">{merchant.bankAccountName || 'Alfa Store LLC'}</span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span style={{ color: '#64748B' }}>{language === 'en' ? 'Account no.' : 'رقم الحساب'}</span>
+                    <span style={{ color: '#64748B' }}>{t('account_no')}</span>
                     <span className="font-medium font-mono text-white" dir="ltr">{merchant.bankAccountNumber || '1234567890'}</span>
                   </div>
                 </div>
@@ -911,10 +913,10 @@ const StorefrontInner = ({ store }) => {
                     <UploadCloud size={20} className="mb-2 mx-auto transition-transform group-hover:-translate-y-0.5" style={{ color: '#3B82F6' }} />
                   )}
                   <p className="text-sm font-medium text-white">
-                    {receiptFile ? receiptFile.name : (language === 'en' ? 'Upload transfer receipt' : 'ارفع إيصال التحويل')}
+                    {receiptFile ? receiptFile.name : (t('upload_transfer_receipt'))}
                   </p>
                   <p className="text-xs mt-1" style={{ color: '#475569' }}>
-                    {language === 'en' ? 'Image or PDF · Max 10MB' : 'صورة أو PDF · بحد أقصى 10 ميجابايت'}
+                    {t('image_or_pdf_max_10mb')}
                   </p>
                 </label>
               </div>
@@ -941,9 +943,9 @@ const StorefrontInner = ({ store }) => {
         {checkoutStep === 2 && (
           <div className="text-center py-8 flex flex-col items-center">
             <div className="flex items-center gap-2 mb-6">
-              <StepDot done label={language === 'en' ? 'Details' : 'التفاصيل'} />
+              <StepDot done label={t('details')} />
               <div className="w-8 h-px" style={{ background: 'rgba(74,222,128,0.4)' }} />
-              <StepDot active success label={language === 'en' ? 'Confirmed' : 'التأكيد'} />
+              <StepDot active success label={t('confirmed')} />
             </div>
 
             <div className="relative w-20 h-20 mb-6">
@@ -954,13 +956,13 @@ const StorefrontInner = ({ store }) => {
             </div>
 
             <h4 className="sf-display text-xl font-bold text-white mb-2">
-              {isCartCheckout ? (language === 'en' ? 'Cart Orders Submitted!' : 'تم تقديم طلبات السلة بنجاح!') : t('order_success')}
+              {isCartCheckout ? (t('cart_orders_submitted')) : t('order_success')}
             </h4>
 
             {isCartCheckout && createdOrders.length > 0 ? (
-              <div className="w-full max-w-xs space-y-2 mb-6 text-left">
+              <div className="w-full max-w-xs space-y-2 mb-6 text-start">
                 <div className="text-xs font-semibold text-slate-400 text-center mb-2">
-                  {language === 'en' ? 'Generated Independent Orders:' : 'أرقام الطلبات المستقلة:'}
+                  {t('generated_independent_orders')}
                 </div>
                 {createdOrders.map((ord) => (
                   <div key={ord.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-bold text-blue-400">
@@ -978,7 +980,7 @@ const StorefrontInner = ({ store }) => {
 
             <p className="text-sm mb-8 max-w-xs mx-auto leading-relaxed" style={{ color: '#64748B' }}>
               {isCartCheckout 
-                ? (language === 'en' ? 'Each item has been converted into an independent order for the merchant to process.' : 'تم تحويل كل عنصر إلى طلب مستقل ليعالجه التاجر.')
+                ? (t('each_item_has_been_converted_i'))
                 : t('awaiting_verification')}
             </p>
 
@@ -986,7 +988,7 @@ const StorefrontInner = ({ store }) => {
               onClick={closeCheckout}
               className="dash-btn dash-btn-secondary py-2.5 px-8 rounded-full text-sm font-bold"
             >
-              {language === 'en' ? 'Close' : 'إغلاق'}
+              {t('close')}
             </button>
           </div>
         )}

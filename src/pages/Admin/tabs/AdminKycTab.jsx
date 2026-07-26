@@ -26,7 +26,7 @@ const AdminKycTab = ({ kycPendingLoading, onApproveKyc, onRejectKyc, onViewDocum
               <th>Bank Information</th>
               <th>Document</th>
               <th>Status</th>
-              <th className="text-right">Actions</th>
+              <th className="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -58,7 +58,7 @@ const AdminKycTab = ({ kycPendingLoading, onApproveKyc, onRejectKyc, onViewDocum
                   )}
                 </td>
                 <td><StatusBadge status={app.status} /></td>
-                <td className="text-right">
+                <td className="text-end">
                   {app.status === 'pending' && (
                     <div className="flex justify-end gap-2">
                       <DashButton onClick={() => onApproveKyc(app.id)} className="dash-btn dash-btn-success">Approve</DashButton>

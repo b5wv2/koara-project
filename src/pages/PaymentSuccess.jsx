@@ -84,7 +84,7 @@ const PaymentSuccess = () => {
               </p>
               <div className="mt-6 flex justify-center">
                 <Loader2 className="animate-spin" size={16} style={{ color: '#475569' }} />
-                <span className="text-xs ml-2" style={{ color: '#64748B' }}>Redirecting to dashboard...</span>
+                <span className="text-xs ms-2" style={{ color: '#64748B' }}>Redirecting to dashboard...</span>
               </div>
             </>
           )}

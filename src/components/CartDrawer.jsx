@@ -38,7 +38,7 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
       setAppliedPromo(found);
     } else {
       setAppliedPromo(null);
-      setPromoError(language === 'en' ? 'Invalid or inactive promo code.' : 'رمز ترويجي غير صالح.');
+      setPromoError(t('invalid_or_inactive_promo_code'));
     }
   };
 
@@ -50,7 +50,7 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
         onClick={onClose}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex ltr:pl-10 rtl:pr-10">
+      <div className="fixed inset-y-0 end-0 max-w-full flex ltr:ps-10 rtl:pe-10">
         <div className="w-screen max-w-md bg-[#020617] text-white shadow-2xl flex flex-col border-l border-white/10">
           
           {/* Header */}
@@ -61,7 +61,7 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">
-                  {language === 'en' ? 'Shopping Cart' : 'سلة التسوق'}
+                  {t('shopping_cart')}
                 </h3>
                 <span className="text-xs text-slate-400">
                   {cartCount} {language === 'en' ? (cartCount === 1 ? 'item' : 'items') : 'منتجات'}
@@ -84,12 +84,10 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
                   <ShoppingBag size={32} />
                 </div>
                 <h4 className="text-base font-semibold text-white mb-1">
-                  {language === 'en' ? 'Your cart is empty' : 'سلتك فارغة'}
+                  {t('your_cart_is_empty')}
                 </h4>
                 <p className="text-xs text-slate-400 max-w-xs">
-                  {language === 'en' 
-                    ? 'Explore our digital products and top-ups to add items to your cart.' 
-                    : 'استكشف منتجاتنا الرقمية وشحن الألعاب لإضافة عناصر إلى سلتك.'}
+                  {t('explore_our_digital_products_a')}
                 </p>
               </div>
             ) : (
@@ -130,7 +128,7 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
                         
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/5 uppercase">
-                            {item.isTopup ? (language === 'en' ? 'Top-Up' : 'شحن') : (language === 'en' ? 'Gift Card' : 'بطاقة')}
+                            {item.isTopup ? (t('top_up')) : (t('gift_card'))}
                           </span>
                         </div>
 
@@ -165,7 +163,7 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
                           </button>
                         </div>
 
-                        <div className="text-right">
+                        <div className="text-end">
                           <span className="text-xs font-bold text-blue-400 font-mono" dir="ltr">
                             ${(item.selling_price * item.quantity).toFixed(2)}
                           </span>
@@ -187,7 +185,7 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
                 <div className="flex gap-2 rounded-xl bg-white/5 border border-white/10 p-1">
                   <input
                     type="text"
-                    placeholder={language === 'en' ? 'Promo code' : 'رمز الخصم'}
+                    placeholder={t('promo_code')}
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value)}
                     className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono uppercase text-white outline-none placeholder-slate-500"
@@ -196,7 +194,7 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
                     onClick={handleApplyPromo}
                     className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
                   >
-                    {language === 'en' ? 'Apply' : 'تطبيق'}
+                    {t('apply')}
                   </button>
                 </div>
                 {promoError && <p className="text-[11px] text-red-400 mt-1">{promoError}</p>}
@@ -210,17 +208,17 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
               {/* Price Calculation */}
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-400">
-                  <span>{language === 'en' ? 'Subtotal' : 'المجموع الفرعي'}</span>
+                  <span>{t('subtotal')}</span>
                   <span className="font-mono text-white" dir="ltr">${subtotal.toFixed(2)}</span>
                 </div>
                 {appliedPromo && (
                   <div className="flex justify-between text-green-400 font-medium">
-                    <span>{language === 'en' ? 'Discount' : 'الخصم'}</span>
+                    <span>{t('discount')}</span>
                     <span className="font-mono" dir="ltr">-${discountAmount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-white/10">
-                  <span>{language === 'en' ? 'Total' : 'الإجمالي'}</span>
+                  <span>{t('total')}</span>
                   <span className="font-mono text-blue-400" dir="ltr">${grandTotal.toFixed(2)}</span>
                 </div>
               </div>
@@ -231,14 +229,14 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
                   onClick={() => { onClose(); onProceedToCheckout(); }}
                   className="dash-btn dash-btn-primary w-full justify-center py-3 text-sm font-bold rounded-xl"
                 >
-                  {language === 'en' ? 'Proceed to Checkout' : 'متابعة الدفع'} <ArrowRight size={16} />
+                  {t('proceed_to_checkout')} <ArrowRight size={16} />
                 </DashButton>
 
                 <button
                   onClick={clearCart}
                   className="w-full text-center text-xs text-slate-500 hover:text-slate-400 py-1 transition-colors"
                 >
-                  {language === 'en' ? 'Clear cart' : 'إفراغ السلة'}
+                  {t('clear_cart')}
                 </button>
               </div>
 

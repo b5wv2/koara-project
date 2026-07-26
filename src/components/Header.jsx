@@ -8,7 +8,7 @@ const Header = ({ onStartSelling, onSignIn }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'ar' : 'en');
+    setLanguage(t('ar'));
   };
 
   return (
@@ -39,7 +39,7 @@ const Header = ({ onStartSelling, onSignIn }) => {
         {/* Right Action Links */}
         <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} lg:flex flex-col lg:flex-row items-center justify-end w-full lg:w-auto flex-1 gap-4 sm:gap-5 order-2 lg:order-none mt-4 lg:mt-0`}>
           <button onClick={toggleLanguage} className="text-sm font-semibold text-slate-500 hover:text-white transition-colors">
-            {language === 'en' ? 'AR' : 'EN'}
+            {t('ar_1')}
           </button>
           <button className="text-sm font-semibold text-slate-400 hover:text-white transition-colors" onClick={onSignIn}>
             {t('signin')}

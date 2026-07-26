@@ -133,7 +133,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
           <div className="flex flex-col items-center py-8">
             <div className="relative mb-4 flex items-center justify-center">
               <div
-                className="absolute top-1/2 left-1/2 w-16 h-16 rounded-full"
+                className="absolute top-1/2 start-1/2 w-16 h-16 rounded-full"
                 style={{ background: 'rgba(74,222,128,0.18)', filter: 'blur(8px)', transform: 'translate(-50%, -50%)' }}
               />
               <div className="relative w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(74,222,128,0.1)' }}>

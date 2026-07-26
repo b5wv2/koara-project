@@ -5,7 +5,7 @@ const PremiumLockOverlay = ({ isPlusActive, onUpgrade, children, compact = false
   if (isPlusActive) {
     return (
       <div className="relative h-full">
-        <div className="absolute top-2 right-2 z-10 pointer-events-none">
+        <div className="absolute top-2 end-2 z-10 pointer-events-none">
           <div className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm">
             <Crown size={10} /> PLUS
           </div>
