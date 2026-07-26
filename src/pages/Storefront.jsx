@@ -7,6 +7,7 @@ import { useAsyncAction } from '../hooks/useAsyncAction';
 import { CartProvider, useCart } from '../context/CartContext';
 import CartDrawer from '../components/CartDrawer';
 import TopupConfigModal from '../components/modals/TopupConfigModal';
+import { getImageUrl } from '../utils/imageUrl';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -463,7 +464,7 @@ const StorefrontInner = ({ store }) => {
             aria-hidden="true"
           />
           {product.image_url || product.image ? (
-            <img src={(product.image_url || product.image).startsWith('http') || (product.image_url || product.image).startsWith('data:') ? (product.image_url || product.image) : `${API_BASE_URL}${(product.image_url || product.image)}`} alt={product.name} className="relative max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" />
+            <img src={getImageUrl(product.image_url || product.image)} alt={product.name} className="relative max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" />
           ) : (
             <Package size={36} className="relative" style={{ color: '#2D3748', opacity: 0.6 }} />
           )}
@@ -541,7 +542,7 @@ const StorefrontInner = ({ store }) => {
         <div className="flex items-center gap-3 min-w-0">
           {merchant.logoUrl ? (
             <img
-              src={merchant.logoUrl}
+              src={getImageUrl(merchant.logoUrl)}
               alt={merchant.name}
               className="w-10 h-10 object-cover shrink-0"
               style={{ border: '1px solid rgba(255,255,255,0.12)', boxShadow: `0 0 0 3px ${custom.primaryColor || '#2563EB'}15`, borderRadius: custom.borderRadius || '12px' }}
@@ -627,7 +628,7 @@ const StorefrontInner = ({ store }) => {
                       key={cat.id}
                       name={cat.name}
                       color={cat.color || custom.primaryColor || '#3B82F6'}
-                      logoSrc={cat.logo_url || cat.logoUrl}
+                      logoSrc={getImageUrl(cat.logo_url || cat.logoUrl)}
                       iconText={cat.icon_text || cat.iconText}
                       productCount={count}
                       onClick={() => setSelectedCategoryId(cat.id)}
@@ -643,7 +644,7 @@ const StorefrontInner = ({ store }) => {
                       key={`topup-${topupCat.category.id}`}
                       name={topupCat.category.name}
                       color="#7C3AED"
-                      logoSrc={topupCat.category.image_url ? (topupCat.category.image_url.startsWith('http') || topupCat.category.image_url.startsWith('data:') ? topupCat.category.image_url : `${API_BASE_URL}${topupCat.category.image_url}`) : null}
+                      logoSrc={getImageUrl(topupCat.category.image_url)}
                       iconText={topupCat.category.name.charAt(0)}
                       productCount={count}
                       onClick={() => setSelectedCategoryId(topupCat.category.id)}
@@ -811,7 +812,7 @@ const StorefrontInner = ({ store }) => {
                   <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                     <div className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
                       {selectedProduct.image_url ? (
-                        <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full h-full object-contain p-1" />
+                        <img src={getImageUrl(selectedProduct.image_url)} alt={selectedProduct.name} className="w-full h-full object-contain p-1" />
                       ) : (
                         <span className="font-extrabold text-xs text-blue-400">{selectedProduct.name.charAt(0)}</span>
                       )}

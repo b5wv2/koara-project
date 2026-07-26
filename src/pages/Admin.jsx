@@ -12,6 +12,7 @@ import MerchantWithdrawalModal from '../components/modals/MerchantWithdrawalModa
 import MerchantCustomizationTab from '../components/MerchantCustomizationTab';
 import PremiumLockOverlay from '../components/ui/PremiumLockOverlay';
 import Toggle from '../components/ui/Toggle';
+import { getImageUrl } from '../utils/imageUrl';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -1323,7 +1324,7 @@ const AdminDashboard = () => {
                       <div key={cat.category_id} className="dash-card p-4 text-center relative overflow-hidden flex flex-col items-center justify-center">
                         {cat.custom_image_url ? (
                           <div className="w-full aspect-square mb-3 relative rounded overflow-hidden bg-white/5">
-                            <img src={cat.custom_image_url.startsWith('http') || cat.custom_image_url.startsWith('/') ? cat.custom_image_url : `${API_BASE_URL}${cat.custom_image_url}`} alt={cat.name} className="w-full h-full object-contain" />
+                            <img src={getImageUrl(cat.custom_image_url)} alt={cat.name} className="w-full h-full object-contain" />
                           </div>
                         ) : (
                           <div className="w-full aspect-square mb-3 relative rounded overflow-hidden bg-white/5 flex items-center justify-center">
@@ -1419,7 +1420,7 @@ const AdminDashboard = () => {
                               <div className="flex items-center gap-2">
                                 <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
                                   {topup.custom_image_url ? (
-                                    <img src={topup.custom_image_url.startsWith('http') || topup.custom_image_url.startsWith('/') ? topup.custom_image_url : `${API_BASE_URL}${topup.custom_image_url}`} alt="" className="w-full h-full object-contain" />
+                                    <img src={getImageUrl(topup.custom_image_url)} alt="" className="w-full h-full object-contain" />
                                   ) : (
                                     <ImageIcon size={14} className="text-slate-500 opacity-50" />
                                   )}
@@ -1608,7 +1609,7 @@ const AdminDashboard = () => {
                       {/* Preview */}
                       <div className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden shrink-0" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                         {merchants.find(m => m.id === storeId)?.logoUrl ? (
-                          <img src={merchants.find(m => m.id === storeId)?.logoUrl} alt="Store Logo" className="w-full h-full object-cover" />
+                          <img src={getImageUrl(merchants.find(m => m.id === storeId)?.logoUrl)} alt="Store Logo" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl" style={{ background: 'linear-gradient(135deg,#2563EB,#4F46E5)' }}>
                             {merchants.find(m => m.id === storeId)?.name.charAt(0) || 'S'}
@@ -2055,7 +2056,7 @@ const AdminDashboard = () => {
               <div className="flex items-center gap-4 mt-2">
                 <div className="w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   {customizingProduct.previewImage ? (
-                    <img src={customizingProduct.previewImage.startsWith('http') || customizingProduct.previewImage.startsWith('data:') || customizingProduct.previewImage.startsWith('/') ? customizingProduct.previewImage : `${API_BASE_URL}${customizingProduct.previewImage}`} alt="Preview" className="max-h-full max-w-full object-contain" />
+                    <img src={getImageUrl(customizingProduct.previewImage)} alt="Preview" className="max-h-full max-w-full object-contain" />
                   ) : (
                     <ImageIcon size={24} className="text-slate-500" />
                   )}
@@ -2152,7 +2153,7 @@ const AdminDashboard = () => {
           <div className="space-y-5 text-center">
             <div className="w-full h-48 rounded-xl flex items-center justify-center overflow-hidden text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
               {selectedReceipt.receipt_url ? (
-                <img src={`${API_BASE_URL}${selectedReceipt.receipt_url}`} alt="Receipt" className="max-h-full object-contain" />
+                <img src={getImageUrl(selectedReceipt.receipt_url)} alt="Receipt" className="max-h-full object-contain" />
               ) : (
                 <span style={{ color: '#475569' }}>No receipt uploaded</span>
               )}
@@ -2283,7 +2284,7 @@ const AdminDashboard = () => {
                   <FileText size={40} className="mx-auto" style={{ color: '#475569' }} />
                   <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>PDF Document</p>
                   <a
-                    href={`${API_BASE_URL}${selectedKyc.kyc_document_url}`}
+                    href={getImageUrl(selectedKyc.kyc_document_url)}
                     target="_blank"
                     rel="noreferrer"
                     className="dash-btn dash-btn-primary inline-flex py-2 px-5 rounded-lg"
@@ -2293,7 +2294,7 @@ const AdminDashboard = () => {
                 </div>
               ) : (
                 <img
-                  src={`${API_BASE_URL}${selectedKyc.kyc_document_url}`}
+                  src={getImageUrl(selectedKyc.kyc_document_url)}
                   alt="KYC Document"
                   className="max-w-full max-h-[55vh] object-contain rounded-lg"
                 />
