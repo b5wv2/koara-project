@@ -125,6 +125,7 @@ class CartService {
       const storeOwnerRes = await db.query('SELECT owner_id FROM stores WHERE id = $1', [storeId]);
       if (storeOwnerRes.rows.length > 0) {
         const merchantOwnerId = storeOwnerRes.rows[0].owner_id;
+        console.log(`[CART-CHECKOUT] Preparing FCM notification. storeId: ${storeId}, merchantOwnerId (resolved): ${merchantOwnerId}`);
         fcmNotificationService.sendToMerchant(merchantOwnerId, {
           notification: {
             title: 'New Order',
@@ -135,6 +136,8 @@ class CartService {
             route: '/orders'
           }
         }).catch(err => console.error('[CART-CHECKOUT] Async FCM Error:', err.message));
+      } else {
+        console.log(`[CART-CHECKOUT] No owner found for storeId: ${storeId}`);
       }
     } catch (fcmErr) {
       console.error('[CART-CHECKOUT] Non-blocking error dispatching FCM notification:', fcmErr);

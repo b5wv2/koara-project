@@ -140,13 +140,16 @@ class NotificationService {
         ...payload
       };
 
+      console.log(`[NotificationService] Immediately before calling admin.messaging().sendEachForMulticast...`);
       const response = await admin.messaging().sendEachForMulticast(message);
-      console.log(`[NotificationService] Multicast complete: ${response.successCount} success, ${response.failureCount} failures.`);
+      console.log(`[NotificationService] Multicast response received. Success: ${response.successCount}, Failures: ${response.failureCount}`);
+      console.log(`[NotificationService] Multicast Message IDs:`, response.responses.map(r => r.messageId).filter(Boolean).join(', '));
 
       if (response.failureCount > 0) {
         const failedTokens = [];
         response.responses.forEach((resp, idx) => {
           if (!resp.success) {
+            console.error(`[NotificationService] Firebase error for token ${deviceTokens[idx].substring(0, 20)}... Code: ${resp.error.code}, Message: ${resp.error.message}`);
             failedTokens.push({
               token: deviceTokens[idx],
               error: resp.error
@@ -162,7 +165,7 @@ class NotificationService {
 
       return true;
     } catch (error) {
-      console.error('[NotificationService] Failed to send multicast message:', error.message);
+      console.error('[NotificationService] Failed to send multicast message:', error.code, error.message);
       return false;
     }
   }
@@ -174,8 +177,15 @@ class NotificationService {
    */
   async sendToMerchant(merchantId, payload) {
     try {
+      console.log(`[NotificationService] -> sendToMerchant() entered. merchantId received: ${merchantId}`);
       const result = await db.query('SELECT device_token FROM merchant_device_tokens WHERE merchant_id = $1', [merchantId]);
       
+      console.log(`[NotificationService] SQL query result: ${result.rows.length} tokens found for merchantId: ${merchantId}`);
+      if (result.rows.length > 0) {
+        const tokenLogs = result.rows.map(row => (row.device_token ? row.device_token.substring(0, 20) : 'null'));
+        console.log(`[NotificationService] First 20 chars of tokens: ${tokenLogs.join(', ')}`);
+      }
+
       if (result.rows.length === 0) {
         console.log(`[NotificationService] No device tokens found for merchant ${merchantId}.`);
         return false;
