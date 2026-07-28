@@ -64,7 +64,7 @@ const StatusBadge = ({ status }) => {
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, isAuthLoading, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, fetchProviderCategories, createProviderCategory, deleteProviderCategory, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance, invitationCodes, fetchInvitationCodes } = useAppContext();
+  const { user, isAuthLoading, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, fetchProviderCategories, createProviderCategory, deleteProviderCategory, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance, invitationCodes, fetchInvitationCodes, formatDate } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1040,7 +1040,7 @@ const AdminDashboard = () => {
                             <td className="cell-mono text-xs" style={{ color: '#64748B' }}>#{w.id}</td>
                             <td>
                               <div className="font-semibold text-white">{w.store_name}</div>
-                              <div className="text-xs text-slate-400">{formatDate()}</div>
+                              <div className="text-xs text-slate-400">{formatDate(w.created_at || new Date().toISOString())}</div>
                             </td>
                             <td>
                               <div className="font-medium text-white">{w.bank_name}</div>
@@ -1062,7 +1062,7 @@ const AdminDashboard = () => {
                                   <button onClick={() => handleAdminWithdrawalReject(w.id)} disabled={withdrawalProcessingId !== null} className="dash-btn dash-btn-secondary py-1.5 px-3 text-xs" style={{ color: '#f87171', background: 'rgba(248,113,113,0.1)' }}>Reject</button>
                                 </div>
                               ) : (
-                                <span className="text-xs text-slate-500">{formatDate()}</span>
+                                <span className="text-xs text-slate-500">{formatDate(w.processed_at || w.created_at || new Date().toISOString())}</span>
                               )}
                             </td>
                           </tr>
@@ -1897,11 +1897,11 @@ const AdminDashboard = () => {
                       <div className="mt-6 flex flex-wrap gap-6">
                         <div>
                           <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#475569' }}>Started</div>
-                          <div className="text-sm text-white">{formatDate()}</div>
+                          <div className="text-sm text-white">{formatDate(subscription.created_at || new Date().toISOString())}</div>
                         </div>
                         <div>
                           <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#475569' }}>Renews</div>
-                          <div className="text-sm text-white">{formatDate()}</div>
+                          <div className="text-sm text-white">{formatDate(subscription.expires_at || new Date().toISOString())}</div>
                         </div>
                       </div>
                     )}
@@ -1942,7 +1942,7 @@ const AdminDashboard = () => {
                         ) : (
                           billingHistory.map((item) => (
                             <tr key={item.id}>
-                              <td>{formatDate()}</td>
+                              <td>{formatDate(item.created_at || item.date || new Date().toISOString())}</td>
                               <td>{item.transaction_id || '-'}</td>
                               <td className="font-semibold text-white">${parseFloat(item.amount).toFixed(2)}</td>
                               <td>
