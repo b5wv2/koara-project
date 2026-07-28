@@ -164,6 +164,8 @@ export const AppProvider = ({ children }) => {
 
   const [ledger, setLedger] = useState([]);
 
+  const [invitationCodes, setInvitationCodes] = useState([]);
+
   const login = async (email, password) => {
     try {
 
@@ -933,6 +935,22 @@ export const AppProvider = ({ children }) => {
 
   const upgradeSubscription = async () => {};
 
+  const fetchInvitationCodes = async () => {
+    if (user?.role !== 'admin') return [];
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/invitation-codes`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setInvitationCodes(data.codes || []);
+        return data.codes || [];
+      }
+      return [];
+    } catch (err) {
+      console.error('Error fetching invitation codes:', err);
+      return [];
+    }
+  };
+
   const fetchSubscription = async () => {
     if (!store) return;
     try {
@@ -965,7 +983,8 @@ export const AppProvider = ({ children }) => {
       fetchProviderCategories, createProviderCategory, deleteProviderCategory,
       merchantPlatformProducts, setMerchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct,
       subscription, setSubscription, isPlusActive, upgradeSubscription, fetchSubscription,
-      syncWalletBalance
+      syncWalletBalance,
+      invitationCodes, setInvitationCodes, fetchInvitationCodes
     }}>
       {children}
     </AppContext.Provider>

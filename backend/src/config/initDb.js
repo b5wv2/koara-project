@@ -358,6 +358,37 @@ const createSubscriptionAuditLogsTableQuery = `
   );
 `;
 
+const createInvitationCodesTableQuery = `
+  CREATE TABLE IF NOT EXISTS invitation_codes (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    type VARCHAR(50) NOT NULL DEFAULT 'kyc_bypass',
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
+    disabled_reason TEXT,
+    max_uses INTEGER NOT NULL,
+    current_uses INTEGER DEFAULT 0,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    notes TEXT,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
+const createInvitationRedemptionsTableQuery = `
+  CREATE TABLE IF NOT EXISTS invitation_redemptions (
+    id SERIAL PRIMARY KEY,
+    code_id INTEGER REFERENCES invitation_codes(id) ON DELETE CASCADE,
+    store_request_id INTEGER REFERENCES store_requests(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    store_id INTEGER REFERENCES stores(id) ON DELETE CASCADE,
+    merchant_email VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    redeemed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
+
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
   const client = await db.pool.connect();
@@ -484,6 +515,10 @@ const initializeDatabase = async () => {
     // Create subscriptions and audit logs tables
     await client.query(createSubscriptionsTableQuery);
     await client.query(createSubscriptionAuditLogsTableQuery);
+
+    // Create invitation codes tables
+    await client.query(createInvitationCodesTableQuery);
+    await client.query(createInvitationRedemptionsTableQuery);
 
     // Create webhook_logs table
     await client.query(createWebhookLogsTableQuery);

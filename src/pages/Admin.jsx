@@ -64,7 +64,7 @@ const StatusBadge = ({ status }) => {
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, isAuthLoading, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, fetchProviderCategories, createProviderCategory, deleteProviderCategory, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance } = useAppContext();
+  const { user, isAuthLoading, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, fetchProviderCategories, createProviderCategory, deleteProviderCategory, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance, invitationCodes, fetchInvitationCodes } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -90,6 +90,13 @@ const AdminDashboard = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [expandedCategoryId, setExpandedCategoryId] = useState(null);
+
+  // Invitation Codes State
+  const [createCodeModal, setCreateCodeModal] = useState(false);
+  const [redemptionsModal, setRedemptionsModal] = useState(false);
+  const [selectedCodeId, setSelectedCodeId] = useState(null);
+  const [redemptionsList, setRedemptionsList] = useState([]);
+  const [newCodeData, setNewCodeData] = useState({ code: '', type: 'kyc_bypass', max_uses: 1, notes: '' });
 
   // Catalog management state (admin)
   const [catalogCreateModal, setCatalogCreateModal] = useState(false);
@@ -182,6 +189,9 @@ const AdminDashboard = () => {
           fetchAdminWithdrawals()
             .catch(console.error)
             .finally(() => setWithdrawalsLoading(false));
+        }
+        if (activeTab === 'invitation_codes') {
+          fetchInvitationCodes().catch(console.error);
         }
       };
       loadDashboardData();
@@ -489,6 +499,7 @@ const AdminDashboard = () => {
     { key: 'ledger', icon: Database, label: 'Global Ledger' },
     { key: 'withdrawals', icon: Banknote, label: 'Withdrawals' },
     { key: 'kyc', icon: ShieldCheck, label: 'KYC Requests' },
+    { key: 'invitation_codes', icon: Tag, label: 'Invitation Codes' },
     { key: 'catalog', icon: Package, label: 'Product Catalog' },
   ];
 
@@ -519,6 +530,63 @@ const AdminDashboard = () => {
     const res = await rejectWithdrawal(id);
     if (!res.success) alert(res.message || 'Failed to reject withdrawal');
     setWithdrawalProcessingId(null);
+  };
+
+  const handleCreateCode = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/invitation-codes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(newCodeData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCreateCodeModal(false);
+        setNewCodeData({ code: '', type: 'kyc_bypass', max_uses: 1, notes: '' });
+        fetchInvitationCodes();
+      } else {
+        alert(data.error || 'Failed to create code');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error creating code');
+    }
+  };
+
+  const handleToggleCodeStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+    let reason = null;
+    if (newStatus === 'disabled') {
+      reason = prompt('Reason for disabling this code?');
+      if (reason === null) return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/invitation-codes/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus, disabled_reason: reason })
+      });
+      if (res.ok) fetchInvitationCodes();
+      else alert('Failed to update status');
+    } catch (err) {
+      console.error(err);
+      alert('Error updating status');
+    }
+  };
+
+  const fetchRedemptions = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/invitation-codes/${id}/redemptions`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setRedemptionsList(data.redemptions || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const filteredAdminWithdrawals = adminWithdrawals?.filter(w => {
@@ -774,6 +842,56 @@ const AdminDashboard = () => {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ══ ADMIN: Invitation Codes ══ */}
+            {role === 'admin' && activeTab === 'invitation_codes' && (
+              <div className="dash-card overflow-hidden">
+                <SectionHeader 
+                  title="Invitation Codes" 
+                  action={<button className="dash-btn dash-btn-primary py-2 px-4 rounded-xl text-sm font-semibold" onClick={() => setCreateCodeModal(true)}>Create Code</button>} 
+                />
+                <div className="overflow-x-auto">
+                  <table className="koara-table">
+                    <thead>
+                      <tr>
+                        <th>Code</th>
+                        <th>Type</th>
+                        <th>Uses</th>
+                        <th>Status</th>
+                        <th>Creator</th>
+                        <th>Created</th>
+                        <th className="text-end">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(invitationCodes || []).map(code => (
+                        <tr key={code.id}>
+                          <td className="cell-primary font-mono">{code.code}</td>
+                          <td>{code.type}</td>
+                          <td>{code.current_uses} / {code.max_uses === -1 ? '∞' : code.max_uses}</td>
+                          <td><StatusBadge status={code.status} /></td>
+                          <td>{code.creator_email || 'System'}</td>
+                          <td>{formatDate(code.created_at)}</td>
+                          <td className="text-end">
+                            <div className="flex justify-end gap-2">
+                              <button onClick={() => { setSelectedCodeId(code.id); fetchRedemptions(code.id); setRedemptionsModal(true); }} className="dash-btn dash-btn-secondary">Logs</button>
+                              {code.status === 'active' ? (
+                                <button onClick={() => handleToggleCodeStatus(code.id, code.status)} className="dash-btn dash-btn-danger">Disable</button>
+                              ) : (
+                                <button onClick={() => handleToggleCodeStatus(code.id, code.status)} className="dash-btn dash-btn-success">Enable</button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {(invitationCodes || []).length === 0 && (
+                        <tr><td colSpan="7"><div className="koara-empty-state"><Tag size={32} /><span>No invitation codes found.</span></div></td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -2602,6 +2720,58 @@ const AdminDashboard = () => {
         onClose={() => setShowWithdrawalModal(false)} 
       />
 
+      {/* Code Creation Modal */}
+      <Modal
+        isOpen={createCodeModal}
+        onClose={() => setCreateCodeModal(false)}
+        title="Create Invitation Code"
+      >
+        <form onSubmit={handleCreateCode} className="space-y-4">
+          <div>
+            <label className="koara-label">Code</label>
+            <input required type="text" value={newCodeData.code} onChange={(e) => setNewCodeData({ ...newCodeData, code: e.target.value })} className="koara-input" placeholder="e.g. VIP-2026" />
+          </div>
+          <div>
+            <label className="koara-label">Type</label>
+            <select value={newCodeData.type} onChange={(e) => setNewCodeData({ ...newCodeData, type: e.target.value })} className="koara-select">
+              <option value="kyc_bypass">KYC Bypass</option>
+              <option value="beta_access">Beta Access</option>
+              <option value="partner">Partner</option>
+            </select>
+          </div>
+          <div>
+            <label className="koara-label">Max Uses (-1 for unlimited)</label>
+            <input required type="number" value={newCodeData.max_uses} onChange={(e) => setNewCodeData({ ...newCodeData, max_uses: parseInt(e.target.value, 10) })} className="koara-input" />
+          </div>
+          <button type="submit" className="dash-btn dash-btn-primary w-full justify-center py-2.5 rounded-xl text-sm font-semibold">Create Code</button>
+        </form>
+      </Modal>
+
+      {/* Code Redemptions Modal */}
+      <Modal
+        isOpen={redemptionsModal}
+        onClose={() => setRedemptionsModal(false)}
+        title="Code Redemptions"
+      >
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 scrollbar-none">
+          {redemptionsList.map(r => (
+            <div key={r.id} className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="flex justify-between items-start mb-2">
+                <div className="font-semibold text-white">{r.store_name}</div>
+                <div className="text-xs text-slate-400">{formatDate(r.redeemed_at)}</div>
+              </div>
+              <div className="text-sm text-slate-300">Merchant: {r.merchant_email}</div>
+              <div className="text-xs text-slate-500 mt-1">IP: {r.ip_address || 'Unknown'}</div>
+            </div>
+          ))}
+          {redemptionsList.length === 0 && (
+            <div className="koara-empty-state py-8">
+              <Activity size={28} />
+              <span>No redemptions found.</span>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

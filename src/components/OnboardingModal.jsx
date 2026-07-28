@@ -52,6 +52,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
   // KYC Document
   const [kycDocument, setKycDocument] = useState(null);
+  const [invitationCode, setInvitationCode] = useState('');
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -80,6 +81,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       setAccountHolderName('');
       setAccountNumber('');
       setKycDocument(null);
+      setInvitationCode('');
       setErrorMsg('');
       setSuccessMsg('');
     }
@@ -256,7 +258,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
     if (e && e.preventDefault) e.preventDefault();
     setErrorMsg('');
 
-    if (!kycDocument) {
+    if (!kycDocument && !invitationCode.trim()) {
       setErrorMsg(t('err_req_kyc'));
       return { success: false };
     }
@@ -270,7 +272,12 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
     formData.append('bank_name', bankName.trim());
     formData.append('account_holder_name', accountHolderName.trim());
     formData.append('account_number', accountNumber.trim());
-    formData.append('kyc_document', kycDocument);
+    if (kycDocument) {
+      formData.append('kyc_document', kycDocument);
+    }
+    if (invitationCode.trim()) {
+      formData.append('invitation_code', invitationCode.trim());
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
       method: 'POST',
@@ -459,8 +466,9 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             </div>
             <div>
               <label className="koara-label">{t('account_number')}</label>
-              <input required type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="1234567890" className="koara-input" dir="ltr" />
+              <input required type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="1234567890" className="koara-input" />
             </div>
+
           </div>
           <div className="flex gap-3 mt-2">
             <button
@@ -494,10 +502,27 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
                 <CheckCircle2 size={12} /> {t('file_selected')}
               </div>
             )}
-            <input type="file" accept=".png,.jpg,.jpeg,.pdf" className="hidden" onChange={(e) => setKycDocument(e.target.files[0])} />
+            <input type="file" id="kycUpload" className="hidden" accept="image/*,.pdf" onChange={(e) => setKycDocument(e.target.files[0])} />
           </label>
 
-          <div className="flex gap-3">
+          <div className="relative flex py-3 items-center">
+            <div className="flex-grow border-t border-slate-700"></div>
+            <span className="flex-shrink-0 mx-4 text-slate-500 text-xs font-semibold">OR</span>
+            <div className="flex-grow border-t border-slate-700"></div>
+          </div>
+
+          <div>
+            <label className="koara-label">Invitation Code (Optional Bypass)</label>
+            <input
+              type="text"
+              value={invitationCode}
+              onChange={(e) => setInvitationCode(e.target.value)}
+              placeholder="Enter invitation code"
+              className="koara-input"
+            />
+          </div>
+
+          <div className="flex gap-3 mt-2">
             <button onClick={() => { setErrorMsg(''); setStep(4); }} className="dash-btn dash-btn-secondary py-2.5 px-4 rounded-xl">
               <ArrowLeft size={14} /> {t('back')}
             </button>

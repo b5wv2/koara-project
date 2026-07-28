@@ -10,6 +10,7 @@ const { validateSubdomainFormat } = require('../utils/subdomainValidation');
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/authMiddleware');
+const { provisionMerchant } = require('../services/merchantProvisioningService');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -145,9 +146,40 @@ const handleSuccessfulVerification = async (email, otpId) => {
 };
 
 
+// POST /validate-invitation-code route
+router.post('/validate-invitation-code', async (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'Code is required' });
+
+  try {
+    const result = await db.query(
+      `SELECT * FROM invitation_codes WHERE code = $1 AND status = 'active'`,
+      [code.trim()]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or inactive invitation code.' });
+    }
+
+    const codeRow = result.rows[0];
+    if (codeRow.expires_at && new Date(codeRow.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'Invitation code has expired.' });
+    }
+    
+    if (codeRow.max_uses !== -1 && codeRow.current_uses >= codeRow.max_uses) {
+      return res.status(400).json({ error: 'Invitation code usage limit reached.' });
+    }
+
+    return res.status(200).json({ success: true, valid: true });
+  } catch (err) {
+    console.error('Error validating code:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /signup route
 router.post('/signup', upload.single('kyc_document'), async (req, res) => {
-  const { name, email, password, store_name, bank_name, account_holder_name, account_number, subdomain } = req.body;
+  const { name, email, password, store_name, bank_name, account_holder_name, account_number, subdomain, invitation_code } = req.body;
 
   // Validate request inputs
   if (!name || !email || !password || !store_name || !bank_name || !account_holder_name || !account_number || !subdomain) {
@@ -161,23 +193,11 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
   }
   const cleanSubdomain = subdomain.toLowerCase().trim();
 
-  if (!req.file) {
+  if (!invitation_code && !req.file) {
     return res.status(400).json({ error: 'KYC Document is required.' });
   }
 
   // Verify that the email was verified via OTP
-  // For signup, since we delete OTPs on success, we check if the user is in users/store_requests.
-  // Wait, if we delete OTP on success, how does signup know email was verified?
-  // Ah, currently signup relies on `email_verifications.verified = TRUE`.
-  // If we delete it in `handleSuccessfulVerification`, signup won't find it!
-  // Since signup happens *after* verify-registration-code, we must NOT delete the record, 
-  // or we need to mark it verified but KEEP it until signup finishes, OR we change the flow.
-  // The plan states "Ensure successful OTP verification deletes the record completely". 
-  // For password reset it's fine. For registration, if we delete it, `signup` will fail.
-  // Let's modify signup to NOT fail if we delete it, but how do we know they verified?
-  // Actually, we can keep the `verified = TRUE` record, but delete it inside `/signup`!
-  // That's much safer. So for registration, verify marks it true. Signup deletes it.
-
   try {
     const verifCheck = await db.query(
       `SELECT id FROM email_verifications WHERE email = $1 AND type = 'registration' AND verified = TRUE`,
@@ -191,7 +211,7 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
     return res.status(500).json({ error: 'Failed to verify email status.' });
   }
 
-  const kyc_document_url = `/uploads/${req.file.filename}`;
+  const kyc_document_url = req.file ? `/uploads/${req.file.filename}` : null;
 
   const client = await db.pool.connect();
   try {
@@ -209,11 +229,44 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
       return res.status(409).json({ error: 'Subdomain is already reserved by a pending request.' });
     }
 
+    let bypassKyc = false;
+    let validCodeId = null;
+
+    if (invitation_code) {
+      // Validate code atomically inside transaction
+      const codeCheck = await client.query(
+        `SELECT * FROM invitation_codes WHERE code = $1 AND status = 'active' FOR UPDATE`,
+        [invitation_code.trim()]
+      );
+      
+      if (codeCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Invalid or inactive invitation code.' });
+      }
+
+      const codeRow = codeCheck.rows[0];
+      if (codeRow.expires_at && new Date(codeRow.expires_at) < new Date()) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Invitation code has expired.' });
+      }
+      
+      if (codeRow.max_uses !== -1 && codeRow.current_uses >= codeRow.max_uses) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Invitation code usage limit reached.' });
+      }
+
+      bypassKyc = true;
+      validCodeId = codeRow.id;
+
+      // Update current uses
+      await client.query(`UPDATE invitation_codes SET current_uses = current_uses + 1 WHERE id = $1`, [validCodeId]);
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
 
     const insertRequestQuery = `
       INSERT INTO store_requests (applicant_name, email, password_hash, store_name, bank_name, account_holder_name, account_number, kyc_document_url, status, subdomain)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id, applicant_name as name, email, store_name, status, created_at, subdomain;
     `;
     const requestResult = await client.query(insertRequestQuery, [
@@ -225,6 +278,7 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
       account_holder_name.trim(),
       account_number.trim(),
       kyc_document_url,
+      bypassKyc ? 'approved' : 'pending',
       cleanSubdomain
     ]);
     const newRequest = requestResult.rows[0];
@@ -232,20 +286,48 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
     // Delete the verified registration OTP now that it's consumed
     await client.query(`DELETE FROM email_verifications WHERE email = $1 AND type = 'registration'`, [email.trim()]);
 
+    let newUser = null;
+    let newStore = null;
+
+    if (bypassKyc) {
+      // Provision immediately
+      const provisioned = await provisionMerchant(newRequest.id, client);
+      newUser = provisioned.user;
+      newStore = provisioned.store;
+      
+      // Log redemption
+      await client.query(`
+        INSERT INTO invitation_redemptions (code_id, store_request_id, user_id, store_id, merchant_email, ip_address, user_agent)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [validCodeId, newRequest.id, newUser.id, newStore.id, newRequest.email, req.ip, req.get('User-Agent')]);
+    }
+
     await client.query('COMMIT');
 
-    setSessionCookie(res, {
-      id: newRequest.id,
-      role: 'applicant',
-      email: newRequest.email,
-      storeRequestId: newRequest.id
-    });
+    if (bypassKyc) {
+      setSessionCookie(res, newUser);
+      return res.status(201).json({
+        success: true,
+        message: 'Account created successfully using invitation code.',
+        bypassedKyc: true,
+        user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role },
+        store: newStore
+      });
+    } else {
+      setSessionCookie(res, {
+        id: newRequest.id,
+        role: 'applicant',
+        email: newRequest.email,
+        storeRequestId: newRequest.id
+      });
 
-    res.status(201).json({
-      success: true,
-      message: 'Store application submitted successfully and is pending review.',
-      request: newRequest
-    });
+      return res.status(201).json({
+        success: true,
+        message: 'Store application submitted successfully and is pending review.',
+        request: newRequest
+      });
+    }
+
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Database transaction error during merchant signup:', error.message);

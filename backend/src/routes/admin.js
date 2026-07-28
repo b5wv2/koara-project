@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const notificationService = require('../services/notificationService');
+const { provisionMerchant } = require('../services/merchantProvisioningService');
 
 
 
@@ -33,43 +34,17 @@ router.post('/kyc/approve', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // 1. Fetch the request
+    // 1. Fetch the request to verify it exists and is pending
     const requestResult = await client.query('SELECT * FROM store_requests WHERE id = $1 AND status = $2', [store_id, 'pending']);
     if (requestResult.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Pending request not found' });
     }
-    const request = requestResult.rows[0];
 
-    // 2. Create the user
-    const insertUserQuery = `
-      INSERT INTO users (name, email, password_hash, role, status)
-      VALUES ($1, $2, $3, 'merchant', 'active')
-      RETURNING id;
-    `;
-    const userResult = await client.query(insertUserQuery, [request.applicant_name, request.email, request.password_hash]);
-    const newUser = userResult.rows[0];
-
-    const insertStoreQuery = `
-      INSERT INTO stores (owner_id, store_name, subdomain, status, bank_name, account_name, account_no)
-      VALUES ($1, $2, $3, 'active', $4, $5, $6)
-    `;
-    await client.query(insertStoreQuery, [
-      newUser.id,
-      request.store_name,
-      request.subdomain,
-      request.bank_name,
-      request.account_holder_name,
-      request.account_number
-    ]);
-
-    // 4. Update request status
-    await client.query('UPDATE store_requests SET status = $1 WHERE id = $2', ['approved', store_id]);
+    // 2. Provision the merchant using the single source of truth service
+    await provisionMerchant(store_id, client);
 
     await client.query('COMMIT');
-    
-    // Trigger notification (doesn't throw on error)
-    await notificationService.sendStoreApproved(request.email, request.store_name, request.subdomain);
 
     res.json({ success: true, message: 'Merchant approved and created successfully.' });
   } catch (error) {
@@ -495,6 +470,108 @@ router.post('/withdrawals/:id/reject', async (req, res) => {
     res.status(400).json({ error: error.message || 'Internal server error' });
   } finally {
     client.release();
+  }
+});
+
+// --- Invitation Codes Management ---
+
+// GET /api/admin/invitation-codes
+router.get('/invitation-codes', async (req, res) => {
+  try {
+    const query = `
+      SELECT c.*, u.email as creator_email 
+      FROM invitation_codes c
+      LEFT JOIN users u ON c.created_by = u.id
+      ORDER BY c.created_at DESC
+    `;
+    const result = await db.query(query);
+    res.json({ success: true, codes: result.rows });
+  } catch (error) {
+    console.error('Error fetching invitation codes:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/invitation-codes
+router.post('/invitation-codes', async (req, res) => {
+  const { code, type, max_uses, notes, expires_at } = req.body;
+  const adminId = req.user.id;
+
+  if (!code || max_uses === undefined) {
+    return res.status(400).json({ error: 'Code and max_uses are required' });
+  }
+
+  try {
+    const insertQuery = `
+      INSERT INTO invitation_codes (code, type, max_uses, notes, expires_at, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+    const result = await db.query(insertQuery, [
+      code.trim(),
+      type || 'kyc_bypass',
+      max_uses,
+      notes || null,
+      expires_at || null,
+      adminId
+    ]);
+
+    res.status(201).json({ success: true, code: result.rows[0] });
+  } catch (error) {
+    console.error('Error creating invitation code:', error.message);
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Code already exists.' });
+    }
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/admin/invitation-codes/:id/status
+router.put('/invitation-codes/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status, disabled_reason } = req.body;
+
+  if (!['active', 'disabled'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  try {
+    const updateQuery = `
+      UPDATE invitation_codes 
+      SET status = $1, disabled_reason = $2 
+      WHERE id = $3 
+      RETURNING *
+    `;
+    const result = await db.query(updateQuery, [status, status === 'disabled' ? disabled_reason : null, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Invitation code not found' });
+    }
+
+    res.json({ success: true, code: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating invitation code status:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/admin/invitation-codes/:id/redemptions
+router.get('/invitation-codes/:id/redemptions', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = `
+      SELECT r.*, u.name as user_name, s.store_name 
+      FROM invitation_redemptions r
+      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN stores s ON r.store_id = s.id
+      WHERE r.code_id = $1
+      ORDER BY r.redeemed_at DESC
+    `;
+    const result = await db.query(query, [id]);
+    res.json({ success: true, redemptions: result.rows });
+  } catch (error) {
+    console.error('Error fetching redemptions:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
