@@ -1,4 +1,5 @@
-const admin = require('firebase-admin');
+const { initializeApp, cert, getApps } = require('firebase-admin/app');
+const { getMessaging } = require('firebase-admin/messaging');
 const db = require('../config/db');
 
 class NotificationService {
@@ -9,21 +10,21 @@ class NotificationService {
 
   initFirebase() {
     try {
-      if (!admin.apps || admin.apps.length === 0) {
+      if (getApps().length === 0) {
         // Option 1: Using FIREBASE_SERVICE_ACCOUNT base64 encoded JSON from env
         if (process.env.FIREBASE_SERVICE_ACCOUNT) {
           const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf8'));
-          admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
+          initializeApp({
+            credential: cert(serviceAccount)
           });
           this.initialized = true;
-          console.log('[NotificationService] Firebase initialized successfully from base64 env.');
+          console.log('[NotificationService] Firebase Admin initialized successfully.');
         } 
         // Option 2: Using GOOGLE_APPLICATION_CREDENTIALS path from env (Firebase default behavior if initialized without args)
         else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-          admin.initializeApp();
+          initializeApp();
           this.initialized = true;
-          console.log('[NotificationService] Firebase initialized successfully from credentials path.');
+          console.log('[NotificationService] Firebase Admin initialized successfully.');
         } else {
           console.warn('[NotificationService] Firebase credentials not provided. Push notifications are disabled.');
         }
@@ -112,7 +113,7 @@ class NotificationService {
         ...payload
       };
 
-      const response = await admin.messaging().send(message);
+      const response = await getMessaging().send(message);
       console.log(`[NotificationService] Successfully sent message: ${response}`);
       return true;
     } catch (error) {
@@ -140,8 +141,8 @@ class NotificationService {
         ...payload
       };
 
-      console.log(`[NotificationService] Immediately before calling admin.messaging().sendEachForMulticast...`);
-      const response = await admin.messaging().sendEachForMulticast(message);
+      console.log(`[NotificationService] Immediately before calling getMessaging().sendEachForMulticast...`);
+      const response = await getMessaging().sendEachForMulticast(message);
       console.log(`[NotificationService] Multicast response received. Success: ${response.successCount}, Failures: ${response.failureCount}`);
       console.log(`[NotificationService] Multicast Message IDs:`, response.responses.map(r => r.messageId).filter(Boolean).join(', '));
 
