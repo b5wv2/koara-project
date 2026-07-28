@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const notificationService = require('../services/notificationService');
+const fcmNotificationService = require('../services/fcmNotificationService');
 const { provisionMerchant } = require('../services/merchantProvisioningService');
 
 
@@ -207,6 +208,27 @@ router.post('/stores/:id/add-credit', async (req, res) => {
     await client.query(insertTxQuery, [storeId, amount, reason || 'Admin Manual Credit']);
 
     await client.query('COMMIT');
+
+    // Dispatch FCM Notification for Wallet Deposit Approved
+    try {
+      const storeOwnerRes = await db.query('SELECT owner_id FROM stores WHERE id = $1', [storeId]);
+      if (storeOwnerRes.rows.length > 0) {
+        const merchantOwnerId = storeOwnerRes.rows[0].owner_id;
+        fcmNotificationService.sendToMerchant(merchantOwnerId, {
+          notification: {
+            title: 'Wallet Updated',
+            body: 'Funds have been added to your wallet.'
+          },
+          data: {
+            type: 'wallet',
+            route: '/wallet'
+          }
+        }).catch(err => console.error('[ADD-CREDIT] Async FCM Error:', err.message));
+      }
+    } catch (fcmErr) {
+      console.error('[ADD-CREDIT] Non-blocking error dispatching FCM notification:', fcmErr);
+    }
+
     res.json({ success: true, balance: newBalance });
   } catch (error) {
     await client.query('ROLLBACK');

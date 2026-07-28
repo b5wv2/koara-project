@@ -388,6 +388,16 @@ const createInvitationRedemptionsTableQuery = `
   );
 `;
 
+const createMerchantDeviceTokensTableQuery = `
+  CREATE TABLE IF NOT EXISTS merchant_device_tokens (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    device_token VARCHAR(255) UNIQUE NOT NULL,
+    platform VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
 
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
@@ -522,6 +532,9 @@ const initializeDatabase = async () => {
 
     // Create webhook_logs table
     await client.query(createWebhookLogsTableQuery);
+
+    // Create merchant_device_tokens table
+    await client.query(createMerchantDeviceTokensTableQuery);
 
     // --- Order System Enhancements ---
     await client.query(`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`);

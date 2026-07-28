@@ -2,6 +2,7 @@ const db = require('../config/db');
 const orderService = require('./orderService');
 const topupOrderService = require('./topupOrderService');
 const notificationService = require('./notificationService');
+const fcmNotificationService = require('./fcmNotificationService');
 
 class CartService {
   /**
@@ -117,6 +118,26 @@ class CartService {
       });
     } catch (notifError) {
       console.error('[CART-CHECKOUT] Non-blocking error dispatching batch notifications:', notifError);
+    }
+
+    // 3. Dispatch Push Notification via FCM
+    try {
+      const storeOwnerRes = await db.query('SELECT owner_id FROM stores WHERE id = $1', [storeId]);
+      if (storeOwnerRes.rows.length > 0) {
+        const merchantOwnerId = storeOwnerRes.rows[0].owner_id;
+        fcmNotificationService.sendToMerchant(merchantOwnerId, {
+          notification: {
+            title: 'New Order',
+            body: 'You have received a new order.'
+          },
+          data: {
+            type: 'order',
+            route: '/orders'
+          }
+        }).catch(err => console.error('[CART-CHECKOUT] Async FCM Error:', err.message));
+      }
+    } catch (fcmErr) {
+      console.error('[CART-CHECKOUT] Non-blocking error dispatching FCM notification:', fcmErr);
     }
 
     return {

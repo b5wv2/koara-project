@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const orderService = require('../services/orderService');
+const notificationService = require('../services/fcmNotificationService');
 const { requireKoaraPlus } = require('../middleware/subscriptionCheck');
 const resolveMerchantStore = require('../middleware/resolveMerchantStore');
 
@@ -435,6 +436,26 @@ router.post('/withdraw', async (req, res) => {
     res.status(400).json({ error: err.message || 'Internal server error' });
   } finally {
     client.release();
+  }
+});
+
+// --- Notifications ---
+
+// POST /api/merchant/device-token
+router.post('/device-token', async (req, res) => {
+  const merchantId = req.user.id;
+  const { deviceToken, platform } = req.body;
+
+  if (!deviceToken) {
+    return res.status(400).json({ error: 'deviceToken is required' });
+  }
+
+  try {
+    const result = await notificationService.registerDeviceToken(merchantId, deviceToken, platform);
+    res.status(200).json({ success: true, token: result });
+  } catch (err) {
+    console.error('Error registering device token:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
