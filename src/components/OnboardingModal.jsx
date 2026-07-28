@@ -529,7 +529,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             <DashButton
               onClick={handleSubmit}
               loading={loading}
-              disabled={loading || !kycDocument}
+              disabled={loading || (!kycDocument && !invitationCode.trim())}
               className="dash-btn dash-btn-primary flex-1 justify-center py-2.5 rounded-xl text-sm font-semibold"
             >
               {t('submit_application')}
