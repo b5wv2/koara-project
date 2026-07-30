@@ -442,6 +442,19 @@ const createSubscriptionAdminLogsTableQuery = `
   );
 `;
 
+
+const createReportGenerationsTableQuery = `
+  CREATE TABLE IF NOT EXISTS report_generations (
+    id SERIAL PRIMARY KEY,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+    generated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    period_start TIMESTAMP WITH TIME ZONE NOT NULL,
+    period_end TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
   const client = await db.pool.connect();

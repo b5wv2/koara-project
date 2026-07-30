@@ -113,6 +113,7 @@ const AdminDashboard = () => {
     reason: ''
   });
   const [submittingSub, setSubmittingSub] = useState(false);
+  const [isReportDownloading, setIsReportDownloading] = useState(false);
 
   // Broadcast state
   const [broadcasts, setBroadcasts] = useState([]);
@@ -274,6 +275,61 @@ const AdminDashboard = () => {
       console.error('Failed to fetch admin subscriptions:', err);
     } finally {
       setAdminSubscriptionsLoading(false);
+    }
+  };
+
+
+  const downloadMonthlyReport = async () => {
+    if (!isPlusActive) {
+      setUpgradeModalOpen(true);
+      return;
+    }
+    
+    try {
+      setIsReportDownloading(true);
+      const res = await fetch(`${API_BASE_URL}/api/merchant/reports`, {
+        credentials: 'include'
+      });
+      
+      if (res.status === 403) {
+        setUpgradeModalOpen(true);
+        return;
+      }
+      
+      if (res.status === 429) {
+        const errorData = await res.json();
+        alert(errorData.error || 'You have reached your report generation limit for this subscription cycle.');
+        return;
+      }
+      
+      if (!res.ok) {
+        throw new Error('Failed to generate report');
+      }
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      // Extract filename from Content-Disposition if possible, otherwise use fallback
+      let filename = 'Koara_Report.pdf';
+      const disposition = res.headers.get('content-disposition');
+      if (disposition && disposition.includes('filename=')) {
+        const parts = disposition.split('filename=');
+        if (parts.length > 1) {
+          filename = parts[1].replace(/['"]/g, '');
+        }
+      }
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err) {
+      console.error('Error downloading report:', err);
+      alert('An error occurred while generating the report. Please try again.');
+    } finally {
+      setIsReportDownloading(false);
     }
   };
 
