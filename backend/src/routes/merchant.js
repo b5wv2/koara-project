@@ -533,6 +533,10 @@ router.get('/reports', async (req, res) => {
     // 3. Data Aggregation
     step = 'Completing Database queries';
     console.log(`[REPORT_DEBUG] Step: ${step}`);
+    
+    // We STRICTLY use created_at >= starts_at as commanded.
+    // If a test merchant placed orders BEFORE they bought their current active subscription, 
+    // those orders will correctly NOT be included in this report.
     const topupsRes = await db.query(`
       SELECT COUNT(*) as topups_count, COALESCE(SUM(amount), 0) as total_deposited 
       FROM wallet_transactions 
@@ -556,34 +560,51 @@ router.get('/reports', async (req, res) => {
     `, [storeId, store.starts_at]);
     
     const o = ordersRes.rows[0];
+    const totalOrders = parseInt(o.total_orders || 0);
+    const completedOrders = parseInt(o.completed_orders || 0);
+    const rejectedOrders = parseInt(o.rejected_orders || 0);
+    const refundedOrders = parseInt(o.refunded_orders || 0);
     const grossSales = parseFloat(o.gross_sales || 0);
     const refundedAmount = parseFloat(o.refunded_amount || 0);
     const netSales = grossSales - refundedAmount;
-    const avgOrderValue = parseInt(o.completed_orders) > 0 ? (grossSales / parseInt(o.completed_orders)).toFixed(2) : '0.00';
+    const avgOrderValue = completedOrders > 0 ? (grossSales / completedOrders).toFixed(2) : '0.00';
     
     let avgOrdersPerDay = '0.00';
     if (o.first_order_date && o.latest_order_date) {
       const days = Math.max(1, (new Date(o.latest_order_date) - new Date(o.first_order_date)) / (1000 * 60 * 60 * 24));
-      avgOrdersPerDay = (parseInt(o.total_orders) / days).toFixed(2);
+      avgOrdersPerDay = (totalOrders / days).toFixed(2);
     }
     
+    // CRITICAL FIX: The "products" JOIN was returning 0 rows because product_id in orders is null.
+    // We now use o.product_name directly from the orders table!
     const productsRes = await db.query(`
-      SELECT p.name as product_name, COUNT(o.id) as quantity_sold, COALESCE(SUM(o.amount), 0) as revenue
+      SELECT o.product_name, COUNT(o.id) as quantity_sold, COALESCE(SUM(o.amount), 0) as revenue
       FROM orders o
-      JOIN products p ON p.id = o.product_id
       WHERE o.store_id = $1 AND o.status = 'completed' AND o.created_at >= $2
-      GROUP BY p.id, p.name
+      GROUP BY o.product_name
       ORDER BY quantity_sold DESC
     `, [storeId, store.starts_at]);
     
+    // CRITICAL FIX: Removed JOIN products to properly load real recent orders.
     const recentOrdersRes = await db.query(`
-      SELECT o.id, o.created_at, p.name as product_name, o.amount, o.status, 1 as quantity
+      SELECT o.id, o.created_at, o.product_name, o.amount, o.status, o.quantity
       FROM orders o
-      JOIN products p ON p.id = o.product_id
       WHERE o.store_id = $1 AND o.created_at >= $2
       ORDER BY o.created_at DESC
       LIMIT 10
     `, [storeId, store.starts_at]);
+    
+    // Debugging as requested
+    console.log({
+      totalOrders,
+      completedOrders,
+      rejectedOrders,
+      refundedOrders,
+      grossSales,
+      walletBalance: store.wallet_balance,
+      productSummary: productsRes.rows,
+      latestOrders: recentOrdersRes.rows
+    });
     
     console.log(`[REPORT_DEBUG] Database queries completed successfully.`);
     
@@ -728,21 +749,21 @@ router.get('/reports', async (req, res) => {
         <div class="section">
           <h2 class="section-title">${t.orderSummary}</h2>
           <div class="grid">
-            <div class="card"><div class="card-label">${t.totalOrders}</div><div class="card-value">${o.total_orders}</div></div>
+            <div class="card"><div class="card-label">${t.totalOrders}</div><div class="card-value">${totalOrders}</div></div>
             <div class="card"><div class="card-label">${t.pendingOrders}</div><div class="card-value">${o.pending_orders}</div></div>
             <div class="card"><div class="card-label">${t.processingOrders}</div><div class="card-value">${o.processing_orders}</div></div>
           </div>
           <div class="grid" style="margin-top:15px;">
-            <div class="card"><div class="card-label">${t.completedOrders}</div><div class="card-value">${o.completed_orders}</div></div>
-            <div class="card"><div class="card-label">${t.rejectedOrders}</div><div class="card-value">${o.rejected_orders}</div></div>
-            <div class="card"><div class="card-label">${t.refundedOrders}</div><div class="card-value">${o.refunded_orders}</div></div>
+            <div class="card"><div class="card-label">${t.completedOrders}</div><div class="card-value">${completedOrders}</div></div>
+            <div class="card"><div class="card-label">${t.rejectedOrders}</div><div class="card-value">${rejectedOrders}</div></div>
+            <div class="card"><div class="card-label">${t.refundedOrders}</div><div class="card-value">${refundedOrders}</div></div>
           </div>
         </div>
 
         <div class="section">
           <h2 class="section-title">${t.statistics}</h2>
           <div class="grid">
-            <div class="card"><div class="card-label">${t.bestProduct}</div><div class="card-value" dir="auto">${productsRes.rows.length > 0 ? productsRes.rows[0].product_name : 'N/A'}</div></div>
+            <div class="card"><div class="card-label">${t.bestProduct}</div><div class="card-value" dir="auto">${productsRes.rows.length > 0 ? productsRes.rows[0].product_name || 'N/A' : 'N/A'}</div></div>
             <div class="card"><div class="card-label">${t.firstOrderDate}</div><div class="card-value" dir="auto">${formatDate(o.first_order_date)}</div></div>
             <div class="card"><div class="card-label">${t.latestOrderDate}</div><div class="card-value" dir="auto">${formatDate(o.latest_order_date)}</div></div>
             <div class="card"><div class="card-label">${t.avgOrdersDay}</div><div class="card-value" dir="auto">${avgOrdersPerDay}</div></div>
@@ -755,7 +776,7 @@ router.get('/reports', async (req, res) => {
           <table>
             <thead><tr><th>${t.productName}</th><th>${t.qtySold}</th><th>${t.revenue}</th></tr></thead>
             <tbody>
-              ${productsRes.rows.map(p => `<tr><td dir="auto">${p.product_name}</td><td>${p.quantity_sold}</td><td dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(p.revenue)}</td></tr>`).join('')}
+              ${productsRes.rows.map(p => `<tr><td dir="auto">${p.product_name || 'Unknown Product'}</td><td>${p.quantity_sold}</td><td dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(p.revenue)}</td></tr>`).join('')}
             </tbody>
           </table>
           ` : `<div class="empty-state">${t.noData}</div>`}
@@ -767,7 +788,7 @@ router.get('/reports', async (req, res) => {
           <table>
             <thead><tr><th>${t.orderNum}</th><th>${t.date}</th><th>${t.product}</th><th>${t.qty}</th><th>${t.amount}</th><th>${t.status}</th></tr></thead>
             <tbody>
-              ${recentOrdersRes.rows.map(ro => `<tr><td>#${ro.id}</td><td>${formatDate(ro.created_at)}</td><td dir="auto">${ro.product_name}</td><td>${ro.quantity}</td><td dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(ro.amount)}</td><td><span style="text-transform:capitalize" dir="auto">${ro.status}</span></td></tr>`).join('')}
+              ${recentOrdersRes.rows.map(ro => `<tr><td>#${ro.id}</td><td>${formatDate(ro.created_at)}</td><td dir="auto">${ro.product_name || 'Unknown Product'}</td><td>${ro.quantity || 1}</td><td dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(ro.amount)}</td><td><span style="text-transform:capitalize" dir="auto">${ro.status}</span></td></tr>`).join('')}
             </tbody>
           </table>
           ` : `<div class="empty-state">${t.noData}</div>`}
