@@ -536,24 +536,30 @@ router.get('/reports', async (req, res) => {
     const topupsRes = await db.query(`
       SELECT COUNT(*) as topups_count, COALESCE(SUM(amount), 0) as total_deposited 
       FROM wallet_transactions 
-      WHERE store_id = $1 AND transaction_type = 'credit'
-    `, [storeId]);
+      WHERE store_id = $1 AND transaction_type = 'credit' AND created_at >= $2
+    `, [storeId, store.starts_at]);
     
     const ordersRes = await db.query(`
       SELECT 
         COUNT(*) as total_orders,
         COUNT(*) FILTER (WHERE status = 'completed') as completed_orders,
         COUNT(*) FILTER (WHERE status = 'pending') as pending_orders,
-        COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled_orders,
-        COALESCE(SUM(amount) FILTER (WHERE status = 'completed'), 0) as total_revenue,
+        COUNT(*) FILTER (WHERE status = 'processing') as processing_orders,
+        COUNT(*) FILTER (WHERE status = 'rejected') as rejected_orders,
+        COUNT(*) FILTER (WHERE status = 'refunded') as refunded_orders,
+        COALESCE(SUM(amount) FILTER (WHERE status = 'completed'), 0) as gross_sales,
+        COALESCE(SUM(amount) FILTER (WHERE status = 'refunded'), 0) as refunded_amount,
         MIN(created_at) as first_order_date,
         MAX(created_at) as latest_order_date
       FROM orders 
-      WHERE store_id = $1
-    `, [storeId]);
+      WHERE store_id = $1 AND created_at >= $2
+    `, [storeId, store.starts_at]);
     
     const o = ordersRes.rows[0];
-    const avgOrderValue = parseInt(o.completed_orders) > 0 ? (parseFloat(o.total_revenue) / parseInt(o.completed_orders)).toFixed(2) : '0.00';
+    const grossSales = parseFloat(o.gross_sales || 0);
+    const refundedAmount = parseFloat(o.refunded_amount || 0);
+    const netSales = grossSales - refundedAmount;
+    const avgOrderValue = parseInt(o.completed_orders) > 0 ? (grossSales / parseInt(o.completed_orders)).toFixed(2) : '0.00';
     
     let avgOrdersPerDay = '0.00';
     if (o.first_order_date && o.latest_order_date) {
@@ -565,19 +571,19 @@ router.get('/reports', async (req, res) => {
       SELECT p.name as product_name, COUNT(o.id) as quantity_sold, COALESCE(SUM(o.amount), 0) as revenue
       FROM orders o
       JOIN products p ON p.id = o.product_id
-      WHERE o.store_id = $1 AND o.status = 'completed'
+      WHERE o.store_id = $1 AND o.status = 'completed' AND o.created_at >= $2
       GROUP BY p.id, p.name
       ORDER BY quantity_sold DESC
-    `, [storeId]);
+    `, [storeId, store.starts_at]);
     
     const recentOrdersRes = await db.query(`
       SELECT o.id, o.created_at, p.name as product_name, o.amount, o.status, 1 as quantity
       FROM orders o
       JOIN products p ON p.id = o.product_id
-      WHERE o.store_id = $1
+      WHERE o.store_id = $1 AND o.created_at >= $2
       ORDER BY o.created_at DESC
       LIMIT 10
-    `, [storeId]);
+    `, [storeId, store.starts_at]);
     
     console.log(`[REPORT_DEBUG] Database queries completed successfully.`);
     
@@ -610,13 +616,18 @@ router.get('/reports', async (req, res) => {
       financialSummary: isAr ? 'الملخص المالي' : 'Financial Summary',
       walletBalance: isAr ? 'رصيد المحفظة الحالي' : 'Current Wallet Balance',
       walletTopups: isAr ? 'إجمالي عمليات شحن المحفظة' : 'Total Wallet Top-ups',
-      walletDeposited: isAr ? 'إجمالي المبالغ المودعة في المحفظة' : 'Total Wallet Deposited',
-      totalRevenue: isAr ? 'إجمالي الأرباح' : 'Total Revenue',
+      walletDeposited: isAr ? 'إجمالي المبالغ المودعة' : 'Total Wallet Deposited',
+      grossSales: isAr ? 'إجمالي المبيعات' : 'Gross Sales',
+      refundedAmount: isAr ? 'المبالغ المستردة' : 'Refunded Amount',
+      netSales: isAr ? 'صافي المبيعات' : 'Net Sales',
       avgOrderVal: isAr ? 'متوسط قيمة الطلب' : 'Average Order Value',
+      orderSummary: isAr ? 'ملخص الطلبات' : 'Order Summary',
       totalOrders: isAr ? 'إجمالي الطلبات' : 'Total Orders',
-      completedOrders: isAr ? 'الطلبات المكتملة' : 'Completed Orders',
       pendingOrders: isAr ? 'الطلبات المعلقة' : 'Pending Orders',
-      cancelledOrders: isAr ? 'الطلبات الملغاة' : 'Cancelled Orders',
+      processingOrders: isAr ? 'قيد التجهيز' : 'Processing Orders',
+      completedOrders: isAr ? 'الطلبات المكتملة' : 'Completed Orders',
+      rejectedOrders: isAr ? 'الطلبات المرفوضة' : 'Rejected Orders',
+      refundedOrders: isAr ? 'الطلبات المستردة' : 'Refunded Orders',
       statistics: isAr ? 'الإحصائيات' : 'Statistics',
       bestProduct: isAr ? 'المنتج الأكثر مبيعاً' : 'Best Selling Product',
       firstOrderDate: isAr ? 'تاريخ أول طلب' : 'First Order Date',
@@ -624,7 +635,7 @@ router.get('/reports', async (req, res) => {
       avgOrdersDay: isAr ? 'متوسط الطلبات في اليوم' : 'Avg Orders Per Day',
       productsSummary: isAr ? 'ملخص المنتجات' : 'Products Summary',
       productName: isAr ? 'اسم المنتج' : 'Product Name',
-      qtySold: isAr ? 'الكمية المباعة' : 'Quantity Sold',
+      qtySold: isAr ? 'الكمية المباعة (الطلبات)' : 'Orders (Qty)',
       revenue: isAr ? 'الأرباح' : 'Revenue',
       recentOrders: isAr ? 'أحدث الطلبات' : 'Recent Orders',
       orderNum: isAr ? 'الطلب #' : 'Order #',
@@ -707,14 +718,24 @@ router.get('/reports', async (req, res) => {
             <div class="card"><div class="card-label">${t.walletDeposited}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(topupsRes.rows[0].total_deposited)}</div></div>
           </div>
           <div class="grid" style="margin-top:15px;">
-            <div class="card"><div class="card-label">${t.totalRevenue}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(o.total_revenue)}</div></div>
+            <div class="card"><div class="card-label">${t.grossSales}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(grossSales)}</div></div>
+            <div class="card"><div class="card-label">${t.refundedAmount}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(refundedAmount)}</div></div>
+            <div class="card"><div class="card-label">${t.netSales}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(netSales)}</div></div>
             <div class="card"><div class="card-label">${t.avgOrderVal}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(avgOrderValue)}</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">${t.orderSummary}</h2>
+          <div class="grid">
             <div class="card"><div class="card-label">${t.totalOrders}</div><div class="card-value">${o.total_orders}</div></div>
-            <div class="card"><div class="card-label">${t.completedOrders}</div><div class="card-value">${o.completed_orders}</div></div>
+            <div class="card"><div class="card-label">${t.pendingOrders}</div><div class="card-value">${o.pending_orders}</div></div>
+            <div class="card"><div class="card-label">${t.processingOrders}</div><div class="card-value">${o.processing_orders}</div></div>
           </div>
           <div class="grid" style="margin-top:15px;">
-             <div class="card"><div class="card-label">${t.pendingOrders}</div><div class="card-value">${o.pending_orders}</div></div>
-             <div class="card"><div class="card-label">${t.cancelledOrders}</div><div class="card-value">${o.cancelled_orders}</div></div>
+            <div class="card"><div class="card-label">${t.completedOrders}</div><div class="card-value">${o.completed_orders}</div></div>
+            <div class="card"><div class="card-label">${t.rejectedOrders}</div><div class="card-value">${o.rejected_orders}</div></div>
+            <div class="card"><div class="card-label">${t.refundedOrders}</div><div class="card-value">${o.refunded_orders}</div></div>
           </div>
         </div>
 
