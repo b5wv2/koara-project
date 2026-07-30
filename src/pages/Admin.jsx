@@ -98,6 +98,21 @@ const AdminDashboard = () => {
   const [redemptionsList, setRedemptionsList] = useState([]);
   const [newCodeData, setNewCodeData] = useState({ code: '', type: 'kyc_bypass', max_uses: 1, notes: '' });
 
+
+  // Subscription Admin state
+  const [adminSubscriptions, setAdminSubscriptions] = useState([]);
+  const [adminSubscriptionsLoading, setAdminSubscriptionsLoading] = useState(true);
+  const [subscriptionSearchQuery, setSubscriptionSearchQuery] = useState('');
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [selectedSubMerchant, setSelectedSubMerchant] = useState(null);
+  const [subFormData, setSubFormData] = useState({
+    action: 'Extend',
+    plan: 'plus',
+    duration: '30 Days',
+    reason: ''
+  });
+  const [submittingSub, setSubmittingSub] = useState(false);
+
   // Broadcast state
   const [broadcasts, setBroadcasts] = useState([]);
   const [broadcastsLoading, setBroadcastsLoading] = useState(true);
@@ -244,6 +259,69 @@ const AdminDashboard = () => {
       }
     }
   }, [activeTab, role, storeId, isPlusActive, syncWalletBalance]);
+
+
+  const fetchAdminSubscriptions = async () => {
+    try {
+      setAdminSubscriptionsLoading(true);
+      const res = await fetch(`${API_BASE_URL}/api/admin/subscriptions`, { credentials: 'include' });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setAdminSubscriptions(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch admin subscriptions:', err);
+    } finally {
+      setAdminSubscriptionsLoading(false);
+    }
+  };
+
+  const handleSubSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedSubMerchant || !subFormData.reason.trim()) return;
+    
+    // Check if cancel was clicked or normal submit
+    const isCancel = e.nativeEvent.submitter.name === 'cancelAction';
+    const isRemoveExp = e.nativeEvent.submitter.name === 'removeExpirationAction';
+    
+    let action = subFormData.action;
+    let duration = subFormData.duration;
+    
+    if (isCancel) {
+      action = 'Cancel';
+      duration = '1 Minute'; // Doesn't matter for cancel
+    } else if (isRemoveExp) {
+      duration = 'Lifetime';
+    }
+
+    try {
+      setSubmittingSub(true);
+      const res = await fetch(`${API_BASE_URL}/api/admin/subscriptions/grant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          storeId: selectedSubMerchant.store_id,
+          plan: subFormData.plan,
+          duration: duration,
+          action: action,
+          reason: subFormData.reason
+        })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update subscription');
+      
+      setShowSubscriptionModal(false);
+      fetchAdminSubscriptions(); // Refresh
+      alert('Subscription successfully updated!');
+    } catch (err) {
+      console.error('Error modifying subscription:', err);
+      alert(err.message);
+    } finally {
+      setSubmittingSub(false);
+    }
+  };
 
   const fetchBroadcasts = async () => {
     try {
@@ -587,7 +665,10 @@ const AdminDashboard = () => {
     { key: 'kyc', icon: ShieldCheck, label: 'KYC Requests' },
     { key: 'invitation_codes', icon: Tag, label: 'Invitation Codes' },
     { key: 'catalog', icon: Package, label: 'Product Catalog' },
-    ...(user?.isSuperAdmin ? [{ key: 'broadcasts', icon: Megaphone, label: 'Broadcasts' }] : []),
+    ...(user?.isSuperAdmin ? [
+      { key: 'broadcasts', icon: Megaphone, label: 'Broadcasts' },
+      { key: 'subscriptions', icon: Crown, label: 'Subscriptions' }
+    ] : []),
   ];
 
   const merchantNavItems = [
@@ -1466,6 +1547,206 @@ const AdminDashboard = () => {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+
+            {/* ══ ADMIN: Subscriptions ══ */}
+            {role === 'admin' && activeTab === 'subscriptions' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-white flex items-center">
+                    <Crown className="w-6 h-6 mr-2 text-yellow-500" />
+                    Subscription Management
+                  </h2>
+                </div>
+                
+                {/* Search Bar */}
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="relative flex-1 max-w-md">
+                    <input
+                      type="text"
+                      placeholder="Search by Merchant Name, Email, ID or Store Name..."
+                      value={subscriptionSearchQuery}
+                      onChange={(e) => setSubscriptionSearchQuery(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Data Table */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700/50 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-slate-300">
+                      <thead className="bg-slate-900/50 text-xs uppercase font-semibold text-slate-400">
+                        <tr>
+                          <th className="px-6 py-4">Merchant</th>
+                          <th className="px-6 py-4">Store</th>
+                          <th className="px-6 py-4">Plan & Status</th>
+                          <th className="px-6 py-4">Expires At</th>
+                          <th className="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700/50">
+                        {adminSubscriptionsLoading ? (
+                          <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">Loading subscriptions...</td></tr>
+                        ) : adminSubscriptions.filter(s => 
+                          (s.owner_name?.toLowerCase().includes(subscriptionSearchQuery.toLowerCase())) ||
+                          (s.owner_email?.toLowerCase().includes(subscriptionSearchQuery.toLowerCase())) ||
+                          (s.store_name?.toLowerCase().includes(subscriptionSearchQuery.toLowerCase())) ||
+                          (s.owner_id?.toString() === subscriptionSearchQuery)
+                        ).map(sub => (
+                          <tr key={sub.id} className="hover:bg-slate-700/20 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-white">{sub.owner_name}</div>
+                              <div className="text-xs text-slate-400">{sub.owner_email}</div>
+                              <div className="text-xs text-slate-500">ID: {sub.owner_id}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-slate-200">{sub.store_name}</div>
+                              <div className="text-xs text-slate-500">{sub.subdomain}.koara.app</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center space-x-2">
+                                <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${sub.plan === 'pro' ? 'bg-indigo-500/20 text-indigo-300' : sub.plan === 'plus' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-500/20 text-slate-300'}`}>
+                                  {sub.plan}
+                                </span>
+                                <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${sub.status === 'active' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
+                                  {sub.status}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              {sub.expires_at ? (
+                                <>
+                                  <div className="text-slate-200">{new Date(sub.expires_at).toLocaleString()}</div>
+                                  <div className={`text-xs mt-1 ${new Date(sub.expires_at) < new Date() ? 'text-red-400' : 'text-green-400'}`}>
+                                    {new Date(sub.expires_at) < new Date() ? 'Expired' : 'Active'}
+                                  </div>
+                                </>
+                              ) : (
+                                <span className="text-purple-400 text-xs font-medium uppercase">Lifetime</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button
+                                onClick={() => {
+                                  setSelectedSubMerchant(sub);
+                                  setSubFormData({ action: 'Extend', plan: sub.plan === 'basic' ? 'plus' : sub.plan, duration: '30 Days', reason: '' });
+                                  setShowSubscriptionModal(true);
+                                }}
+                                className="inline-flex items-center px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-sm transition-colors border border-blue-500/20"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+                                Manage
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Modify Modal */}
+                {showSubscriptionModal && selectedSubMerchant && (
+                  <Modal isOpen={true} onClose={() => setShowSubscriptionModal(false)} title="Grant / Modify Subscription">
+                    <form onSubmit={handleSubSubmit} className="space-y-4">
+                      <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50 mb-4">
+                        <div className="text-sm text-slate-400 mb-1">Target Merchant</div>
+                        <div className="font-medium text-white">{selectedSubMerchant.owner_name} ({selectedSubMerchant.store_name})</div>
+                        <div className="text-xs text-slate-500 mt-1">Current Plan: {selectedSubMerchant.plan} | Status: {selectedSubMerchant.status}</div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-1">Action</label>
+                          <select
+                            value={subFormData.action}
+                            onChange={(e) => setSubFormData({...subFormData, action: e.target.value})}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                          >
+                            <option value="Extend">Extend Existing</option>
+                            <option value="Replace">Replace / Start New</option>
+                            <option value="Activate">Activate (from Expired)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-1">Target Plan</label>
+                          <select
+                            value={subFormData.plan}
+                            onChange={(e) => setSubFormData({...subFormData, plan: e.target.value})}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                          >
+                            <option value="basic">Free (Basic)</option>
+                            <option value="plus">Plus</option>
+                            <option value="pro">Pro</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Duration</label>
+                        <select
+                          value={subFormData.duration}
+                          onChange={(e) => setSubFormData({...subFormData, duration: e.target.value})}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                          <option value="1 Minute">1 Minute</option>
+                          <option value="5 Minutes">5 Minutes</option>
+                          <option value="1 Hour">1 Hour</option>
+                          <option value="1 Day">1 Day</option>
+                          <option value="7 Days">7 Days</option>
+                          <option value="30 Days">30 Days</option>
+                          <option value="90 Days">90 Days</option>
+                          <option value="1 Year">1 Year</option>
+                          <option value="Lifetime">Lifetime (No Expiration)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Reason for Admin Action (Required)</label>
+                        <textarea
+                          required
+                          value={subFormData.reason}
+                          onChange={(e) => setSubFormData({...subFormData, reason: e.target.value})}
+                          placeholder="e.g. Compensation for downtime..."
+                          rows={2}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        />
+                      </div>
+
+                      <div className="flex flex-col space-y-3 pt-4 border-t border-slate-700">
+                        <button
+                          type="submit"
+                          disabled={submittingSub || !subFormData.reason.trim()}
+                          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                        >
+                          {submittingSub ? 'Processing...' : 'Apply Subscription Update'}
+                        </button>
+                        
+                        <div className="flex gap-3">
+                          <button
+                            type="submit"
+                            name="removeExpirationAction"
+                            disabled={submittingSub || !subFormData.reason.trim()}
+                            className="flex-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 font-medium py-2 px-4 rounded-lg transition-colors"
+                          >
+                            Grant Lifetime
+                          </button>
+                          <button
+                            type="submit"
+                            name="cancelAction"
+                            disabled={submittingSub || !subFormData.reason.trim()}
+                            className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-medium py-2 px-4 rounded-lg transition-colors"
+                          >
+                            Cancel Immediately
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </Modal>
+                )}
               </div>
             )}
 

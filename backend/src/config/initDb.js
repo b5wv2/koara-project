@@ -426,6 +426,22 @@ const createNotificationLogsTableQuery = `
   );
 `;
 
+
+const createSubscriptionAdminLogsTableQuery = `
+  CREATE TABLE IF NOT EXISTS subscription_admin_logs (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    admin_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action VARCHAR(50) NOT NULL,
+    old_plan VARCHAR(50),
+    new_plan VARCHAR(50),
+    old_expires_at TIMESTAMP WITH TIME ZONE,
+    new_expires_at TIMESTAMP WITH TIME ZONE,
+    reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
   const client = await db.pool.connect();
@@ -555,6 +571,7 @@ const initializeDatabase = async () => {
     // Create subscriptions and audit logs tables
     await client.query(createSubscriptionsTableQuery);
     await client.query(createSubscriptionAuditLogsTableQuery);
+      await client.query(createSubscriptionAdminLogsTableQuery);
 
     // Create invitation codes tables
     await client.query(createInvitationCodesTableQuery);

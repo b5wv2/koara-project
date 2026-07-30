@@ -112,9 +112,10 @@ router.get('/stores', async (req, res) => {
 router.get('/subscriptions', async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT sub.*, s.store_name, s.subdomain 
+      SELECT sub.*, s.store_name, s.subdomain, u.name AS owner_name, u.id AS owner_id, u.email AS owner_email 
       FROM subscriptions sub
       JOIN stores s ON s.id = sub.store_id
+      JOIN users u ON u.id = s.owner_id
       ORDER BY sub.created_at DESC
     `);
     res.json(result.rows);
@@ -650,6 +651,115 @@ router.post('/broadcast', superAdminMiddleware, async (req, res) => {
     res.json({ success: true, broadcastId, message: 'Broadcast scheduled successfully' });
   } catch (error) {
     console.error('Error scheduling broadcast:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Super Admin Subscription Management ---
+router.post('/subscriptions/grant', async (req, res) => {
+  const { storeId, plan, duration, action, reason } = req.body;
+  if (!storeId || !action || !reason) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // 1. Fetch current subscription to log 'old' state and verify store
+      const subRes = await client.query('SELECT s.*, st.owner_id FROM subscriptions s JOIN stores st ON st.id = s.store_id WHERE s.store_id = $1', [storeId]);
+      
+      let oldPlan = 'basic';
+      let oldExpiresAt = null;
+      let ownerId = null;
+
+      if (subRes.rows.length > 0) {
+        oldPlan = subRes.rows[0].plan;
+        oldExpiresAt = subRes.rows[0].expires_at;
+        ownerId = subRes.rows[0].owner_id;
+      } else {
+        const storeRes = await client.query('SELECT owner_id FROM stores WHERE id = $1', [storeId]);
+        if (storeRes.rows.length === 0) throw new Error('Store not found');
+        ownerId = storeRes.rows[0].owner_id;
+      }
+
+      // 2. Calculate new expires_at
+      let intervalStr = null;
+      switch (duration) {
+        case '1 Minute': intervalStr = "1 minute"; break;
+        case '5 Minutes': intervalStr = "5 minutes"; break;
+        case '1 Hour': intervalStr = "1 hour"; break;
+        case '1 Day': intervalStr = "1 day"; break;
+        case '7 Days': intervalStr = "7 days"; break;
+        case '30 Days': intervalStr = "30 days"; break;
+        case '90 Days': intervalStr = "90 days"; break;
+        case '1 Year': intervalStr = "1 year"; break;
+        case 'Lifetime': intervalStr = null; break; // null means no expiration
+        default: 
+          if (action !== 'Cancel') return res.status(400).json({ error: 'Invalid duration' });
+      }
+
+      let newExpiresAtQuery = 'CURRENT_TIMESTAMP'; // default for Cancel
+      let queryParams = [storeId];
+      
+      if (action === 'Cancel') {
+        // Immediate expiration
+        await client.query(`
+          UPDATE subscriptions 
+          SET plan = 'basic', status = 'cancelled', expires_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+          WHERE store_id = $1
+        `, [storeId]);
+      } else {
+        // Activate, Replace, Extend
+        if (intervalStr === null) {
+          // Lifetime
+          newExpiresAtQuery = 'NULL';
+        } else if (action === 'Extend' && oldExpiresAt && oldExpiresAt > new Date()) {
+          newExpiresAtQuery = `expires_at + INTERVAL '${intervalStr}'`;
+        } else {
+          // Replace or Activate (start from now)
+          newExpiresAtQuery = `CURRENT_TIMESTAMP + INTERVAL '${intervalStr}'`;
+        }
+
+        const upsertQuery = `
+          INSERT INTO subscriptions (store_id, plan, status, starts_at, expires_at, payment_method, last_payment_amount)
+          VALUES ($1, $2, 'active', CURRENT_TIMESTAMP, ${newExpiresAtQuery}, 'admin', 0)
+          ON CONFLICT (store_id) 
+          DO UPDATE SET 
+            plan = EXCLUDED.plan, 
+            status = 'active',
+            starts_at = CASE WHEN subscriptions.status = 'active' THEN subscriptions.starts_at ELSE CURRENT_TIMESTAMP END,
+            expires_at = ${newExpiresAtQuery},
+            payment_method = 'admin',
+            updated_at = CURRENT_TIMESTAMP
+          RETURNING *
+        `;
+        queryParams.push(plan); // $2
+        await client.query(upsertQuery, queryParams);
+      }
+
+      // Fetch the updated subscription state
+      const updatedSub = await client.query('SELECT plan, expires_at FROM subscriptions WHERE store_id = $1', [storeId]);
+      const newPlan = updatedSub.rows.length > 0 ? updatedSub.rows[0].plan : 'basic';
+      const newExpiresAt = updatedSub.rows.length > 0 ? updatedSub.rows[0].expires_at : null;
+
+      // 3. Insert into audit logs
+      await client.query(`
+        INSERT INTO subscription_admin_logs (merchant_id, admin_id, action, old_plan, new_plan, old_expires_at, new_expires_at, reason)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [ownerId, req.user.id, action, oldPlan, newPlan, oldExpiresAt, newExpiresAt, reason]);
+
+      await client.query('COMMIT');
+      res.json({ message: 'Subscription successfully updated', newPlan, newExpiresAt });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Error modifying subscription:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
