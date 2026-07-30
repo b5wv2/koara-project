@@ -464,6 +464,18 @@ const puppeteer = require('puppeteer');
 const fsModule = require('fs');
 const path = require('path');
 
+let browserInstance = null;
+async function getBrowser() {
+  if (!browserInstance || !browserInstance.isConnected()) {
+    browserInstance = await puppeteer.launch({ 
+      executablePath: '/usr/bin/chromium-browser',
+      headless: true, 
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
+    });
+  }
+  return browserInstance;
+}
+
 router.get('/reports', async (req, res) => {
   const storeId = req.merchantStoreId;
   
@@ -673,11 +685,11 @@ router.get('/reports', async (req, res) => {
       </html>
     `;
     
-    const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const browser = await getBrowser();
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' } });
-    await browser.close();
+    await page.close();
     
     await db.query(`
       INSERT INTO report_generations (store_id, subscription_id, period_start, period_end)
@@ -689,8 +701,8 @@ router.get('/reports', async (req, res) => {
     res.send(pdfBuffer);
     
   } catch (err) {
-    console.error('Report generation error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Report generation error (Server-side logged):', err.message);
+    res.status(500).json({ error: 'Internal server error. Failed to generate report.' });
   }
 });
 
