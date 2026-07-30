@@ -114,11 +114,22 @@ router.get('/subscriptions', async (req, res) => {
   try {
     console.log('[DEBUG] Before db.query for subscriptions');
     const result = await db.query(`
-      SELECT sub.*, s.store_name, s.subdomain, u.name AS owner_name, u.id AS owner_id, u.email AS owner_email 
-      FROM subscriptions sub
-      JOIN stores s ON s.id = sub.store_id
+      SELECT 
+        s.id as store_id,
+        s.store_name, 
+        s.subdomain, 
+        u.name AS owner_name, 
+        u.id AS owner_id, 
+        u.email AS owner_email,
+        COALESCE(sub.plan, 'basic') as plan,
+        COALESCE(sub.status, 'free') as status,
+        sub.expires_at,
+        sub.starts_at,
+        sub.id as subscription_id
+      FROM stores s
       JOIN users u ON u.id = s.owner_id
-      ORDER BY sub.created_at DESC
+      LEFT JOIN subscriptions sub ON sub.store_id = s.id
+      ORDER BY s.created_at DESC
     `);
     console.log(`[DEBUG] After db.query. Rows returned: ${result.rows.length}`);
     console.log('[DEBUG] Before sending response');
@@ -661,7 +672,7 @@ router.post('/broadcast', superAdminMiddleware, async (req, res) => {
 
 // --- Super Admin Subscription Management ---
 router.post('/subscriptions/grant', async (req, res) => {
-  const { storeId, plan, duration, action, reason } = req.body;
+  const { storeId, plan, durationValue, durationUnit, action, reason } = req.body;
   if (!storeId || !action || !reason) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -690,18 +701,24 @@ router.post('/subscriptions/grant', async (req, res) => {
 
       // 2. Calculate new expires_at
       let intervalStr = null;
-      switch (duration) {
-        case '1 Minute': intervalStr = "1 minute"; break;
-        case '5 Minutes': intervalStr = "5 minutes"; break;
-        case '1 Hour': intervalStr = "1 hour"; break;
-        case '1 Day': intervalStr = "1 day"; break;
-        case '7 Days': intervalStr = "7 days"; break;
-        case '30 Days': intervalStr = "30 days"; break;
-        case '90 Days': intervalStr = "90 days"; break;
-        case '1 Year': intervalStr = "1 year"; break;
-        case 'Lifetime': intervalStr = null; break; // null means no expiration
-        default: 
-          if (action !== 'Cancel') return res.status(400).json({ error: 'Invalid duration' });
+      if (durationUnit === 'Lifetime') {
+        intervalStr = null;
+      } else if (action !== 'Cancel') {
+        if (!durationValue || !durationUnit) {
+          return res.status(400).json({ error: 'Invalid duration parameters' });
+        }
+        const val = parseInt(durationValue, 10);
+        if (isNaN(val) || val <= 0) return res.status(400).json({ error: 'Duration value must be positive' });
+        
+        switch (durationUnit) {
+          case 'Minutes': intervalStr = `${val} minutes`; break;
+          case 'Hours': intervalStr = `${val} hours`; break;
+          case 'Days': intervalStr = `${val} days`; break;
+          case 'Weeks': intervalStr = `${val} weeks`; break;
+          case 'Months': intervalStr = `${val} months`; break;
+          case 'Years': intervalStr = `${val} years`; break;
+          default: return res.status(400).json({ error: 'Invalid duration unit' });
+        }
       }
 
       let newExpiresAtQuery = 'CURRENT_TIMESTAMP'; // default for Cancel

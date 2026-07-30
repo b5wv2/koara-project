@@ -108,7 +108,8 @@ const AdminDashboard = () => {
   const [subFormData, setSubFormData] = useState({
     action: 'Extend',
     plan: 'plus',
-    duration: '30 Days',
+    durationValue: 30,
+    durationUnit: 'Days',
     reason: ''
   });
   const [submittingSub, setSubmittingSub] = useState(false);
@@ -285,13 +286,13 @@ const AdminDashboard = () => {
     const isRemoveExp = e.nativeEvent.submitter.name === 'removeExpirationAction';
     
     let action = subFormData.action;
-    let duration = subFormData.duration;
+    let durationValue = subFormData.durationValue;
+    let durationUnit = subFormData.durationUnit;
     
     if (isCancel) {
       action = 'Cancel';
-      duration = '1 Minute'; // Doesn't matter for cancel
     } else if (isRemoveExp) {
-      duration = 'Lifetime';
+      durationUnit = 'Lifetime';
     }
 
     try {
@@ -303,7 +304,8 @@ const AdminDashboard = () => {
         body: JSON.stringify({
           storeId: selectedSubMerchant.store_id,
           plan: subFormData.plan,
-          duration: duration,
+          durationValue: durationValue,
+          durationUnit: durationUnit,
           action: action,
           reason: subFormData.reason
         })
@@ -1620,7 +1622,9 @@ const AdminDashboard = () => {
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              {sub.expires_at ? (
+                              {!sub.subscription_id ? (
+                                <span className="text-slate-500">-</span>
+                              ) : sub.expires_at ? (
                                 <>
                                   <div className="text-slate-200">{new Date(sub.expires_at).toLocaleString()}</div>
                                   <div className={`text-xs mt-1 ${new Date(sub.expires_at) < new Date() ? 'text-red-400' : 'text-green-400'}`}>
@@ -1635,7 +1639,7 @@ const AdminDashboard = () => {
                               <button
                                 onClick={() => {
                                   setSelectedSubMerchant(sub);
-                                  setSubFormData({ action: 'Extend', plan: sub.plan === 'basic' ? 'plus' : sub.plan, duration: '30 Days', reason: '' });
+                                  setSubFormData({ action: 'Extend', plan: sub.plan === 'basic' ? 'plus' : sub.plan, durationValue: 30, durationUnit: 'Days', reason: '' });
                                   setShowSubscriptionModal(true);
                                 }}
                                 className="inline-flex items-center px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-sm transition-colors border border-blue-500/20"
@@ -1688,23 +1692,32 @@ const AdminDashboard = () => {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Duration</label>
-                        <select
-                          value={subFormData.duration}
-                          onChange={(e) => setSubFormData({...subFormData, duration: e.target.value})}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                          <option value="1 Minute">1 Minute</option>
-                          <option value="5 Minutes">5 Minutes</option>
-                          <option value="1 Hour">1 Hour</option>
-                          <option value="1 Day">1 Day</option>
-                          <option value="7 Days">7 Days</option>
-                          <option value="30 Days">30 Days</option>
-                          <option value="90 Days">90 Days</option>
-                          <option value="1 Year">1 Year</option>
-                          <option value="Lifetime">Lifetime (No Expiration)</option>
-                        </select>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-1">Duration Value</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={subFormData.durationValue}
+                            onChange={(e) => setSubFormData({...subFormData, durationValue: parseInt(e.target.value, 10) || ''})}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-1">Duration Unit</label>
+                          <select
+                            value={subFormData.durationUnit}
+                            onChange={(e) => setSubFormData({...subFormData, durationUnit: e.target.value})}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                          >
+                            <option value="Minutes">Minutes</option>
+                            <option value="Hours">Hours</option>
+                            <option value="Days">Days</option>
+                            <option value="Weeks">Weeks</option>
+                            <option value="Months">Months</option>
+                            <option value="Years">Years</option>
+                          </select>
+                        </div>
                       </div>
 
                       <div>
