@@ -466,18 +466,23 @@ const path = require('path');
 
 let browserInstance = null;
 async function getBrowser() {
-  if (!browserInstance || !browserInstance.isConnected()) {
-    // Graceful fallback for local Windows dev vs Ubuntu Production
-    const execPath = fsModule.existsSync('/usr/bin/chromium-browser') ? '/usr/bin/chromium-browser' : undefined;
-    console.log(`[REPORT_DEBUG] Launching browser. Executable path: ${execPath || 'Default Puppeteer Chromium'}`);
-    
-    browserInstance = await puppeteer.launch({ 
-      executablePath: execPath,
-      headless: 'new', 
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
-    });
+  try {
+    if (!browserInstance || !browserInstance.connected) {
+      // Graceful fallback for local Windows dev vs Ubuntu Production
+      const execPath = fsModule.existsSync('/usr/bin/chromium-browser') ? '/usr/bin/chromium-browser' : undefined;
+      console.log(`[REPORT_DEBUG] Launching browser. Executable path: ${execPath || 'Default Puppeteer Chromium'}`);
+      
+      browserInstance = await puppeteer.launch({ 
+        executablePath: execPath,
+        headless: 'new', 
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
+      });
+    }
+    return browserInstance;
+  } catch (err) {
+    browserInstance = null;
+    throw err;
   }
-  return browserInstance;
 }
 
 
