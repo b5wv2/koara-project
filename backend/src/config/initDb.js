@@ -414,6 +414,18 @@ const createBroadcastsTableQuery = `
   );
 `;
 
+const createNotificationLogsTableQuery = `
+  CREATE TABLE IF NOT EXISTS notification_logs (
+    id SERIAL PRIMARY KEY,
+    recipient VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    channel VARCHAR(50) NOT NULL,
+    success BOOLEAN NOT NULL,
+    failure_reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
   const client = await db.pool.connect();

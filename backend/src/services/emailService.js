@@ -4,7 +4,7 @@ const path = require('path');
 
 // Initialize Resend
 const resendApiKey = process.env.RESEND_API_KEY;
-const resend = new Resend(resendApiKey);
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // A default from email if not configured
 const FROM_EMAIL = process.env.FROM_EMAIL;
