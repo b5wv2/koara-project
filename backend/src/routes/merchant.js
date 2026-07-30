@@ -828,6 +828,20 @@ router.get('/reports', async (req, res) => {
       </html>
     `;
     
+    
+    // 1. Print generated HTML to a temporary file
+    const debugHtmlPath = path.join(__dirname, '../../../report-debug.html');
+    fsModule.writeFileSync(debugHtmlPath, htmlContent);
+    console.log(`[PUPPETEER_DIAGNOSIS] HTML saved to ${debugHtmlPath}. Length: ${htmlContent.length} chars`);
+    
+    // 5. Print basic stats
+    const imgCount = (htmlContent.match(/<img/g) || []).length;
+    const tableCount = (htmlContent.match(/<table/g) || []).length;
+    console.log(`[PUPPETEER_DIAGNOSIS] Number of orders: ${totalOrders}`);
+    console.log(`[PUPPETEER_DIAGNOSIS] Number of product rows: ${productsRes.rows.length}`);
+    console.log(`[PUPPETEER_DIAGNOSIS] Number of images: ${imgCount}`);
+    console.log(`[PUPPETEER_DIAGNOSIS] Number of tables: ${tableCount}`);
+
     step = 'Starting Puppeteer browser';
     console.log(`[REPORT_DEBUG] Step: ${step}`);
     const browser = await getBrowser();
@@ -836,13 +850,45 @@ router.get('/reports', async (req, res) => {
     console.log(`[REPORT_DEBUG] Step: ${step}`);
     const page = await browser.newPage();
     
-    step = 'Generating PDF';
+    // 3. Enable page event logging
+    page.on('console', msg => console.log(`[PAGE CONSOLE] ${msg.type()}: ${msg.text()}`));
+    page.on('pageerror', error => console.log(`[PAGE ERROR] ${error.message}`));
+    page.on('requestfailed', request => console.log(`[PAGE REQUEST FAILED] ${request.url()} - ${request.failure()?.errorText}`));
+    page.on('error', error => console.log(`[PAGE CRASH ERROR] ${error.message}`));
+    
+    step = 'Generating PDF - page.setContent';
     console.log(`[REPORT_DEBUG] Step: ${step}`);
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ 
-      format: "A4", 
-      printBackground: true 
-    });
+    try {
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      console.log("[PUPPETEER_DIAGNOSIS] page.setContent() SUCCESS");
+    } catch (e) {
+      console.error("[PUPPETEER_DIAGNOSIS] page.setContent() FAILED:", e.message);
+      throw e;
+    }
+
+    step = 'Generating PDF - page.emulateMediaType';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
+    try {
+      await page.emulateMediaType('screen');
+      console.log("[PUPPETEER_DIAGNOSIS] page.emulateMediaType('screen') SUCCESS");
+    } catch (e) {
+      console.error("[PUPPETEER_DIAGNOSIS] page.emulateMediaType() FAILED:", e.message);
+      throw e;
+    }
+
+    step = 'Generating PDF - page.pdf';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
+    let pdfBuffer;
+    try {
+      pdfBuffer = await page.pdf({ 
+        format: "A4", 
+        printBackground: true 
+      });
+      console.log(`[PUPPETEER_DIAGNOSIS] page.pdf() SUCCESS! Buffer length: ${pdfBuffer.length}`);
+    } catch (e) {
+      console.error("[PUPPETEER_DIAGNOSIS] page.pdf() FAILED:", e.message);
+      throw e;
+    }
     
     console.log('[REPORT_DEBUG] Buffer.isBuffer(pdfBuffer):', Buffer.isBuffer(pdfBuffer));
     console.log('[REPORT_DEBUG] pdfBuffer.length:', pdfBuffer.length);

@@ -1,0 +1,128 @@
+
+      <!DOCTYPE html>
+      <html lang="en" dir="ltr">
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; margin: 0; padding: 40px; text-align: left; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; flex-direction: row; }
+          .logo { height: 40px; margin-bottom: 10px; }
+          .title { font-size: 24px; font-weight: 800; color: #0f172a; margin: 0; }
+          .meta { text-align: right; font-size: 12px; color: #64748b; }
+          .meta p { margin: 2px 0; }
+          .section { margin-bottom: 30px; }
+          .section-title { font-size: 16px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px; }
+          
+          .grid { display: flex; flex-wrap: wrap; gap: 15px; }
+          .card { flex: 1; min-width: 150px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+          .card-label { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 5px; }
+          .card-value { font-size: 18px; font-weight: 700; color: #0f172a; }
+          
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          th { background: #f1f5f9; text-align: left; padding: 10px; color: #475569; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+          td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+          .empty-state { text-align: center; padding: 20px; color: #94a3b8; font-style: italic; }
+          
+          .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+          .flex-center { display: flex; justify-content: space-between; flex-direction: row; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjkzIiBoZWlnaHQ9IjQ4NiIgdmlld0JveD0iMCAwIDY5MyA0ODYiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik02NDEuMDA5IDM4My4yNzJDNjU1LjAyNCAzODMuMjczIDY2Ny4wNSAzODguMjkxIDY3Ny4wODggMzk4LjMyOUM2ODcuMTI2IDQwOC4zNjcgNjkyLjE0NSA0MjAuMzk0IDY5Mi4xNDUgNDM0LjQwOUM2OTIuMTQ1IDQ0My42ODkgNjg5Ljc3OCA0NTIuMjEyIDY4NS4wNDMgNDU5Ljk3OEM2ODAuNDk4IDQ2Ny43NDMgNjc0LjM0MiA0NzMuOTkzIDY2Ni41NzcgNDc4LjcyOEM2NTkuMDAxIDQ4My4yNzMgNjUwLjQ3OCA0ODUuNTQ2IDY0MS4wMDkgNDg1LjU0NkM2MjYuOTk0IDQ4NS41NDYgNjE0Ljk2NyA0ODAuNTI2IDYwNC45MjkgNDcwLjQ4OEM1OTQuODkxIDQ2MC40NSA1ODkuODcyIDQ0OC40MjQgNTg5Ljg3MiA0MzQuNDA5QzU4OS44NzIgNDIwLjM5NCA1OTQuODkxIDQwOC4zNjcgNjA0LjkyOSAzOTguMzI5QzYxNC45NjcgMzg4LjI5MSA2MjYuOTk0IDM4My4yNzIgNjQxLjAwOSAzODMuMjcyWk01My45MDYyIDBDNjcuOTY4OCAwLjUyMDgzMyA3OS45NDc5IDUuNzI5MTcgODkuODQzOCAxNS42MjVDOTkuNzM5NiAyNSAxMDQuOTQ4IDM2LjcxODggMTA1LjQ2OSA1MC43ODEyVjQzMy41OTRDMTAzLjAxMiA0NTguMTU2IDkxLjg2NzIgNDczLjg2NyA3Mi4wMzUyIDQ4MC43MzJMMCAzNzUuOTM2VjUwLjc4MTJDMC41MjA4MzMgMzYuMTk3OSA1Ljk4OTU4IDI0LjIxODggMTYuNDA2MiAxNC44NDM4QzI2LjgyMjkgNC45NDc5MiAzOS4zMjI5IDAgNTMuOTA2MiAwWk00NzUuNzgxIDcuMDMxMjVDNDkwLjM2NSA1Ljk4OTU4IDUwMi44NjUgMTAuNDE2NyA1MTMuMjgxIDIwLjMxMjVDNTIzLjY5OCAyOS42ODc1IDUyOC45MDYgNDEuOTI3MSA1MjguOTA2IDU3LjAzMTJDNTI4LjkwNiA3NC4yMTg3IDUyNS4yNiA4Ni45NzkyIDUxNy45NjkgOTUuMzEyNUM1MTEuMTk4IDEwMy4xMjUgNTAyLjM0NCAxMDkuNjM1IDQ5MS40MDYgMTE0Ljg0NEwzODIuMDMxIDE1Ni4yNUMzNjAuNjc3IDE2NC41ODMgMzQwLjM2NSAxNzIuOTE3IDMyMS4wOTQgMTgxLjI1QzMwMi4zNDQgMTg5LjA2MiAyODUuMTU2IDE5OC4xNzcgMjY5LjUzMSAyMDguNTk0QzI1My45MDYgMjE3Ljk2OSAyNDUuNTczIDIyOC42NDYgMjQ0LjUzMSAyNDAuNjI1QzI0NS41NzMgMjUyLjA4MyAyNTMuOTA2IDI2Mi43NiAyNjkuNTMxIDI3Mi42NTZDMjg1LjE1NiAyODMuMDczIDMwMi4zNDQgMjkyLjQ0OCAzMjEuMDk0IDMwMC43ODFDMzQwLjM2NSAzMDguNTk0IDM2MC42NzcgMzE2LjY2NyAzODIuMDMxIDMyNUw1MDMuOTA2IDM2OS41MzFDNTE0Ljg0NCAzNzQuNzQgNTIzLjY5OCAzODEuNTEgNTMwLjQ2OSAzODkuODQ0QzUzNy43NiAzOTcuNjU2IDU0MS40MDYgNDEwLjE1NiA1NDEuNDA2IDQyNy4zNDRDNTQxLjQwNiA0NDIuNDQ4IDUzNi4xOTggNDU0Ljk0OCA1MjUuNzgxIDQ2NC44NDRDNTE1LjM2NSA0NzQuMjE5IDUwMi44NjUgNDc4LjM4NSA0ODguMjgxIDQ3Ny4zNDRDNDgxLjUxIDQ3Ni44MjMgNDc1LjI2IDQ3NS4yNiA0NjkuNTMxIDQ3Mi42NTZMMzI4LjkwNiA0MTQuODQ0QzI2OS41MzEgMzkwLjg4NSAyMjIuMTM1IDM2Ny4xODggMTg2LjcxOSAzNDMuNzVDMTUxLjgyMyAzMTkuNzkyIDEzNC4xMTUgMjg1LjQxNyAxMzMuNTk0IDI0MC42MjVDMTM0LjExNSAxOTUuODMzIDE1Mi4wODMgMTYxLjQ1OCAxODcuNSAxMzcuNUMyMjIuMzk2IDExNC4wNjIgMjY5LjUzMSA5MC4zNjQ2IDMyOC45MDYgNjYuNDA2Mkw0NTcuMDMxIDExLjcxODhDNDYyLjc2IDkuMTE0NTggNDY5LjAxIDcuNTUyMDggNDc1Ljc4MSA3LjAzMTI1WiIgZmlsbD0iI0Q5RDlEOSIvPgo8ZyBjbGlwLXBhdGg9InVybCgjcGFpbnQwX2FuZ3VsYXJfMTlfNDJfY2xpcF9wYXRoKSIgZGF0YS1maWdtYS1za2lwLXBhcnNlPSJ0cnVlIj48ZyB0cmFuc2Zvcm09Im1hdHJpeCgwLjUgLTAuMjEzIDAuMjI4MDkgMC41MzU0MjIgMjI3LjI4MSAyODYpIj48Zm9yZWlnbk9iamVjdCB4PSItOTkzLjE2MyIgeT0iLTk5My4xNjMiIHdpZHRoPSIxOTg2LjMzIiBoZWlnaHQ9IjE5ODYuMzMiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJiYWNrZ3JvdW5kOmNvbmljLWdyYWRpZW50KGZyb20gOTBkZWcscmdiYSg4NCwgNzYsIDIzNiwgMSkgMGRlZyxyZ2JhKDM3LCA5OSwgMjM1LCAxKSA1NS4yMjY3ZGVnLHJnYmEoMTI0LCA1OCwgMjM3LCAxKSAzMTMuMjVkZWcscmdiYSg4NCwgNzYsIDIzNiwgMSkgMzYwZGVnKTtoZWlnaHQ6MTAwJTt3aWR0aDoxMDAlO29wYWNpdHk6MSI+PC9kaXY+PC9mb3JlaWduT2JqZWN0PjwvZz48L2c+PHBhdGggZD0iTTY0MS4wMDkgMzgzLjI3MkM2NTUuMDI0IDM4My4yNzMgNjY3LjA1IDM4OC4yOTEgNjc3LjA4OCAzOTguMzI5QzY4Ny4xMjYgNDA4LjM2NyA2OTIuMTQ1IDQyMC4zOTQgNjkyLjE0NSA0MzQuNDA5QzY5Mi4xNDUgNDQzLjY4OSA2ODkuNzc4IDQ1Mi4yMTIgNjg1LjA0MyA0NTkuOTc4QzY4MC40OTggNDY3Ljc0MyA2NzQuMzQyIDQ3My45OTMgNjY2LjU3NyA0NzguNzI4QzY1OS4wMDEgNDgzLjI3MyA2NTAuNDc4IDQ4NS41NDYgNjQxLjAwOSA0ODUuNTQ2QzYyNi45OTQgNDg1LjU0NiA2MTQuOTY3IDQ4MC41MjYgNjA0LjkyOSA0NzAuNDg4QzU5NC44OTEgNDYwLjQ1IDU4OS44NzIgNDQ4LjQyNCA1ODkuODcyIDQzNC40MDlDNTg5Ljg3MiA0MjAuMzk0IDU5NC44OTEgNDA4LjM2NyA2MDQuOTI5IDM5OC4zMjlDNjE0Ljk2NyAzODguMjkxIDYyNi45OTQgMzgzLjI3MiA2NDEuMDA5IDM4My4yNzJaTTUzLjkwNjIgMEM2Ny45Njg4IDAuNTIwODMzIDc5Ljk0NzkgNS43MjkxNyA4OS44NDM4IDE1LjYyNUM5OS43Mzk2IDI1IDEwNC45NDggMzYuNzE4OCAxMDUuNDY5IDUwLjc4MTJWNDMzLjU5NEMxMDMuMDEyIDQ1OC4xNTYgOTEuODY3MiA0NzMuODY3IDcyLjAzNTIgNDgwLjczMkwwIDM3NS45MzZWNTAuNzgxMkMwLjUyMDgzMyAzNi4xOTc5IDUuOTg5NTggMjQuMjE4OCAxNi40MDYyIDE0Ljg0MzhDMjYuODIyOSA0Ljk0NzkyIDM5LjMyMjkgMCA1My45MDYyIDBaTTQ3NS43ODEgNy4wMzEyNUM0OTAuMzY1IDUuOTg5NTggNTAyLjg2NSAxMC40MTY3IDUxMy4yODEgMjAuMzEyNUM1MjMuNjk4IDI5LjY4NzUgNTI4LjkwNiA0MS45MjcxIDUyOC45MDYgNTcuMDMxMkM1MjguOTA2IDc0LjIxODcgNTI1LjI2IDg2Ljk3OTIgNTE3Ljk2OSA5NS4zMTI1QzUxMS4xOTggMTAzLjEyNSA1MDIuMzQ0IDEwOS42MzUgNDkxLjQwNiAxMTQuODQ0TDM4Mi4wMzEgMTU2LjI1QzM2MC42NzcgMTY0LjU4MyAzNDAuMzY1IDE3Mi45MTcgMzIxLjA5NCAxODEuMjVDMzAyLjM0NCAxODkuMDYyIDI4NS4xNTYgMTk4LjE3NyAyNjkuNTMxIDIwOC41OTRDMjUzLjkwNiAyMTcuOTY5IDI0NS41NzMgMjI4LjY0NiAyNDQuNTMxIDI0MC42MjVDMjQ1LjU3MyAyNTIuMDgzIDI1My45MDYgMjYyLjc2IDI2OS41MzEgMjcyLjY1NkMyODUuMTU2IDI4My4wNzMgMzAyLjM0NCAyOTIuNDQ4IDMyMS4wOTQgMzAwLjc4MUMzNDAuMzY1IDMwOC41OTQgMzYwLjY3NyAzMTYuNjY3IDM4Mi4wMzEgMzI1TDUwMy45MDYgMzY5LjUzMUM1MTQuODQ0IDM3NC43NCA1MjMuNjk4IDM4MS41MSA1MzAuNDY5IDM4OS44NDRDNTM3Ljc2IDM5Ny42NTYgNTQxLjQwNiA0MTAuMTU2IDU0MS40MDYgNDI3LjM0NEM1NDEuNDA2IDQ0Mi40NDggNTM2LjE5OCA0NTQuOTQ4IDUyNS43ODEgNDY0Ljg0NEM1MTUuMzY1IDQ3NC4yMTkgNTAyLjg2NSA0NzguMzg1IDQ4OC4yODEgNDc3LjM0NEM0ODEuNTEgNDc2LjgyMyA0NzUuMjYgNDc1LjI2IDQ2OS41MzEgNDcyLjY1NkwzMjguOTA2IDQxNC44NDRDMjY5LjUzMSAzOTAuODg1IDIyMi4xMzUgMzY3LjE4OCAxODYuNzE5IDM0My43NUMxNTEuODIzIDMxOS43OTIgMTM0LjExNSAyODUuNDE3IDEzMy41OTQgMjQwLjYyNUMxMzQuMTE1IDE5NS44MzMgMTUyLjA4MyAxNjEuNDU4IDE4Ny41IDEzNy41QzIyMi4zOTYgMTE0LjA2MiAyNjkuNTMxIDkwLjM2NDYgMzI4LjkwNiA2Ni40MDYyTDQ1Ny4wMzEgMTEuNzE4OEM0NjIuNzYgOS4xMTQ1OCA0NjkuMDEgNy41NTIwOCA0NzUuNzgxIDcuMDMxMjVaIiBkYXRhLWZpZ21hLWdyYWRpZW50LWZpbGw9InsmIzM0O3R5cGUmIzM0OzomIzM0O0dSQURJRU5UX0FOR1VMQVImIzM0OywmIzM0O3N0b3BzJiMzNDs6W3smIzM0O2NvbG9yJiMzNDs6eyYjMzQ7ciYjMzQ7OjAuMTQ1MDk4MDQ1NDY4MzMwMzgsJiMzNDtnJiMzNDs6MC4zODgyMzUzMDA3NzkzNDI2NSwmIzM0O2ImIzM0OzowLjkyMTU2ODYzMjEyNTg1NDQ5LCYjMzQ7YSYjMzQ7OjEuMH0sJiMzNDtwb3NpdGlvbiYjMzQ7OjAuMTUzNDA3Mzk0ODg2MDE2ODV9LHsmIzM0O2NvbG9yJiMzNDs6eyYjMzQ7ciYjMzQ7OjAuNDg2Mjc0NTEwNjIyMDI0NTQsJiMzNDtnJiMzNDs6MC4yMjc0NTA5ODE3MzYxODMxNywmIzM0O2ImIzM0OzowLjkyOTQxMTc2ODkxMzI2OTA0LCYjMzQ7YSYjMzQ7OjEuMH0sJiMzNDtwb3NpdGlvbiYjMzQ7OjAuODcwMTM4NTI1OTYyODI5NTl9XSwmIzM0O3N0b3BzVmFyJiMzNDs6W3smIzM0O2NvbG9yJiMzNDs6eyYjMzQ7ciYjMzQ7OjAuMTQ1MDk4MDQ1NDY4MzMwMzgsJiMzNDtnJiMzNDs6MC4zODgyMzUzMDA3NzkzNDI2NSwmIzM0O2ImIzM0OzowLjkyMTU2ODYzMjEyNTg1NDQ5LCYjMzQ7YSYjMzQ7OjEuMH0sJiMzNDtwb3NpdGlvbiYjMzQ7OjAuMTUzNDA3Mzk0ODg2MDE2ODV9LHsmIzM0O2NvbG9yJiMzNDs6eyYjMzQ7ciYjMzQ7OjAuNDg2Mjc0NTEwNjIyMDI0NTQsJiMzNDtnJiMzNDs6MC4yMjc0NTA5ODE3MzYxODMxNywmIzM0O2ImIzM0OzowLjkyOTQxMTc2ODkxMzI2OTA0LCYjMzQ7YSYjMzQ7OjEuMH0sJiMzNDtwb3NpdGlvbiYjMzQ7OjAuODcwMTM4NTI1OTYyODI5NTl9XSwmIzM0O3RyYW5zZm9ybSYjMzQ7OnsmIzM0O20wMCYjMzQ7Ojk5OS45OTk4MTY4OTQ1MzEyNSwmIzM0O20wMSYjMzQ7OjQ1Ni4xNzk4MDk1NzAzMTI1MCwmIzM0O20wMiYjMzQ7Oi01MDAuODA4NTYzMjMyNDIxODgsJiMzNDttMTAmIzM0OzotNDI2LjAsJiMzNDttMTEmIzM0OzoxMDcwLjg0NDQ4MjQyMTg3NTAsJiMzNDttMTImIzM0OzotMzYuNDIyMjM3Mzk2MjQwMjM0fSwmIzM0O29wYWNpdHkmIzM0OzoxLjAsJiMzNDtibGVuZE1vZGUmIzM0OzomIzM0O05PUk1BTCYjMzQ7LCYjMzQ7dmlzaWJsZSYjMzQ7OnRydWV9Ii8+CjxkZWZzPgo8Y2xpcFBhdGggaWQ9InBhaW50MF9hbmd1bGFyXzE5XzQyX2NsaXBfcGF0aCI+PHBhdGggZD0iTTY0MS4wMDkgMzgzLjI3MkM2NTUuMDI0IDM4My4yNzMgNjY3LjA1IDM4OC4yOTEgNjc3LjA4OCAzOTguMzI5QzY4Ny4xMjYgNDA4LjM2NyA2OTIuMTQ1IDQyMC4zOTQgNjkyLjE0NSA0MzQuNDA5QzY5Mi4xNDUgNDQzLjY4OSA2ODkuNzc4IDQ1Mi4yMTIgNjg1LjA0MyA0NTkuOTc4QzY4MC40OTggNDY3Ljc0MyA2NzQuMzQyIDQ3My45OTMgNjY2LjU3NyA0NzguNzI4QzY1OS4wMDEgNDgzLjI3MyA2NTAuNDc4IDQ4NS41NDYgNjQxLjAwOSA0ODUuNTQ2QzYyNi45OTQgNDg1LjU0NiA2MTQuOTY3IDQ4MC41MjYgNjA0LjkyOSA0NzAuNDg4QzU5NC44OTEgNDYwLjQ1IDU4OS44NzIgNDQ4LjQyNCA1ODkuODcyIDQzNC40MDlDNTg5Ljg3MiA0MjAuMzk0IDU5NC44OTEgNDA4LjM2NyA2MDQuOTI5IDM5OC4zMjlDNjE0Ljk2NyAzODguMjkxIDYyNi45OTQgMzgzLjI3MiA2NDEuMDA5IDM4My4yNzJaTTUzLjkwNjIgMEM2Ny45Njg4IDAuNTIwODMzIDc5Ljk0NzkgNS43MjkxNyA4OS44NDM4IDE1LjYyNUM5OS43Mzk2IDI1IDEwNC45NDggMzYuNzE4OCAxMDUuNDY5IDUwLjc4MTJWNDMzLjU5NEMxMDMuMDEyIDQ1OC4xNTYgOTEuODY3MiA0NzMuODY3IDcyLjAzNTIgNDgwLjczMkwwIDM3NS45MzZWNTAuNzgxMkMwLjUyMDgzMyAzNi4xOTc5IDUuOTg5NTggMjQuMjE4OCAxNi40MDYyIDE0Ljg0MzhDMjYuODIyOSA0Ljk0NzkyIDM5LjMyMjkgMCA1My45MDYyIDBaTTQ3NS43ODEgNy4wMzEyNUM0OTAuMzY1IDUuOTg5NTggNTAyLjg2NSAxMC40MTY3IDUxMy4yODEgMjAuMzEyNUM1MjMuNjk4IDI5LjY4NzUgNTI4LjkwNiA0MS45MjcxIDUyOC45MDYgNTcuMDMxMkM1MjguOTA2IDc0LjIxODcgNTI1LjI2IDg2Ljk3OTIgNTE3Ljk2OSA5NS4zMTI1QzUxMS4xOTggMTAzLjEyNSA1MDIuMzQ0IDEwOS42MzUgNDkxLjQwNiAxMTQuODQ0TDM4Mi4wMzEgMTU2LjI1QzM2MC42NzcgMTY0LjU4MyAzNDAuMzY1IDE3Mi45MTcgMzIxLjA5NCAxODEuMjVDMzAyLjM0NCAxODkuMDYyIDI4NS4xNTYgMTk4LjE3NyAyNjkuNTMxIDIwOC41OTRDMjUzLjkwNiAyMTcuOTY5IDI0NS41NzMgMjI4LjY0NiAyNDQuNTMxIDI0MC42MjVDMjQ1LjU3MyAyNTIuMDgzIDI1My45MDYgMjYyLjc2IDI2OS41MzEgMjcyLjY1NkMyODUuMTU2IDI4My4wNzMgMzAyLjM0NCAyOTIuNDQ4IDMyMS4wOTQgMzAwLjc4MUMzNDAuMzY1IDMwOC41OTQgMzYwLjY3NyAzMTYuNjY3IDM4Mi4wMzEgMzI1TDUwMy45MDYgMzY5LjUzMUM1MTQuODQ0IDM3NC43NCA1MjMuNjk4IDM4MS41MSA1MzAuNDY5IDM4OS44NDRDNTM3Ljc2IDM5Ny42NTYgNTQxLjQwNiA0MTAuMTU2IDU0MS40MDYgNDI3LjM0NEM1NDEuNDA2IDQ0Mi40NDggNTM2LjE5OCA0NTQuOTQ4IDUyNS43ODEgNDY0Ljg0NEM1MTUuMzY1IDQ3NC4yMTkgNTAyLjg2NSA0NzguMzg1IDQ4OC4yODEgNDc3LjM0NEM0ODEuNTEgNDc2LjgyMyA0NzUuMjYgNDc1LjI2IDQ2OS41MzEgNDcyLjY1NkwzMjguOTA2IDQxNC44NDRDMjY5LjUzMSAzOTAuODg1IDIyMi4xMzUgMzY3LjE4OCAxODYuNzE5IDM0My43NUMxNTEuODIzIDMxOS43OTIgMTM0LjExNSAyODUuNDE3IDEzMy41OTQgMjQwLjYyNUMxMzQuMTE1IDE5NS44MzMgMTUyLjA4MyAxNjEuNDU4IDE4Ny41IDEzNy41QzIyMi4zOTYgMTE0LjA2MiAyNjkuNTMxIDkwLjM2NDYgMzI4LjkwNiA2Ni40MDYyTDQ1Ny4wMzEgMTEuNzE4OEM0NjIuNzYgOS4xMTQ1OCA0NjkuMDEgNy41NTIwOCA0NzUuNzgxIDcuMDMxMjVaIi8+PC9jbGlwUGF0aD48L2RlZnM+Cjwvc3ZnPgo=" class="logo" />
+            <h1 class="title">Koara Monthly Report</h1>
+          </div>
+          <div class="meta">
+            <p><strong>Report Period:</strong> 26 Jul 2026 → 30 Jul 2026</p>
+            <p><strong>Subscription Start:</strong> 26 Jul 2026</p>
+            <p><strong>Generated At:</strong> 7/30/2026, 12:17:47 PM</p>
+            <p><strong>Current Subscription Plan:</strong> PLUS</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Store Information</h2>
+          <div class="grid">
+            <div class="card"><div class="card-label">Store Name</div><div class="card-value" dir="auto">amx1</div></div>
+            <div class="card"><div class="card-label">Owner Name</div><div class="card-value" dir="auto">undefined</div></div>
+            <div class="card"><div class="card-label">Store Domain</div><div class="card-value" dir="ltr" style="text-align: left">amx1.getkoara.com</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Financial Summary</h2>
+          <div class="grid">
+            <div class="card"><div class="card-label">Current Wallet Balance</div><div class="card-value" dir="ltr" style="text-align: left">3000.08 USD</div></div>
+            <div class="card"><div class="card-label">Total Wallet Top-ups</div><div class="card-value">3</div></div>
+            <div class="card"><div class="card-label">Total Wallet Deposited</div><div class="card-value" dir="ltr" style="text-align: left">3000.99 USD</div></div>
+          </div>
+          <div class="grid" style="margin-top:15px;">
+            <div class="card"><div class="card-label">Gross Sales</div><div class="card-value" dir="ltr" style="text-align: left">0.00 USD</div></div>
+            <div class="card"><div class="card-label">Refunded Amount</div><div class="card-value" dir="ltr" style="text-align: left">0.00 USD</div></div>
+            <div class="card"><div class="card-label">Net Sales</div><div class="card-value" dir="ltr" style="text-align: left">0.00 USD</div></div>
+            <div class="card"><div class="card-label">Average Order Value</div><div class="card-value" dir="ltr" style="text-align: left">0.00 USD</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Order Summary</h2>
+          <div class="grid">
+            <div class="card"><div class="card-label">Total Orders</div><div class="card-value">5</div></div>
+            <div class="card"><div class="card-label">Pending Orders</div><div class="card-value">1</div></div>
+            <div class="card"><div class="card-label">Processing Orders</div><div class="card-value">0</div></div>
+          </div>
+          <div class="grid" style="margin-top:15px;">
+            <div class="card"><div class="card-label">Completed Orders</div><div class="card-value">0</div></div>
+            <div class="card"><div class="card-label">Rejected Orders</div><div class="card-value">4</div></div>
+            <div class="card"><div class="card-label">Refunded Orders</div><div class="card-value">0</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Statistics</h2>
+          <div class="grid">
+            <div class="card"><div class="card-label">Best Selling Product</div><div class="card-value" dir="auto">N/A</div></div>
+            <div class="card"><div class="card-label">First Order Date</div><div class="card-value" dir="auto">26 Jul 2026</div></div>
+            <div class="card"><div class="card-label">Latest Order Date</div><div class="card-value" dir="auto">30 Jul 2026</div></div>
+            <div class="card"><div class="card-label">Avg Orders Per Day</div><div class="card-value" dir="auto">1.15</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Products Summary</h2>
+          <div class="empty-state">No data available</div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Recent Orders</h2>
+          
+          <table>
+            <thead><tr><th>Order #</th><th>Date</th><th>Product</th><th>Qty</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>#19</td><td>30 Jul 2026</td><td dir="auto">110_diamonds</td><td>1</td><td dir="ltr" style="text-align: left">6.00 USD</td><td><span style="text-transform:capitalize" dir="auto">pending</span></td></tr><tr><td>#18</td><td>30 Jul 2026</td><td dir="auto">110_diamonds</td><td>1</td><td dir="ltr" style="text-align: left">6.00 USD</td><td><span style="text-transform:capitalize" dir="auto">rejected</span></td></tr><tr><td>#15</td><td>30 Jul 2026</td><td dir="auto">110_diamonds</td><td>1</td><td dir="ltr" style="text-align: left">6.00 USD</td><td><span style="text-transform:capitalize" dir="auto">rejected</span></td></tr><tr><td>#11</td><td>26 Jul 2026</td><td dir="auto">weekly_deal_pack_1</td><td>1</td><td dir="ltr" style="text-align: left">0.00 USD</td><td><span style="text-transform:capitalize" dir="auto">rejected</span></td></tr><tr><td>#10</td><td>26 Jul 2026</td><td dir="auto">2420_diamonds</td><td>1</td><td dir="ltr" style="text-align: left">0.00 USD</td><td><span style="text-transform:capitalize" dir="auto">rejected</span></td></tr>
+            </tbody>
+          </table>
+          
+        </div>
+
+        <div class="footer">
+          <p class="flex-center" style="justify-content: center; gap: 10px;">
+            <span>Report Period: 26 Jul 2026 → 30 Jul 2026</span> | 
+            <span>Subscription Start: 26 Jul 2026</span> | 
+            <span>Expiration: 25 Aug 2026</span>
+          </p>
+          <p class="flex-center" style="justify-content: center; gap: 10px;">
+            <span>Generated At: 7/30/2026, 12:17:47 PM</span> | 
+            <span>Reports Generated This Cycle: 6 / 20</span>
+          </p>
+          <p style="margin-top:15px;" class="flex-center" style="justify-content: center; gap: 10px;">
+            <span>Generated automatically by Koara</span> | 
+            <span>Powered by Koara</span>
+          </p>
+          <p>This report is electronically generated and does not require a signature.</p>
+          <p><a href="https://getkoara.com" style="color:#64748b;text-decoration:none;" dir="ltr">https://getkoara.com</a></p>
+        </div>
+      </body>
+      </html>
+    
