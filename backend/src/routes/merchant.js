@@ -535,15 +535,31 @@ router.get('/reports', async (req, res) => {
     console.log(`[REPORT_DEBUG] Step: ${step}`);
     
     // We STRICTLY use created_at >= starts_at as commanded.
-    // If a test merchant placed orders BEFORE they bought their current active subscription, 
-    // those orders will correctly NOT be included in this report.
     const topupsRes = await db.query(`
       SELECT COUNT(*) as topups_count, COALESCE(SUM(amount), 0) as total_deposited 
       FROM wallet_transactions 
       WHERE store_id = $1 AND transaction_type = 'credit' AND created_at >= $2
     `, [storeId, store.starts_at]);
     
+    // Create the unified orders query text (CTE)
+    const unifiedOrdersCTE = `
+      WITH unified_orders AS (
+        SELECT 
+          id, created_at, status, amount, product_name, 1 as quantity
+        FROM orders
+        WHERE store_id = $1 AND created_at >= $2
+        
+        UNION ALL
+        
+        SELECT 
+          id, created_at, status, selling_price as amount, offer_id as product_name, 1 as quantity
+        FROM topup_orders
+        WHERE store_id = $1 AND created_at >= $2
+      )
+    `;
+
     const ordersRes = await db.query(`
+      ${unifiedOrdersCTE}
       SELECT 
         COUNT(*) as total_orders,
         COUNT(*) FILTER (WHERE status = 'completed') as completed_orders,
@@ -555,8 +571,7 @@ router.get('/reports', async (req, res) => {
         COALESCE(SUM(amount) FILTER (WHERE status = 'refunded'), 0) as refunded_amount,
         MIN(created_at) as first_order_date,
         MAX(created_at) as latest_order_date
-      FROM orders 
-      WHERE store_id = $1 AND created_at >= $2
+      FROM unified_orders
     `, [storeId, store.starts_at]);
     
     const o = ordersRes.rows[0];
@@ -575,33 +590,31 @@ router.get('/reports', async (req, res) => {
       avgOrdersPerDay = (totalOrders / days).toFixed(2);
     }
     
-    // CRITICAL FIX: The "products" JOIN was returning 0 rows because product_id in orders is null.
-    // We now use o.product_name directly from the orders table!
     const productsRes = await db.query(`
-      SELECT o.product_name, COUNT(o.id) as quantity_sold, COALESCE(SUM(o.amount), 0) as revenue
-      FROM orders o
-      WHERE o.store_id = $1 AND o.status = 'completed' AND o.created_at >= $2
-      GROUP BY o.product_name
+      ${unifiedOrdersCTE}
+      SELECT product_name, COUNT(*) as quantity_sold, COALESCE(SUM(amount), 0) as revenue
+      FROM unified_orders
+      WHERE status = 'completed'
+      GROUP BY product_name
       ORDER BY quantity_sold DESC
     `, [storeId, store.starts_at]);
     
-    // CRITICAL FIX: Removed JOIN products to properly load real recent orders.
     const recentOrdersRes = await db.query(`
-      SELECT o.id, o.created_at, o.product_name, o.amount, o.status, o.quantity
-      FROM orders o
-      WHERE o.store_id = $1 AND o.created_at >= $2
-      ORDER BY o.created_at DESC
+      ${unifiedOrdersCTE}
+      SELECT id, created_at, product_name, amount, status, quantity
+      FROM unified_orders
+      ORDER BY created_at DESC
       LIMIT 10
     `, [storeId, store.starts_at]);
     
-    // Debugging as requested
+    // CRITICAL: use store.balance, NOT store.wallet_balance
     console.log({
       totalOrders,
       completedOrders,
       rejectedOrders,
       refundedOrders,
       grossSales,
-      walletBalance: store.wallet_balance,
+      walletBalance: store.balance,
       productSummary: productsRes.rows,
       latestOrders: recentOrdersRes.rows
     });
@@ -734,7 +747,7 @@ router.get('/reports', async (req, res) => {
         <div class="section">
           <h2 class="section-title">${t.financialSummary}</h2>
           <div class="grid">
-            <div class="card"><div class="card-label">${t.walletBalance}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(store.wallet_balance)}</div></div>
+            <div class="card"><div class="card-label">${t.walletBalance}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(store.balance)}</div></div>
             <div class="card"><div class="card-label">${t.walletTopups}</div><div class="card-value">${topupsRes.rows[0].topups_count}</div></div>
             <div class="card"><div class="card-label">${t.walletDeposited}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(topupsRes.rows[0].total_deposited)}</div></div>
           </div>
