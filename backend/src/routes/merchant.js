@@ -530,9 +530,9 @@ router.get('/reports', async (req, res) => {
     console.log(`[REPORT_DEBUG] Step: ${step}`);
     const topupsRes = await db.query(`
       SELECT COUNT(*) as topups_count, COALESCE(SUM(amount), 0) as total_deposited 
-      FROM transactions 
-      WHERE user_id = $1 AND type = 'wallet_topup' AND status = 'completed'
-    `, [store.owner_id]);
+      FROM wallet_transactions 
+      WHERE store_id = $1 AND transaction_type = 'credit'
+    `, [storeId]);
     
     const ordersRes = await db.query(`
       SELECT 
@@ -557,7 +557,7 @@ router.get('/reports', async (req, res) => {
     }
     
     const productsRes = await db.query(`
-      SELECT p.name as product_name, SUM(o.quantity) as quantity_sold, COALESCE(SUM(o.amount), 0) as revenue
+      SELECT p.name as product_name, COUNT(o.id) as quantity_sold, COALESCE(SUM(o.amount), 0) as revenue
       FROM orders o
       JOIN products p ON p.id = o.product_id
       WHERE o.store_id = $1 AND o.status = 'completed'
@@ -566,7 +566,7 @@ router.get('/reports', async (req, res) => {
     `, [storeId]);
     
     const recentOrdersRes = await db.query(`
-      SELECT o.id, o.created_at, p.name as product_name, o.amount, o.status, o.quantity
+      SELECT o.id, o.created_at, p.name as product_name, o.amount, o.status, 1 as quantity
       FROM orders o
       JOIN products p ON p.id = o.product_id
       WHERE o.store_id = $1
