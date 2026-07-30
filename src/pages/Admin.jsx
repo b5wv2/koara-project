@@ -114,6 +114,7 @@ const AdminDashboard = () => {
   });
   const [submittingSub, setSubmittingSub] = useState(false);
   const [isReportDownloading, setIsReportDownloading] = useState(false);
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
   // Broadcast state
   const [broadcasts, setBroadcasts] = useState([]);
@@ -279,22 +280,21 @@ const AdminDashboard = () => {
   };
 
 
-  const downloadMonthlyReport = async () => {
-    console.log('[DEBUG] downloadMonthlyReport() clicked!');
+  const downloadMonthlyReport = () => {
     if (!isPlusActive) {
-      console.log('[DEBUG] User is not active Plus, opening upgrade modal.');
       setUpgradeModalOpen(true);
       return;
     }
-    
+    setIsLanguageModalOpen(true);
+  };
+
+  const executeDownloadMonthlyReport = async (lang) => {
+    setIsLanguageModalOpen(false);
     try {
-      console.log('[DEBUG] Starting PDF generation request...');
       setIsReportDownloading(true);
-      const res = await fetch(`${API_BASE_URL}/api/merchant/reports`, {
+      const res = await fetch(`${API_BASE_URL}/api/merchant/reports?lang=${lang}`, {
         credentials: 'include'
       });
-      
-      console.log('[DEBUG] Response received with status:', res.status);
       
       if (res.status === 403) {
         setUpgradeModalOpen(true);
@@ -316,7 +316,6 @@ const AdminDashboard = () => {
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      // Extract filename from Content-Disposition if possible, otherwise use fallback
       let filename = 'Koara_Report.pdf';
       const disposition = res.headers.get('content-disposition');
       if (disposition && disposition.includes('filename=')) {
