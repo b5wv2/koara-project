@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const notificationService = require('./notificationService');
 const fazerCardsProvider = require('./providers/fazerCardsProvider');
+const fcmNotificationService = require('./fcmNotificationService');
 
 class OrderService {
   /**
@@ -24,7 +25,7 @@ class OrderService {
       await client.query('BEGIN');
 
       // 1. Validate merchant and store
-      const storeRes = await client.query('SELECT id, status, store_name FROM stores WHERE id = $1', [storeId]);
+      const storeRes = await client.query('SELECT id, status, store_name, owner_id FROM stores WHERE id = $1', [storeId]);
       if (storeRes.rows.length === 0) {
         throw new Error('Store not found.');
       }
@@ -163,6 +164,28 @@ class OrderService {
         store_name: storeRes.rows[0].store_name
       });
       
+      // Dispatch FCM notification to merchant owner
+      try {
+        const merchantOwnerId = storeRes.rows[0].owner_id;
+        if (merchantOwnerId) {
+          console.log(`[DEBUG-ORDER] Before sendToMerchant(). Merchant ID being passed: ${merchantOwnerId}`);
+          fcmNotificationService.sendToMerchant(merchantOwnerId, {
+            notification: {
+              title: 'New Order Received',
+              body: `You have a new order: ${orderNumber}`
+            },
+            data: {
+              type: 'order',
+              route: '/orders'
+            }
+          }).then(() => {
+            console.log(`[DEBUG-ORDER] After sendToMerchant() successfully queued.`);
+          }).catch(err => console.error('[DEBUG-ORDER] Async FCM Error:', err.message));
+        }
+      } catch (fcmErr) {
+        console.error('[DEBUG-ORDER] Non-blocking error dispatching FCM notification:', fcmErr);
+      }
+
       return newOrder;
 
     } catch (error) {
