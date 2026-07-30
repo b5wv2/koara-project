@@ -85,6 +85,7 @@ export const AppProvider = ({ children }) => {
           setUser({
             id: data.user.id,
             role: data.user.role === 'super_admin' ? 'admin' : data.user.role,
+            isSuperAdmin: data.user.role === 'super_admin',
             email: data.user.email,
             name: data.user.name,
             storeId: data.store ? data.store.id : null,
@@ -190,6 +191,7 @@ export const AppProvider = ({ children }) => {
         const sessionUser = {
           id: data.user.id,
           role: data.user.role === 'super_admin' ? 'admin' : data.user.role,
+          isSuperAdmin: data.user.role === 'super_admin',
           email: data.user.email,
           name: data.user.name,
           storeId: data.store ? data.store.id : null,
@@ -272,6 +274,7 @@ export const AppProvider = ({ children }) => {
         const sessionUser = {
           id: data.user.id,
           role: data.user.role === 'super_admin' ? 'admin' : data.user.role,
+          isSuperAdmin: data.user.role === 'super_admin',
           email: data.user.email,
           name: data.user.name,
           storeId: data.store ? data.store.id : null,
@@ -341,6 +344,7 @@ export const AppProvider = ({ children }) => {
         const sessionUser = {
           id: data.user.id,
           role: data.user.role === 'super_admin' ? 'admin' : data.user.role,
+          isSuperAdmin: data.user.role === 'super_admin',
           email: data.user.email,
           name: data.user.name,
           storeId: null,
