@@ -110,7 +110,9 @@ router.get('/stores', async (req, res) => {
 // --- Subscriptions ---
 
 router.get('/subscriptions', async (req, res) => {
+  console.log('[DEBUG] GET /api/admin/subscriptions entered');
   try {
+    console.log('[DEBUG] Before db.query for subscriptions');
     const result = await db.query(`
       SELECT sub.*, s.store_name, s.subdomain, u.name AS owner_name, u.id AS owner_id, u.email AS owner_email 
       FROM subscriptions sub
@@ -118,6 +120,8 @@ router.get('/subscriptions', async (req, res) => {
       JOIN users u ON u.id = s.owner_id
       ORDER BY sub.created_at DESC
     `);
+    console.log(`[DEBUG] After db.query. Rows returned: ${result.rows.length}`);
+    console.log('[DEBUG] Before sending response');
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching admin subscriptions:', err);

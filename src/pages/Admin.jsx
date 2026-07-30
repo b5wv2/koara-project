@@ -342,6 +342,9 @@ const AdminDashboard = () => {
     if (role === 'admin' && activeTab === 'broadcasts') {
       fetchBroadcasts();
     }
+    if (role === 'admin' && activeTab === 'subscriptions') {
+      fetchAdminSubscriptions();
+    }
   }, [role, activeTab]);
 
   const handleBroadcastInputChange = (e) => {
