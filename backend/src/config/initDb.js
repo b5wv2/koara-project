@@ -585,6 +585,7 @@ const initializeDatabase = async () => {
     await client.query(createSubscriptionsTableQuery);
     await client.query(createSubscriptionAuditLogsTableQuery);
       await client.query(createSubscriptionAdminLogsTableQuery);
+      await client.query(createReportGenerationsTableQuery);
 
     // Create invitation codes tables
     await client.query(createInvitationCodesTableQuery);

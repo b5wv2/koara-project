@@ -467,20 +467,29 @@ const path = require('path');
 let browserInstance = null;
 async function getBrowser() {
   if (!browserInstance || !browserInstance.isConnected()) {
+    // Graceful fallback for local Windows dev vs Ubuntu Production
+    const execPath = fsModule.existsSync('/usr/bin/chromium-browser') ? '/usr/bin/chromium-browser' : undefined;
+    console.log(`[REPORT_DEBUG] Launching browser. Executable path: ${execPath || 'Default Puppeteer Chromium'}`);
+    
     browserInstance = await puppeteer.launch({ 
-      executablePath: '/usr/bin/chromium-browser',
-      headless: true, 
+      executablePath: execPath,
+      headless: 'new', 
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
     });
   }
   return browserInstance;
 }
 
+
 router.get('/reports', async (req, res) => {
+  let step = 'Initializing';
   const storeId = req.merchantStoreId;
+  console.log(`[REPORT_DEBUG] Started report generation for store: ${storeId}`);
   
   try {
     // 1. Plan Enforcement & Store details
+    step = 'Authentication passed & Loading active subscription';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     const storeSubRes = await db.query(`
       SELECT s.*, sub.id as sub_id, sub.plan, sub.status as sub_status, sub.starts_at, sub.expires_at, 
              u.name as owner_name, u.email as owner_email
@@ -495,10 +504,13 @@ router.get('/reports', async (req, res) => {
     const store = storeSubRes.rows[0];
     
     if (!store.sub_id || store.plan !== 'plus' || store.sub_status !== 'active') {
+      console.log(`[REPORT_DEBUG] Blocked: Store is not active Plus.`);
       return res.status(403).json({ error: 'Detailed Reports are available exclusively for Koara Plus subscribers. Upgrade to Plus to unlock premium business reports.' });
     }
     
     // 2. Quota Enforcement
+    step = 'Verifying report quota';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     const countRes = await db.query(`
       SELECT COUNT(*) as count 
       FROM report_generations 
@@ -506,12 +518,16 @@ router.get('/reports', async (req, res) => {
     `, [storeId, store.starts_at, store.expires_at]);
     
     const generationCount = parseInt(countRes.rows[0].count, 10);
+    console.log(`[REPORT_DEBUG] Current generation count: ${generationCount}`);
     
     if (generationCount >= 20) {
+      console.log(`[REPORT_DEBUG] Quota exceeded (20 reports max).`);
       return res.status(429).json({ error: 'You have reached your report generation limit for this subscription cycle. Your quota will automatically reset when your subscription renews.' });
     }
     
     // 3. Data Aggregation
+    step = 'Completing Database queries';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     const topupsRes = await db.query(`
       SELECT COUNT(*) as topups_count, COALESCE(SUM(amount), 0) as total_deposited 
       FROM transactions 
@@ -558,12 +574,19 @@ router.get('/reports', async (req, res) => {
       LIMIT 10
     `, [storeId]);
     
+    console.log(`[REPORT_DEBUG] Database queries completed successfully.`);
+    
     // 4. HTML PDF Generation
+    step = 'Rendering HTML template';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     const logoPath = path.join(__dirname, '../../../src/assets/koara-logo.svg');
     let base64Logo = '';
     if (fsModule.existsSync(logoPath)) {
       const logoSvg = fsModule.readFileSync(logoPath, 'utf8');
       base64Logo = `data:image/svg+xml;base64,${Buffer.from(logoSvg).toString('base64')}`;
+      console.log(`[REPORT_DEBUG] SVG logo loaded successfully.`);
+    } else {
+      console.warn(`[REPORT_DEBUG] WARNING: SVG logo NOT FOUND at ${logoPath}`);
     }
     
     const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
@@ -600,7 +623,7 @@ router.get('/reports', async (req, res) => {
       <body>
         <div class="header">
           <div>
-            <img src="${base64Logo}" class="logo" />
+            ${base64Logo ? `<img src="${base64Logo}" class="logo" />` : ''}
             <h1 class="title">Koara Monthly Report</h1>
           </div>
           <div class="meta">
@@ -685,23 +708,43 @@ router.get('/reports', async (req, res) => {
       </html>
     `;
     
+    step = 'Starting Puppeteer browser';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     const browser = await getBrowser();
+    
+    step = 'Creating new page';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     const page = await browser.newPage();
+    
+    step = 'Generating PDF';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' } });
+    
+    step = 'Closing page';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     await page.close();
     
+    step = 'Inserting database generation log';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     await db.query(`
       INSERT INTO report_generations (store_id, subscription_id, period_start, period_end)
       VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
     `, [storeId, store.sub_id, store.starts_at]);
     
+    step = 'Streaming PDF successfully';
+    console.log(`[REPORT_DEBUG] Step: ${step}`);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="Koara_Report_${store.store_name.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf"`);
     res.send(pdfBuffer);
-    
+    console.log(`[REPORT_DEBUG] Report flow completed successfully.`);
   } catch (err) {
-    console.error('Report generation error (Server-side logged):', err.message);
+    console.error(`\n================= REPORT GENERATION CRASH =================`);
+    console.error(`Failed at step: ${step}`);
+    console.error(`Error Message: ${err.message}`);
+    console.error(`Error Stack:`);
+    console.error(err.stack);
+    console.error(`=============================================================\n`);
     res.status(500).json({ error: 'Internal server error. Failed to generate report.' });
   }
 });
