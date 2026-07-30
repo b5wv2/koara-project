@@ -19,6 +19,8 @@ class OrderService {
     checkoutGroupId = null,
     skipNotifications = false
   }) {
+    console.log('[DEBUG-CHECKOUT] Enter service (orderService.createOrder)');
+    console.log('[DEBUG-CHECKOUT] Before database transaction');
     const client = await db.pool.connect();
     
     try {
@@ -151,25 +153,28 @@ class OrderService {
       await client.query('COMMIT');
       
       const newOrder = insertRes.rows[0];
-      console.log('[DEBUG-ORDER] Order created successfully:', newOrder);
-      console.log('[DEBUG-ORDER] Relationships:', {
-        store_id: newOrder.store_id,
-        merchant_product_id: newOrder.merchant_product_id,
-        platform_product_id: newOrder.platform_product_id
-      });
+      console.log('[DEBUG-CHECKOUT] After successful order insert, localOrder:', newOrder.order_number);
       
       // Trigger notification
-      await notificationService.sendOrderConfirmation(customerEmail, {
-        ...newOrder,
-        store_name: storeRes.rows[0].store_name
-      });
+      if (!skipNotifications) {
+        console.log('[DEBUG-CHECKOUT] Before sending customer email');
+        await notificationService.sendOrderConfirmation(customerEmail, {
+          ...newOrder,
+          store_name: storeRes.rows[0].store_name
+        });
+        console.log('[DEBUG-CHECKOUT] After customer email');
+      } else {
+        console.log('[DEBUG-CHECKOUT] skipNotifications is true, skipping customer email');
+      }
       
       // Dispatch FCM notification to merchant owner
       try {
         const merchantOwnerId = storeRes.rows[0].owner_id;
+        console.log(`[DEBUG-CHECKOUT] Resolving merchant ID. Found: ${merchantOwnerId}`);
         if (merchantOwnerId) {
-          console.log(`[DEBUG-ORDER] Before sendToMerchant(). Merchant ID being passed: ${merchantOwnerId}`);
-          fcmNotificationService.sendToMerchant(merchantOwnerId, {
+          console.log(`[DEBUG-CHECKOUT] BEFORE calling fcmNotificationService.sendToMerchant() with ID ${merchantOwnerId}`);
+          
+          await fcmNotificationService.sendToMerchant(merchantOwnerId, {
             notification: {
               title: 'New Order Received',
               body: `You have a new order: ${orderNumber}`
@@ -178,12 +183,12 @@ class OrderService {
               type: 'order',
               route: '/orders'
             }
-          }).then(() => {
-            console.log(`[DEBUG-ORDER] After sendToMerchant() successfully queued.`);
-          }).catch(err => console.error('[DEBUG-ORDER] Async FCM Error:', err.message));
+          });
+          
+          console.log(`[DEBUG-CHECKOUT] AFTER calling fcmNotificationService.sendToMerchant()`);
         }
       } catch (fcmErr) {
-        console.error('[DEBUG-ORDER] Non-blocking error dispatching FCM notification:', fcmErr);
+        console.error('[DEBUG-CHECKOUT] Non-blocking error dispatching FCM notification:', fcmErr);
       }
 
       return newOrder;

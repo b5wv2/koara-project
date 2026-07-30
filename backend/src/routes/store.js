@@ -182,6 +182,7 @@ router.get('/:storeId/catalog', async (req, res) => {
 
 // POST /api/store/:storeId/orders
 router.post('/:storeId/orders', upload.single('receipt'), async (req, res) => {
+  console.log('[DEBUG-CHECKOUT] Enter checkout controller (single order):', req.params.storeId);
   const { storeId } = req.params;
   const { customerName, customerEmail, whatsapp, platformProductId, quantity, promoCode } = req.body;
 
@@ -216,6 +217,7 @@ router.post('/:storeId/orders', upload.single('receipt'), async (req, res) => {
 
 // POST /api/store/:storeId/cart/checkout
 router.post('/:storeId/cart/checkout', upload.single('receipt'), async (req, res) => {
+  console.log('[DEBUG-CHECKOUT] Enter checkout controller (cart):', req.params.storeId);
   const { storeId } = req.params;
   let { customerName, customerEmail, whatsapp, cartItems, promoCode } = req.body;
 
