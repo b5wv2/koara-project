@@ -724,7 +724,14 @@ router.get('/reports', async (req, res) => {
     step = 'Generating PDF';
     console.log(`[REPORT_DEBUG] Step: ${step}`);
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' } });
+    const pdfBuffer = await page.pdf({ 
+      format: "A4", 
+      printBackground: true 
+    });
+    
+    console.log('[REPORT_DEBUG] Buffer.isBuffer(pdfBuffer):', Buffer.isBuffer(pdfBuffer));
+    console.log('[REPORT_DEBUG] pdfBuffer.length:', pdfBuffer.length);
+    fsModule.writeFileSync('test-report.pdf', pdfBuffer);
     
     step = 'Closing page';
     console.log(`[REPORT_DEBUG] Step: ${step}`);
@@ -739,10 +746,15 @@ router.get('/reports', async (req, res) => {
     
     step = 'Streaming PDF successfully';
     console.log(`[REPORT_DEBUG] Step: ${step}`);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="Koara_Report_${store.store_name.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf"`);
-    res.send(pdfBuffer);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="Koara_Report.pdf"'
+    );
+    res.setHeader("Content-Length", pdfBuffer.length);
+
     console.log(`[REPORT_DEBUG] Report flow completed successfully.`);
+    return res.end(pdfBuffer);
   } catch (err) {
     console.error(`\n================= REPORT GENERATION CRASH =================`);
     console.error(`Failed at step: ${step}`);
