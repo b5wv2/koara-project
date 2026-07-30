@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Database, Package, ShieldCheck, Tag, Settings, CreditCard, Banknote, Palette } from 'lucide-react';
+import { LayoutDashboard, Users, Database, Package, ShieldCheck, Tag, Settings, CreditCard, Banknote, Palette, Megaphone } from 'lucide-react';
 
 /**
  * Navigation item definitions for Admin and Merchant dashboards.
@@ -10,6 +10,7 @@ export const ADMIN_NAV_ITEMS = [
   { key: 'kyc', icon: ShieldCheck, label: 'KYC Requests' },
   { key: 'withdrawals', icon: Banknote, label: 'Withdrawals' },
   { key: 'catalog', icon: Package, label: 'Product Catalog' },
+  { key: 'broadcasts', icon: Megaphone, label: 'Broadcasts' },
 ];
 
 export const MERCHANT_NAV_ITEMS = [

@@ -399,6 +399,21 @@ const createMerchantDeviceTokensTableQuery = `
   );
 `;
 
+const createBroadcastsTableQuery = `
+  CREATE TABLE IF NOT EXISTS broadcasts (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(20) NOT NULL,
+    title VARCHAR(255),
+    subject VARCHAR(255),
+    message TEXT NOT NULL,
+    created_by INTEGER REFERENCES users(id),
+    total_targets INTEGER DEFAULT 0,
+    successful INTEGER DEFAULT 0,
+    failed INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
   const client = await db.pool.connect();
@@ -454,6 +469,9 @@ const initializeDatabase = async () => {
     await client.query(createEmailLocksTableQuery);
 
     // Create categories, products, promos, orders tables
+    await client.query(createNotificationLogsTableQuery);
+    await client.query(createStoreRequestsTableQuery);
+    await client.query(createBroadcastsTableQuery);
     await client.query(createCategoriesTableQuery);
     await client.query(createProductsTableQuery);
     await client.query(createPromosTableQuery);

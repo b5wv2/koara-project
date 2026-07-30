@@ -17,6 +17,7 @@ import AdminMerchantsTab from './tabs/AdminMerchantsTab';
 import AdminLedgerTab from './tabs/AdminLedgerTab';
 import AdminWithdrawalsTab from './tabs/AdminWithdrawalsTab';
 import AdminCatalogTab from './tabs/AdminCatalogTab';
+import AdminBroadcastsTab from './tabs/AdminBroadcastsTab';
 
 // Merchant tabs
 import MerchantDashboardTab from './tabs/MerchantDashboardTab';
@@ -227,6 +228,7 @@ const AdminPage = () => {
         case 'merchants': return <AdminMerchantsTab onAddBalance={(id) => setBalanceModal({ isOpen: true, type: 'add', storeId: id, amount: '' })} onDeductBalance={(id) => setBalanceModal({ isOpen: true, type: 'deduct', storeId: id, amount: '' })} onDeleteStore={(id, name) => setDeleteModal({ isOpen: true, storeId: id, storeName: name })} />;
         case 'ledger': return <AdminLedgerTab />;
         case 'catalog': return <AdminCatalogTab onCreateProduct={() => { setNewProduct({ name: '', category: '', description: '' }); setCatalogCreateModal(true); }} onEditProduct={(p) => setCatalogEditModal({ isOpen: true, product: { ...p } })} onDeactivateProduct={async (id) => { await deactivatePlatformProduct(id); return { success: true }; }} onManageProviders={async (p) => { const mappings = await fetchProviderMappings(p.id); setCatalogProviderModal({ isOpen: true, productId: p.id, productName: p.name, mappings }); return { success: true }; }} />;
+        case 'broadcasts': return <AdminBroadcastsTab />;
         default: return null;
       }
     } else {

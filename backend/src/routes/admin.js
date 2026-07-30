@@ -4,6 +4,8 @@ const db = require('../config/db');
 const notificationService = require('../services/notificationService');
 const fcmNotificationService = require('../services/fcmNotificationService');
 const { provisionMerchant } = require('../services/merchantProvisioningService');
+const broadcastService = require('../services/broadcastService');
+const superAdminMiddleware = require('../middleware/superAdminMiddleware');
 
 
 
@@ -593,6 +595,61 @@ router.get('/invitation-codes/:id/redemptions', async (req, res) => {
     res.json({ success: true, redemptions: result.rows });
   } catch (error) {
     console.error('Error fetching redemptions:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Broadcast Center ---
+
+// GET /api/admin/broadcasts
+router.get('/broadcasts', superAdminMiddleware, async (req, res) => {
+  try {
+    const query = `
+      SELECT b.*, u.name as created_by_name
+      FROM broadcasts b
+      LEFT JOIN users u ON b.created_by = u.id
+      ORDER BY b.created_at DESC
+    `;
+    const result = await db.query(query);
+    res.json({ success: true, broadcasts: result.rows });
+  } catch (error) {
+    console.error('Error fetching broadcasts:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/broadcast
+router.post('/broadcast', superAdminMiddleware, async (req, res) => {
+  const { type, title, subject, message } = req.body;
+  const adminId = req.user.id;
+
+  if (!type || !['push', 'email', 'both'].includes(type)) {
+    return res.status(400).json({ error: 'Valid broadcast type (push, email, both) is required' });
+  }
+  if (!message || message.trim().length === 0) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+  if (message.length > 5000) {
+    return res.status(400).json({ error: 'Message is too long' });
+  }
+  if ((type === 'push' || type === 'both') && (!title || title.trim().length === 0)) {
+    return res.status(400).json({ error: 'Title is required for push notifications' });
+  }
+  if ((type === 'email' || type === 'both') && (!subject || subject.trim().length === 0)) {
+    return res.status(400).json({ error: 'Subject is required for emails' });
+  }
+
+  try {
+    const broadcastId = await broadcastService.sendBroadcast({
+      type,
+      title: title ? title.trim() : null,
+      subject: subject ? subject.trim() : null,
+      message: message.trim(),
+      createdBy: adminId
+    });
+    res.json({ success: true, broadcastId, message: 'Broadcast scheduled successfully' });
+  } catch (error) {
+    console.error('Error scheduling broadcast:', error.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
