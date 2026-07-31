@@ -18,7 +18,13 @@ async function runDiagnosis() {
       LEFT JOIN subscriptions sub ON sub.store_id = s.id 
       WHERE s.id = $1 AND sub.status = 'active'
     `, [storeId]);
+    
     const store = storeSubRes.rows[0];
+    
+    // EDGE CASE: Handle cases where the store or active subscription does not exist.
+    if (!store) {
+      throw new Error(`Store with ID ${storeId} or active subscription not found.`);
+    }
 
     const topupsRes = await pool.query(`
       SELECT COUNT(*) as topups_count, COALESCE(SUM(amount), 0) as total_deposited 
@@ -28,7 +34,7 @@ async function runDiagnosis() {
 
     const unifiedOrdersCTE = `
       WITH unified_orders AS (
-        SELECT id, created_at, status, amount, product_name, 1 as quantity
+        SELECT id, created_at, status, amount, product_name, COALESCE(quantity, 1) as quantity
         FROM orders WHERE store_id = $1 AND created_at >= $2
         UNION ALL
         SELECT id, created_at, status, selling_price as amount, offer_id as product_name, 1 as quantity
@@ -69,7 +75,7 @@ async function runDiagnosis() {
     
     const productsRes = await pool.query(`
       ${unifiedOrdersCTE}
-      SELECT product_name, COUNT(*) as quantity_sold, COALESCE(SUM(amount), 0) as revenue
+      SELECT product_name, SUM(quantity) as quantity_sold, COALESCE(SUM(amount), 0) as revenue
       FROM unified_orders WHERE status = 'completed' GROUP BY product_name ORDER BY quantity_sold DESC
     `, [storeId, store.starts_at]);
     
@@ -138,20 +144,20 @@ async function runDiagnosis() {
     };
     
     const formatDate = (d) => d ? new Date(d).toLocaleDateString(isAr ? 'ar-DZ' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
-    const formatCurrency = (v) => \`\${parseFloat(v || 0).toFixed(2)} USD\`;
+    const formatCurrency = (v) => `${parseFloat(v || 0).toFixed(2)} USD`;
     const generationCount = 5;
 
-    const htmlContent = \`
+    const htmlContent = `
       <!DOCTYPE html>
-      <html lang="\${lang}" dir="\${isAr ? 'rtl' : 'ltr'}">
+      <html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}">
       <head>
         <meta charset="UTF-8">
         <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; margin: 0; padding: 40px; text-align: \${isAr ? 'right' : 'left'}; }
-          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; flex-direction: \${isAr ? 'row-reverse' : 'row'}; }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; margin: 0; padding: 40px; text-align: ${isAr ? 'right' : 'left'}; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; flex-direction: ${isAr ? 'row-reverse' : 'row'}; }
           .logo { height: 40px; margin-bottom: 10px; }
           .title { font-size: 24px; font-weight: 800; color: #0f172a; margin: 0; }
-          .meta { text-align: \${isAr ? 'left' : 'right'}; font-size: 12px; color: #64748b; }
+          .meta { text-align: ${isAr ? 'left' : 'right'}; font-size: 12px; color: #64748b; }
           .meta p { margin: 2px 0; }
           .section { margin-bottom: 30px; }
           .section-title { font-size: 16px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px; }
@@ -162,120 +168,120 @@ async function runDiagnosis() {
           .card-value { font-size: 18px; font-weight: 700; color: #0f172a; }
           
           table { width: 100%; border-collapse: collapse; font-size: 13px; }
-          th { background: #f1f5f9; text-align: \${isAr ? 'right' : 'left'}; padding: 10px; color: #475569; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+          th { background: #f1f5f9; text-align: ${isAr ? 'right' : 'left'}; padding: 10px; color: #475569; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
           td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
           .empty-state { text-align: center; padding: 20px; color: #94a3b8; font-style: italic; }
           
           .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
-          .flex-center { display: flex; justify-content: space-between; flex-direction: \${isAr ? 'row-reverse' : 'row'}; }
+          .flex-center { display: flex; justify-content: space-between; flex-direction: ${isAr ? 'row-reverse' : 'row'}; }
         </style>
       </head>
       <body>
         <div class="header">
           <div>
-            \${base64Logo ? \`<img src="\${base64Logo}" class="logo" />\` : ''}
-            <h1 class="title">\${t.reportTitle}</h1>
+            ${base64Logo ? `<img src="${base64Logo}" class="logo" />` : ''}
+            <h1 class="title">${t.reportTitle}</h1>
           </div>
           <div class="meta">
-            <p><strong>\${t.reportPeriod}:</strong> \${formatDate(store.starts_at)} → \${formatDate(new Date())}</p>
-            <p><strong>\${t.subStart}:</strong> \${formatDate(store.starts_at)}</p>
-            <p><strong>\${t.generatedAt}:</strong> \${new Date().toLocaleString(isAr ? 'ar-DZ' : 'en-US')}</p>
-            <p><strong>\${t.currentPlan}:</strong> \${store.plan.toUpperCase()}</p>
+            <p><strong>${t.reportPeriod}:</strong> ${formatDate(store.starts_at)} → ${formatDate(new Date())}</p>
+            <p><strong>${t.subStart}:</strong> ${formatDate(store.starts_at)}</p>
+            <p><strong>${t.generatedAt}:</strong> ${new Date().toLocaleString(isAr ? 'ar-DZ' : 'en-US')}</p>
+            <p><strong>${t.currentPlan}:</strong> ${store.plan.toUpperCase()}</p>
           </div>
         </div>
 
         <div class="section">
-          <h2 class="section-title">\${t.storeInfo}</h2>
+          <h2 class="section-title">${t.storeInfo}</h2>
           <div class="grid">
-            <div class="card"><div class="card-label">\${t.storeName}</div><div class="card-value" dir="auto">\${store.store_name}</div></div>
-            <div class="card"><div class="card-label">\${t.ownerName}</div><div class="card-value" dir="auto">\${store.owner_name}</div></div>
-            <div class="card"><div class="card-label">\${t.storeDomain}</div><div class="card-value" dir="ltr" style="text-align: \${isAr ? 'right' : 'left'}">\${store.subdomain}.getkoara.com</div></div>
+            <div class="card"><div class="card-label">${t.storeName}</div><div class="card-value" dir="auto">${store.store_name}</div></div>
+            <div class="card"><div class="card-label">${t.ownerName}</div><div class="card-value" dir="auto">${store.owner_name}</div></div>
+            <div class="card"><div class="card-label">${t.storeDomain}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${store.subdomain}.getkoara.com</div></div>
           </div>
         </div>
 
         <div class="section">
-          <h2 class="section-title">\${t.financialSummary}</h2>
+          <h2 class="section-title">${t.financialSummary}</h2>
           <div class="grid">
-            <div class="card"><div class="card-label">\${t.walletBalance}</div><div class="card-value" dir="ltr" style="text-align: \${isAr ? 'right' : 'left'}">\${formatCurrency(store.balance)}</div></div>
-            <div class="card"><div class="card-label">\${t.walletTopups}</div><div class="card-value">\${topupsRes.rows[0].topups_count}</div></div>
-            <div class="card"><div class="card-label">\${t.walletDeposited}</div><div class="card-value" dir="ltr" style="text-align: \${isAr ? 'right' : 'left'}">\${formatCurrency(topupsRes.rows[0].total_deposited)}</div></div>
+            <div class="card"><div class="card-label">${t.walletBalance}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(store.balance)}</div></div>
+            <div class="card"><div class="card-label">${t.walletTopups}</div><div class="card-value">${topupsRes.rows[0].topups_count}</div></div>
+            <div class="card"><div class="card-label">${t.walletDeposited}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(topupsRes.rows[0].total_deposited)}</div></div>
           </div>
           <div class="grid" style="margin-top:15px;">
-            <div class="card"><div class="card-label">\${t.grossSales}</div><div class="card-value" dir="ltr" style="text-align: \${isAr ? 'right' : 'left'}">\${formatCurrency(grossSales)}</div></div>
-            <div class="card"><div class="card-label">\${t.refundedAmount}</div><div class="card-value" dir="ltr" style="text-align: \${isAr ? 'right' : 'left'}">\${formatCurrency(refundedAmount)}</div></div>
-            <div class="card"><div class="card-label">\${t.netSales}</div><div class="card-value" dir="ltr" style="text-align: \${isAr ? 'right' : 'left'}">\${formatCurrency(netSales)}</div></div>
-            <div class="card"><div class="card-label">\${t.avgOrderVal}</div><div class="card-value" dir="ltr" style="text-align: \${isAr ? 'right' : 'left'}">\${formatCurrency(avgOrderValue)}</div></div>
+            <div class="card"><div class="card-label">${t.grossSales}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(grossSales)}</div></div>
+            <div class="card"><div class="card-label">${t.refundedAmount}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(refundedAmount)}</div></div>
+            <div class="card"><div class="card-label">${t.netSales}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(netSales)}</div></div>
+            <div class="card"><div class="card-label">${t.avgOrderVal}</div><div class="card-value" dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(avgOrderValue)}</div></div>
           </div>
         </div>
 
         <div class="section">
-          <h2 class="section-title">\${t.orderSummary}</h2>
+          <h2 class="section-title">${t.orderSummary}</h2>
           <div class="grid">
-            <div class="card"><div class="card-label">\${t.totalOrders}</div><div class="card-value">\${totalOrders}</div></div>
-            <div class="card"><div class="card-label">\${t.pendingOrders}</div><div class="card-value">\${o.pending_orders}</div></div>
-            <div class="card"><div class="card-label">\${t.processingOrders}</div><div class="card-value">\${o.processing_orders}</div></div>
+            <div class="card"><div class="card-label">${t.totalOrders}</div><div class="card-value">${totalOrders}</div></div>
+            <div class="card"><div class="card-label">${t.pendingOrders}</div><div class="card-value">${o.pending_orders}</div></div>
+            <div class="card"><div class="card-label">${t.processingOrders}</div><div class="card-value">${o.processing_orders}</div></div>
           </div>
           <div class="grid" style="margin-top:15px;">
-            <div class="card"><div class="card-label">\${t.completedOrders}</div><div class="card-value">\${completedOrders}</div></div>
-            <div class="card"><div class="card-label">\${t.rejectedOrders}</div><div class="card-value">\${rejectedOrders}</div></div>
-            <div class="card"><div class="card-label">\${t.refundedOrders}</div><div class="card-value">\${refundedOrders}</div></div>
+            <div class="card"><div class="card-label">${t.completedOrders}</div><div class="card-value">${completedOrders}</div></div>
+            <div class="card"><div class="card-label">${t.rejectedOrders}</div><div class="card-value">${rejectedOrders}</div></div>
+            <div class="card"><div class="card-label">${t.refundedOrders}</div><div class="card-value">${refundedOrders}</div></div>
           </div>
         </div>
 
         <div class="section">
-          <h2 class="section-title">\${t.statistics}</h2>
+          <h2 class="section-title">${t.statistics}</h2>
           <div class="grid">
-            <div class="card"><div class="card-label">\${t.bestProduct}</div><div class="card-value" dir="auto">\${productsRes.rows.length > 0 ? productsRes.rows[0].product_name || 'N/A' : 'N/A'}</div></div>
-            <div class="card"><div class="card-label">\${t.firstOrderDate}</div><div class="card-value" dir="auto">\${formatDate(o.first_order_date)}</div></div>
-            <div class="card"><div class="card-label">\${t.latestOrderDate}</div><div class="card-value" dir="auto">\${formatDate(o.latest_order_date)}</div></div>
-            <div class="card"><div class="card-label">\${t.avgOrdersDay}</div><div class="card-value" dir="auto">\${avgOrdersPerDay}</div></div>
+            <div class="card"><div class="card-label">${t.bestProduct}</div><div class="card-value" dir="auto">${productsRes.rows.length > 0 ? productsRes.rows[0].product_name || 'N/A' : 'N/A'}</div></div>
+            <div class="card"><div class="card-label">${t.firstOrderDate}</div><div class="card-value" dir="auto">${formatDate(o.first_order_date)}</div></div>
+            <div class="card"><div class="card-label">${t.latestOrderDate}</div><div class="card-value" dir="auto">${formatDate(o.latest_order_date)}</div></div>
+            <div class="card"><div class="card-label">${t.avgOrdersDay}</div><div class="card-value" dir="auto">${avgOrdersPerDay}</div></div>
           </div>
         </div>
 
         <div class="section">
-          <h2 class="section-title">\${t.productsSummary}</h2>
-          \${productsRes.rows.length > 0 ? \`
+          <h2 class="section-title">${t.productsSummary}</h2>
+          ${productsRes.rows.length > 0 ? `
           <table>
-            <thead><tr><th>\${t.productName}</th><th>\${t.qtySold}</th><th>\${t.revenue}</th></tr></thead>
+            <thead><tr><th>${t.productName}</th><th>${t.qtySold}</th><th>${t.revenue}</th></tr></thead>
             <tbody>
-              \${productsRes.rows.map(p => \`<tr><td dir="auto">\${p.product_name || 'Unknown Product'}</td><td>\${p.quantity_sold}</td><td dir="ltr" style="text-align: \${isAr ? 'right' : 'left'}">\${formatCurrency(p.revenue)}</td></tr>\`).join('')}
+              ${productsRes.rows.map(p => `<tr><td dir="auto">${p.product_name || 'Unknown Product'}</td><td>${p.quantity_sold}</td><td dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(p.revenue)}</td></tr>`).join('')}
             </tbody>
           </table>
-          \` : \`<div class="empty-state">\${t.noData}</div>\`}
+          ` : `<div class="empty-state">${t.noData}</div>`}
         </div>
 
         <div class="section">
-          <h2 class="section-title">\${t.recentOrders}</h2>
-          \${recentOrdersRes.rows.length > 0 ? \`
+          <h2 class="section-title">${t.recentOrders}</h2>
+          ${recentOrdersRes.rows.length > 0 ? `
           <table>
-            <thead><tr><th>\${t.orderNum}</th><th>\${t.date}</th><th>\${t.product}</th><th>\${t.qty}</th><th>\${t.amount}</th><th>\${t.status}</th></tr></thead>
+            <thead><tr><th>${t.orderNum}</th><th>${t.date}</th><th>${t.product}</th><th>${t.qty}</th><th>${t.amount}</th><th>${t.status}</th></tr></thead>
             <tbody>
-              \${recentOrdersRes.rows.map(ro => \`<tr><td>#\${ro.id}</td><td>\${formatDate(ro.created_at)}</td><td dir="auto">\${ro.product_name || 'Unknown Product'}</td><td>\${ro.quantity || 1}</td><td dir="ltr" style="text-align: \${isAr ? 'right' : 'left'}">\${formatCurrency(ro.amount)}</td><td><span style="text-transform:capitalize" dir="auto">\${ro.status}</span></td></tr>\`).join('')}
+              ${recentOrdersRes.rows.map(ro => `<tr><td>#${ro.id}</td><td>${formatDate(ro.created_at)}</td><td dir="auto">${ro.product_name || 'Unknown Product'}</td><td>${ro.quantity || 1}</td><td dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(ro.amount)}</td><td><span style="text-transform:capitalize" dir="auto">${ro.status}</span></td></tr>`).join('')}
             </tbody>
           </table>
-          \` : \`<div class="empty-state">\${t.noData}</div>\`}
+          ` : `<div class="empty-state">${t.noData}</div>`}
         </div>
 
         <div class="footer">
           <p class="flex-center" style="justify-content: center; gap: 10px;">
-            <span>\${t.reportPeriod}: \${formatDate(store.starts_at)} → \${formatDate(new Date())}</span> | 
-            <span>\${t.subStart}: \${formatDate(store.starts_at)}</span> | 
-            <span>\${t.expiration}: \${formatDate(store.expires_at)}</span>
+            <span>${t.reportPeriod}: ${formatDate(store.starts_at)} → ${formatDate(new Date())}</span> | 
+            <span>${t.subStart}: ${formatDate(store.starts_at)}</span> | 
+            <span>${t.expiration}: ${formatDate(store.expires_at)}</span>
           </p>
           <p class="flex-center" style="justify-content: center; gap: 10px;">
-            <span>\${t.generatedAt}: \${new Date().toLocaleString(isAr ? 'ar-DZ' : 'en-US')}</span> | 
-            <span>\${t.footer4}: \${generationCount + 1} / 20</span>
+            <span>${t.generatedAt}: ${new Date().toLocaleString(isAr ? 'ar-DZ' : 'en-US')}</span> | 
+            <span>${t.footer4}: ${generationCount + 1} / 20</span>
           </p>
           <p style="margin-top:15px;" class="flex-center" style="justify-content: center; gap: 10px;">
-            <span>\${t.footer1}</span> | 
-            <span>\${t.footer2}</span>
+            <span>${t.footer1}</span> | 
+            <span>${t.footer2}</span>
           </p>
-          <p>\${t.footer3}</p>
+          <p>${t.footer3}</p>
           <p><a href="https://getkoara.com" style="color:#64748b;text-decoration:none;" dir="ltr">https://getkoara.com</a></p>
         </div>
       </body>
       </html>
-    \`;
+    `;
 
     // 1. Print generated HTML to a temporary file
     fs.writeFileSync('report-debug.html', htmlContent);
@@ -343,7 +349,8 @@ async function runDiagnosis() {
     if (browser) {
       await browser.close();
     }
-    pool.end();
+    // EDGE CASE: Ensure database pool is always gracefully closed, wait for it to finish.
+    await pool.end();
   }
 }
 

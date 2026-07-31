@@ -302,7 +302,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
     <Modal
       isOpen={isOpen}
       onClose={resetStateAndClose}
-      title={step === 6 ? t('modal_title_complete') : t('modal_title_create_store')}
+      title={step === 6 ? t('modal_title_complete') : t('create store')}
     >
       {step < 6 && <StepIndicator current={step} total={5} />}
 
@@ -321,7 +321,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       {/* ── Step 1: Account Creation ── */}
       {step === 1 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">{t('desc_enter_email_pass')}</p>
+          <p className="text-sm text-slate-400 mb-2">{t('')}</p>
           <div className="space-y-3">
             <div>
               <label className="koara-label">{t('email_address')}</label>
