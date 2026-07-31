@@ -13,6 +13,8 @@ import MerchantCustomizationTab from '../components/MerchantCustomizationTab';
 import PremiumLockOverlay from '../components/ui/PremiumLockOverlay';
 import Toggle from '../components/ui/Toggle';
 import { getImageUrl } from '../utils/imageUrl';
+import html2pdf from 'html2pdf.js';
+import { generateReportHtml } from '../utils/reportGenerator';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -311,24 +313,21 @@ const AdminDashboard = () => {
         throw new Error('Failed to generate report');
       }
       
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      let filename = 'Koara_Report.pdf';
-      const disposition = res.headers.get('content-disposition');
-      if (disposition && disposition.includes('filename=')) {
-        const parts = disposition.split('filename=');
-        if (parts.length > 1) {
-          filename = parts[1].replace(/['"]/g, '');
-        }
-      }
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
+      const data = await res.json();
+      
+      const logoUrl = new URL(KoaraLogo, window.location.href).href;
+      
+      const htmlString = generateReportHtml(data, lang, logoUrl);
+      
+      const opt = {
+        margin:       0,
+        filename:     'Koara_Report.pdf',
+        image:        { type: 'jpeg', quality: 1 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(htmlString).save();
     } catch (err) {
       console.error('Error downloading report:', err);
       alert('An error occurred while generating the report. Please try again.');
