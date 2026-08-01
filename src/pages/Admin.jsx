@@ -4,6 +4,7 @@ import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
 import KoaraLogo from '../assets/koara-logo.svg';
+import KoaraLogoRaw from '../assets/koara-logo.svg?raw';
 import PaymentProviderModal from '../components/PaymentProviderModal';
 import CryptoPaymentModal from '../components/CryptoPaymentModal';
 import LocalBankTransferModal from '../components/LocalBankTransferModal';
@@ -315,7 +316,7 @@ const AdminDashboard = () => {
       
       const data = await res.json();
       
-      const logoUrl = new URL(KoaraLogo, window.location.href).href;
+      const logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(KoaraLogoRaw);
       
       const htmlString = generateReportHtml(data, lang, logoUrl);
       
@@ -323,7 +324,7 @@ const AdminDashboard = () => {
         margin:       0,
         filename:     'Koara_Report.pdf',
         image:        { type: 'jpeg', quality: 1 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { scale: 2, useCORS: true, allowTaint: false },
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
       };
 
