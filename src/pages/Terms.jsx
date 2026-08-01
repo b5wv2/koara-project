@@ -22,7 +22,7 @@ const Terms = () => {
 
       <main className="flex-1 relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-8 pt-32 pb-24 text-slate-300">
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-4">Terms & Conditions</h1>
-        <p className="text-sm text-slate-500 mb-12">Last Updated: October 2023</p>
+        <p className="text-sm text-slate-500 mb-12">Last Updated: October 2026</p>
 
         <div className="space-y-8 glass-card p-8 sm:p-12">
           <section>

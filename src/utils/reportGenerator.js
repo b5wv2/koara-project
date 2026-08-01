@@ -57,6 +57,7 @@ export const generateReportHtml = (data, lang, base64Logo) => {
     footer2: isAr ? 'مدعوم من كوارا' : 'Powered by Koara',
     footer3: isAr ? 'هذا التقرير مُصدر إلكترونياً ولا يحتاج إلى توقيع.' : 'This report is electronically generated and does not require a signature.',
     footer4: isAr ? 'التقارير المُصدرة في هذه الدورة' : 'Reports Generated This Cycle',
+    type: isAr ? 'النوع' : 'Type',
     expiration: isAr ? 'الانتهاء' : 'Expiration',
   };
   
@@ -102,7 +103,7 @@ export const generateReportHtml = (data, lang, base64Logo) => {
           <h1 class="title">${t.reportTitle}</h1>
         </div>
         <div class="meta">
-          <p><strong>${t.reportPeriod}:</strong> ${formatDate(store.starts_at)} → ${formatDate(new Date())}</p>
+          <p><strong>${t.reportPeriod}:</strong> ${formatDate(data.periodStart)} → ${formatDate(data.periodEnd)}</p>
           <p><strong>${t.subStart}:</strong> ${formatDate(store.starts_at)}</p>
           <p><strong>${t.generatedAt}:</strong> ${new Date().toLocaleString(isAr ? 'ar-DZ' : 'en-US')}</p>
           <p><strong>${t.currentPlan}:</strong> ${(store.plan || '').toUpperCase()}</p>
@@ -173,9 +174,9 @@ export const generateReportHtml = (data, lang, base64Logo) => {
         <h2 class="section-title">${t.recentOrders}</h2>
         ${recentOrders && recentOrders.length > 0 ? `
         <table>
-          <thead><tr><th>${t.orderNum}</th><th>${t.date}</th><th>${t.product}</th><th>${t.qty}</th><th>${t.amount}</th><th>${t.status}</th></tr></thead>
+          <thead><tr><th>${t.orderNum}</th><th>${t.date}</th><th>${t.type}</th><th>${t.product}</th><th>${t.qty}</th><th>${t.amount}</th><th>${t.status}</th></tr></thead>
           <tbody>
-            ${recentOrders.map(ro => `<tr><td>#${ro.id}</td><td>${formatDate(ro.created_at)}</td><td dir="auto">${ro.product_name || 'Unknown Product'}</td><td>${ro.quantity || 1}</td><td dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(ro.amount)}</td><td><span style="text-transform:capitalize" dir="auto">${ro.status}</span></td></tr>`).join('')}
+            ${recentOrders.map(ro => `<tr><td dir="auto">${ro.order_number || '#' + ro.id}</td><td>${formatDate(ro.created_at)}</td><td><span style="text-transform:capitalize" dir="auto">${(ro.order_type || 'gift_card').replace('_', ' ')}</span></td><td dir="auto">${ro.product_name || 'Unknown Product'}</td><td>${ro.quantity || 1}</td><td dir="ltr" style="text-align: ${isAr ? 'right' : 'left'}">${formatCurrency(ro.total_amount || ro.amount)}</td><td><span style="text-transform:capitalize" dir="auto">${ro.status}</span></td></tr>`).join('')}
           </tbody>
         </table>
         ` : `<div class="empty-state">${t.noData}</div>`}
@@ -183,7 +184,7 @@ export const generateReportHtml = (data, lang, base64Logo) => {
 
       <div class="footer">
         <p class="flex-center" style="justify-content: center; gap: 10px;">
-          <span>${t.reportPeriod}: ${formatDate(store.starts_at)} → ${formatDate(new Date())}</span> | 
+          <span>${t.reportPeriod}: ${formatDate(data.periodStart)} → ${formatDate(data.periodEnd)}</span> | 
           <span>${t.subStart}: ${formatDate(store.starts_at)}</span> | 
           <span>${t.expiration}: ${formatDate(store.expires_at)}</span>
         </p>

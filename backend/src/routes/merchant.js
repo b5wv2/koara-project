@@ -303,25 +303,7 @@ router.get('/orders', async (req, res) => {
   const store_id = req.merchantStoreId;
 
   try {
-    const orders = await orderService.getStoreOrders(store_id);
-    const topupOrdersRes = await db.query(`SELECT * FROM topup_orders WHERE store_id = $1 ORDER BY created_at DESC`, [store_id]);
-    
-    // Map normal orders
-    const mappedOrders = orders.map(o => ({
-      ...o,
-      order_type: 'gift_card'
-    }));
-
-    // Map topup orders
-    const mappedTopups = topupOrdersRes.rows.map(o => ({
-      ...o,
-      order_type: 'topup',
-      order_number: o.local_order_id,
-      product_name: o.offer_id, // we might want to resolve this to actual name on frontend
-      total_amount: o.selling_price
-    }));
-
-    const allOrders = [...mappedOrders, ...mappedTopups].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const allOrders = await orderService.getAllMergedOrders(store_id);
 
     console.log('[DEBUG-MERCHANT-ORDERS] Sending API response to frontend, total orders:', allOrders.length);
     res.status(200).json({ success: true, orders: allOrders });
@@ -512,78 +494,72 @@ router.get('/reports', async (req, res) => {
     step = 'Completing Database queries';
     console.log(`[REPORT_DEBUG] Step: ${step}`);
     
-    // We STRICTLY use created_at >= starts_at as commanded.
+    // Fetch lifetime topups (no date limit)
     const topupsRes = await db.query(`
       SELECT COUNT(*) as topups_count, COALESCE(SUM(amount), 0) as total_deposited 
       FROM wallet_transactions 
-      WHERE store_id = $1 AND transaction_type = 'credit' AND created_at >= $2
-    `, [storeId, store.starts_at]);
+      WHERE store_id = $1 AND transaction_type = 'credit'
+    `, [storeId]);
     
-    // Create the unified orders query text (CTE)
-    const unifiedOrdersCTE = `
-      WITH unified_orders AS (
-        SELECT 
-          id, created_at, status, amount, product_name, 1 as quantity
-        FROM orders
-        WHERE store_id = $1 AND created_at >= $2
-        
-        UNION ALL
-        
-        SELECT 
-          id, created_at, status, selling_price as amount, offer_id as product_name, 1 as quantity
-        FROM topup_orders
-        WHERE store_id = $1 AND created_at >= $2
-      )
-    `;
+    // Use unified orders for the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const allOrders = await orderService.getAllMergedOrders(storeId);
+    const recentOrdersFiltered = allOrders.filter(o => new Date(o.created_at) >= thirtyDaysAgo);
 
-    const ordersRes = await db.query(`
-      ${unifiedOrdersCTE}
-      SELECT 
-        COUNT(*) as total_orders,
-        COUNT(*) FILTER (WHERE status = 'completed') as completed_orders,
-        COUNT(*) FILTER (WHERE status = 'pending') as pending_orders,
-        COUNT(*) FILTER (WHERE status = 'processing') as processing_orders,
-        COUNT(*) FILTER (WHERE status = 'rejected') as rejected_orders,
-        COUNT(*) FILTER (WHERE status = 'refunded') as refunded_orders,
-        COALESCE(SUM(amount) FILTER (WHERE status = 'completed'), 0) as gross_sales,
-        COALESCE(SUM(amount) FILTER (WHERE status = 'refunded'), 0) as refunded_amount,
-        MIN(created_at) as first_order_date,
-        MAX(created_at) as latest_order_date
-      FROM unified_orders
-    `, [storeId, store.starts_at]);
-    
-    const o = ordersRes.rows[0];
-    const totalOrders = parseInt(o.total_orders || 0);
-    const completedOrders = parseInt(o.completed_orders || 0);
-    const rejectedOrders = parseInt(o.rejected_orders || 0);
-    const refundedOrders = parseInt(o.refunded_orders || 0);
-    const grossSales = parseFloat(o.gross_sales || 0);
-    const refundedAmount = parseFloat(o.refunded_amount || 0);
+    let totalOrders = 0;
+    let completedOrders = 0;
+    let pendingOrders = 0;
+    let processingOrders = 0;
+    let rejectedOrders = 0;
+    let refundedOrders = 0;
+    let grossSales = 0;
+    let refundedAmount = 0;
+    let firstOrderDate = null;
+    let latestOrderDate = null;
+
+    const productMap = {};
+
+    recentOrdersFiltered.forEach(o => {
+      totalOrders++;
+      const amount = parseFloat(o.total_amount || o.amount || o.selling_price || 0);
+
+      if (!firstOrderDate || new Date(o.created_at) < new Date(firstOrderDate)) firstOrderDate = o.created_at;
+      if (!latestOrderDate || new Date(o.created_at) > new Date(latestOrderDate)) latestOrderDate = o.created_at;
+
+      if (o.status === 'completed') {
+        completedOrders++;
+        grossSales += amount;
+
+        // Group for product summary
+        const pName = o.product_name || 'Unknown Product';
+        if (!productMap[pName]) productMap[pName] = { product_name: pName, quantity_sold: 0, revenue: 0 };
+        productMap[pName].quantity_sold++;
+        productMap[pName].revenue += amount;
+      } else if (o.status === 'pending') {
+        pendingOrders++;
+      } else if (o.status === 'processing') {
+        processingOrders++;
+      } else if (o.status === 'rejected') {
+        rejectedOrders++;
+      } else if (o.status === 'refunded') {
+        refundedOrders++;
+        refundedAmount += amount;
+      }
+    });
+
     const netSales = grossSales - refundedAmount;
     const avgOrderValue = completedOrders > 0 ? (grossSales / completedOrders).toFixed(2) : '0.00';
-    
+
     let avgOrdersPerDay = '0.00';
-    if (o.first_order_date && o.latest_order_date) {
-      const days = Math.max(1, (new Date(o.latest_order_date) - new Date(o.first_order_date)) / (1000 * 60 * 60 * 24));
+    if (firstOrderDate && latestOrderDate) {
+      const days = Math.max(1, (new Date(latestOrderDate) - new Date(firstOrderDate)) / (1000 * 60 * 60 * 24));
       avgOrdersPerDay = (totalOrders / days).toFixed(2);
     }
-    
-    const productsRes = await db.query(`
-      ${unifiedOrdersCTE}
-      SELECT product_name, COUNT(*) as quantity_sold, COALESCE(SUM(amount), 0) as revenue
-      FROM unified_orders
-      WHERE status = 'completed'
-      GROUP BY product_name
-      ORDER BY quantity_sold DESC
-    `, [storeId, store.starts_at]);
-    
-    const recentOrdersRes = await db.query(`
-      ${unifiedOrdersCTE}
-      SELECT id, created_at, product_name, amount, status, quantity
-      FROM unified_orders
-      ORDER BY created_at DESC
-      LIMIT 10
-    `, [storeId, store.starts_at]);
+
+    const productsSummary = Object.values(productMap).sort((a, b) => b.quantity_sold - a.quantity_sold);
+    const latestOrders = recentOrdersFiltered.slice(0, 10);
     
     // CRITICAL: use store.balance, NOT store.wallet_balance
     console.log({
@@ -593,8 +569,8 @@ router.get('/reports', async (req, res) => {
       refundedOrders,
       grossSales,
       walletBalance: store.balance,
-      productSummary: productsRes.rows,
-      latestOrders: recentOrdersRes.rows
+      productSummary: productsSummary,
+      latestOrders: latestOrders
     });
     
     console.log(`[REPORT_DEBUG] Database queries completed successfully.`);
@@ -629,21 +605,23 @@ router.get('/reports', async (req, res) => {
       },
       orderSummary: {
         totalOrders,
-        pendingOrders: o.pending_orders,
-        processingOrders: o.processing_orders,
+        pendingOrders,
+        processingOrders,
         completedOrders,
         rejectedOrders,
         refundedOrders,
       },
       statistics: {
-        bestProduct: productsRes.rows.length > 0 ? productsRes.rows[0].product_name : null,
-        firstOrderDate: o.first_order_date,
-        latestOrderDate: o.latest_order_date,
+        bestProduct: productsSummary.length > 0 ? productsSummary[0].product_name : null,
+        firstOrderDate,
+        latestOrderDate,
         avgOrdersDay: avgOrdersPerDay,
       },
-      productsSummary: productsRes.rows,
-      recentOrders: recentOrdersRes.rows,
-      generationCount
+      productsSummary,
+      recentOrders: latestOrders,
+      generationCount,
+      periodStart: thirtyDaysAgo.toISOString(),
+      periodEnd: new Date().toISOString()
     });
   } catch (err) {
     console.error(`\n================= REPORT GENERATION CRASH =================`);

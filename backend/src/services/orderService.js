@@ -2,6 +2,7 @@ const db = require('../config/db');
 const notificationService = require('./notificationService');
 const fazerCardsProvider = require('./providers/fazerCardsProvider');
 const fcmNotificationService = require('./fcmNotificationService');
+const topupCatalogService = require('./topupCatalogService');
 
 class OrderService {
   /**
@@ -220,6 +221,42 @@ class OrderService {
     console.log('[DEBUG-ORDER] Executing query for merchant orders (excluding sensitive PINs):', query);
     const res = await db.query(query, [storeId]);
     return res.rows;
+  }
+
+  /**
+   * Fetches and merges both Gift Card orders and Top-up orders into a unified array,
+   * resolving Top-up product names. Used by Dashboard and Reports.
+   */
+  async getAllMergedOrders(storeId) {
+    const orders = await this.getStoreOrders(storeId);
+    const topupOrdersRes = await db.query(`SELECT * FROM topup_orders WHERE store_id = $1 ORDER BY created_at DESC`, [storeId]);
+    
+    // Map normal orders
+    const mappedOrders = orders.map(o => ({
+      ...o,
+      order_type: 'gift_card'
+    }));
+
+    // Map topup orders
+    const mappedTopups = topupOrdersRes.rows.map(o => {
+      let resolvedName = o.offer_id;
+      if (o.offer_id) {
+        const offerDetails = topupCatalogService.getOfferDetails(o.offer_id);
+        if (offerDetails && offerDetails.name) {
+          resolvedName = offerDetails.name;
+        }
+      }
+      return {
+        ...o,
+        order_type: 'topup',
+        order_number: o.local_order_id,
+        product_name: resolvedName,
+        total_amount: o.selling_price
+      };
+    });
+
+    const allOrders = [...mappedOrders, ...mappedTopups].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return allOrders;
   }
 
   /**
