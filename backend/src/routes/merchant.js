@@ -501,12 +501,13 @@ router.get('/reports', async (req, res) => {
       WHERE store_id = $1 AND transaction_type = 'credit'
     `, [storeId]);
     
-    // Use unified orders for the last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Define the report period (Last 30 Days)
+    const periodEnd = new Date();
+    const periodStart = new Date();
+    periodStart.setDate(periodStart.getDate() - 30);
     
     const allOrders = await orderService.getAllMergedOrders(storeId);
-    const recentOrdersFiltered = allOrders.filter(o => new Date(o.created_at) >= thirtyDaysAgo);
+    const recentOrdersFiltered = allOrders.filter(o => new Date(o.created_at) >= periodStart);
 
     let totalOrders = 0;
     let completedOrders = 0;
@@ -579,8 +580,8 @@ router.get('/reports', async (req, res) => {
     console.log(`[REPORT_DEBUG] Step: ${step}`);
     await db.query(`
       INSERT INTO report_generations (store_id, subscription_id, period_start, period_end)
-      VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-    `, [storeId, store.sub_id, store.starts_at]);
+      VALUES ($1, $2, $3, $4)
+    `, [storeId, store.sub_id, periodStart, periodEnd]);
     
     step = 'Returning JSON data successfully';
     console.log(`[REPORT_DEBUG] Step: ${step}`);
@@ -620,8 +621,8 @@ router.get('/reports', async (req, res) => {
       productsSummary,
       recentOrders: latestOrders,
       generationCount,
-      periodStart: thirtyDaysAgo.toISOString(),
-      periodEnd: new Date().toISOString()
+      periodStart: periodStart.toISOString(),
+      periodEnd: periodEnd.toISOString()
     });
   } catch (err) {
     console.error(`\n================= REPORT GENERATION CRASH =================`);
