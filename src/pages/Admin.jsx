@@ -1493,7 +1493,7 @@ const AdminDashboard = () => {
                           <tr><td colSpan="7"><div className="koara-empty-state"><Database size={32} /><span>No deposit requests found.</span></div></td></tr>
                         ) : adminDeposits.map(d => (
                           <tr key={d.id}>
-                            <td className="cell-mono text-xs" style={{ color: '#64748B' }}>#{d.id.substring(0,8)}</td>
+                            <td className="cell-mono text-xs" style={{ color: '#64748B' }}>#{d.id}</td>
                             <td>
                               <div className="font-semibold text-white">{d.store_name}</div>
                               <div className="text-xs text-slate-400">{formatDate(d.created_at)}</div>
@@ -2218,7 +2218,7 @@ const AdminDashboard = () => {
                         <tr><td colSpan="6"><div className="koara-empty-state"><Banknote size={32} /><span>No deposit history found.</span></div></td></tr>
                       ) : walletHistory.map(deposit => (
                         <tr key={deposit.id}>
-                          <td className="cell-mono">#{deposit.id.substring(0,8)}</td>
+                          <td className="cell-mono">#{deposit.id}</td>
                           <td>{formatDate(deposit.created_at)}</td>
                           <td className="capitalize">{deposit.method_name || 'Bank Transfer'}</td>
                           <td className="text-end font-mono" dir="ltr">{deposit.amount} {deposit.currency}</td>

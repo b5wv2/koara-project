@@ -88,16 +88,16 @@ const LocalBankTransferModal = ({ isOpen, onClose, onSuccess }) => {
       const uploadData = await uploadRes.json();
       if (!uploadRes.ok) throw new Error(uploadData.error || 'Failed to upload receipt');
 
-      const requestedAmt = parseFloat(amount);
+      const receiveAmt = parseFloat(amount);
       const exRate = parseFloat(selectedCurrency.exchange_rate);
-      const creditedAmt = selectedCurrency.is_base_currency ? requestedAmt : (requestedAmt / exRate);
+      const transferAmt = selectedCurrency.is_base_currency ? receiveAmt : (receiveAmt * exRate);
       const baseCurrencyCode = config.currencies.find(c => c.is_base_currency)?.code || 'USD';
 
       const depositData = {
-        requested_amount: requestedAmt,
+        requested_amount: transferAmt,
         requested_currency: selectedCurrency.code,
         exchange_rate_used: exRate,
-        credited_amount: creditedAmt,
+        credited_amount: receiveAmt,
         credited_currency: baseCurrencyCode,
         deposit_method_id: selectedMethod.id,
         receipt_url: uploadData.url
@@ -168,7 +168,7 @@ const LocalBankTransferModal = ({ isOpen, onClose, onSuccess }) => {
                 </div>
                 
                 <div>
-                  <label className="koara-label">{t('amount') || 'Amount'} ({selectedCurrency?.symbol})</label>
+                  <label className="koara-label">{t('amount_to_receive') || 'Deposit Amount'} ({config.currencies.find(c => c.is_base_currency)?.code || 'USD'})</label>
                   <input 
                     type="number" 
                     min="1" 
@@ -181,8 +181,8 @@ const LocalBankTransferModal = ({ isOpen, onClose, onSuccess }) => {
                   />
                   {!selectedCurrency?.is_base_currency && amount && (
                     <div className="text-xs text-slate-400 mt-2">
-                      Exchange Rate: 1 Base Currency = {selectedCurrency?.exchange_rate} {selectedCurrency?.code}<br/>
-                      Wallet will be credited: <strong className="text-white">{(amount / selectedCurrency?.exchange_rate).toFixed(2)} Base Currency</strong>
+                      Exchange Rate: 1 {config.currencies.find(c => c.is_base_currency)?.code || 'USD'} = {selectedCurrency?.exchange_rate} {selectedCurrency?.code}<br/>
+                      You need to transfer: <strong className="text-white">{(amount * selectedCurrency?.exchange_rate).toFixed(2)} {selectedCurrency?.code}</strong>
                     </div>
                   )}
                 </div>
@@ -249,7 +249,7 @@ const LocalBankTransferModal = ({ isOpen, onClose, onSuccess }) => {
                       </div>
                     )}
                     <div className="pt-2 mt-2 border-t border-slate-800 text-xs text-orange-200 bg-orange-950/30 p-3 rounded-lg">
-                      Please transfer exactly <strong className="text-white">{amount} {selectedCurrency?.code}</strong> to the account above.
+                      Please transfer exactly <strong className="text-white">{(amount * (selectedCurrency?.exchange_rate || 1)).toFixed(2)} {selectedCurrency?.code}</strong> to the account above.
                     </div>
                   </div>
                 )}
