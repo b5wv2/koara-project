@@ -1,4 +1,7 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
 const db = require('../config/db');
 const notificationService = require('../services/notificationService');
@@ -833,6 +836,45 @@ router.put('/deposit-methods/:id', async (req, res) => {
     console.error('Error updating deposit method:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// Logo upload endpoint for deposit methods
+const logoStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, '../../uploads/logos');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'logo-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadLogo = multer({
+  storage: logoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|svg|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Only png, jpg, jpeg, svg, and webp are allowed"));
+  }
+});
+
+router.post('/deposit-methods/logo', superAdminMiddleware, uploadLogo.single('logo'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No logo file provided' });
+  }
+  
+  // Return the relative URL to the uploaded logo
+  const logoUrl = `/uploads/logos/${req.file.filename}`;
+  res.json({ success: true, logo_url: logoUrl });
 });
 
 // --- Currencies ---

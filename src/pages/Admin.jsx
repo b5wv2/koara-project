@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote, Palette, Loader2, Megaphone, Send, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote, Palette, Loader2, Megaphone, Send, AlertCircle, Clock, CheckCircle, Landmark, DollarSign } from 'lucide-react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
@@ -11,6 +11,8 @@ import LocalBankTransferModal from '../components/LocalBankTransferModal';
 import SubscriptionPaymentModal from '../components/SubscriptionPaymentModal';
 import MerchantWithdrawalModal from '../components/modals/MerchantWithdrawalModal';
 import MerchantCustomizationTab from '../components/MerchantCustomizationTab';
+import CurrenciesManagement from '../components/admin/CurrenciesManagement';
+import DepositMethodsManagement from '../components/admin/DepositMethodsManagement';
 import PremiumLockOverlay from '../components/ui/PremiumLockOverlay';
 import Toggle from '../components/ui/Toggle';
 import { getImageUrl } from '../utils/imageUrl';
@@ -716,7 +718,7 @@ const AdminDashboard = () => {
     if (merchantActionModal.type === 'add') {
       const amount = merchantActionModal.amount;
       setMerchantActionModal({ isOpen: false, type: '', amount: 0 });
-      setProviderModal({ isOpen: true, amount });
+      setLocalBankModal({ isOpen: true, amount });
     } else {
       setTimeout(() => {
         alert(`Request to ${merchantActionModal.type} $${merchantActionModal.amount} submitted to admin.`);
@@ -816,7 +818,9 @@ const AdminDashboard = () => {
     { key: 'catalog', icon: Package, label: 'Product Catalog' },
     ...(user?.isSuperAdmin ? [
       { key: 'broadcasts', icon: Megaphone, label: 'Broadcasts' },
-      { key: 'subscriptions', icon: Crown, label: 'Subscriptions' }
+      { key: 'subscriptions', icon: Crown, label: 'Subscriptions' },
+      { key: 'currencies', icon: DollarSign, label: 'Currencies' },
+      { key: 'deposit_methods', icon: Landmark, label: 'Deposit Methods' }
     ] : []),
   ];
 
@@ -1693,6 +1697,16 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </>
+            )}
+
+            {/* ══ ADMIN: Currencies ══ */}
+            {role === 'admin' && activeTab === 'currencies' && (
+              <CurrenciesManagement />
+            )}
+
+            {/* ══ ADMIN: Deposit Methods ══ */}
+            {role === 'admin' && activeTab === 'deposit_methods' && (
+              <DepositMethodsManagement />
             )}
 
             {/* ══ ADMIN: Broadcasts ══ */}
