@@ -316,9 +316,49 @@ const AdminDashboard = () => {
       
       const data = await res.json();
       
-      const logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(KoaraLogoRaw);
+      console.log('--- DEBUG REPORT GENERATION ---');
+      console.log('1. Report Data Object:', data);
       
+      const logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(KoaraLogoRaw);
       const htmlString = generateReportHtml(data, lang, logoUrl);
+      
+      console.log('2. HTML String Length:', htmlString.length);
+      
+      // 3 & 5. Temporarily render the generated HTML directly inside the browser
+      const debugContainer = document.createElement('div');
+      debugContainer.id = 'debug-report-container';
+      debugContainer.style.position = 'fixed';
+      debugContainer.style.top = '0';
+      debugContainer.style.left = '0';
+      debugContainer.style.width = '100vw';
+      debugContainer.style.height = '100vh';
+      debugContainer.style.backgroundColor = 'white';
+      debugContainer.style.zIndex = '999999';
+      debugContainer.style.overflow = 'auto';
+      debugContainer.innerHTML = htmlString;
+      
+      const closeBtn = document.createElement('button');
+      closeBtn.innerText = 'Close Debug View & Continue PDF Export';
+      closeBtn.style.position = 'fixed';
+      closeBtn.style.top = '20px';
+      closeBtn.style.right = '20px';
+      closeBtn.style.padding = '10px';
+      closeBtn.style.zIndex = '1000000';
+      closeBtn.style.background = 'black';
+      closeBtn.style.color = 'white';
+      
+      document.body.appendChild(debugContainer);
+      debugContainer.appendChild(closeBtn);
+      
+      console.log('3. Rendered debug container to DOM. Inspect #debug-report-container in DevTools to verify sections.');
+      
+      // Wait for user to inspect and close the debug view before proceeding
+      await new Promise(resolve => {
+        closeBtn.onclick = () => {
+          debugContainer.remove();
+          resolve();
+        };
+      });
       
       const opt = {
         margin:       0,
@@ -328,6 +368,7 @@ const AdminDashboard = () => {
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
       };
 
+      // 4. Verify that html2pdf() is exporting the correct container element by passing the raw string again
       await html2pdf().set(opt).from(htmlString).save();
     } catch (err) {
       console.error('Error downloading report:', err);
