@@ -696,6 +696,27 @@ const initializeDatabase = async () => {
     await client.query(createDepositMethodsTableQuery);
     await client.query(createWalletDepositRequestsTableQuery);
 
+    // Seed required currencies
+    const defaultCurrencies = [
+      { code: 'USD', name: 'US Dollar', symbol: '$', is_base: true },
+      { code: 'SAR', name: 'Saudi Riyal', symbol: 'SR', is_base: false },
+      { code: 'AED', name: 'UAE Dirham', symbol: 'AED', is_base: false },
+      { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£', is_base: false },
+      { code: 'SDG', name: 'Sudanese Pound', symbol: 'SDG', is_base: false },
+      { code: 'KWD', name: 'Kuwaiti Dinar', symbol: 'KD', is_base: false },
+      { code: 'QAR', name: 'Qatari Riyal', symbol: 'QR', is_base: false },
+      { code: 'BHD', name: 'Bahraini Dinar', symbol: 'BD', is_base: false },
+      { code: 'OMR', name: 'Omani Rial', symbol: 'OMR', is_base: false }
+    ];
+
+    for (const currency of defaultCurrencies) {
+      await client.query(`
+        INSERT INTO currencies (code, name, symbol, is_base_currency, is_active)
+        VALUES ($1, $2, $3, $4, true)
+        ON CONFLICT (code) DO NOTHING
+      `, [currency.code, currency.name, currency.symbol, currency.is_base]);
+    }
+
     // Seed super admin user if not exists
     const adminEmail = 'admin@gmil.com';
     const checkAdmin = await client.query('SELECT id FROM users WHERE email = $1', [adminEmail]);
