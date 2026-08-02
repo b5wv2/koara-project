@@ -455,6 +455,61 @@ const createReportGenerationsTableQuery = `
   );
 `;
 
+const createCurrenciesTableQuery = `
+  CREATE TABLE IF NOT EXISTS currencies (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(10) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    symbol VARCHAR(10),
+    exchange_rate NUMERIC(15, 6) DEFAULT 1.0,
+    is_base_currency BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
+const createDepositMethodsTableQuery = `
+  CREATE TABLE IF NOT EXISTS deposit_methods (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    account_holder VARCHAR(255),
+    account_number VARCHAR(255),
+    iban VARCHAR(100),
+    swift VARCHAR(50),
+    currency_code VARCHAR(10) REFERENCES currencies(code) ON UPDATE CASCADE,
+    country VARCHAR(100),
+    notes TEXT,
+    logo_url TEXT,
+    instructions TEXT,
+    min_deposit NUMERIC(15, 2) DEFAULT 0,
+    max_deposit NUMERIC(15, 2) DEFAULT 999999999,
+    is_active BOOLEAN DEFAULT TRUE,
+    display_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
+const createWalletDepositRequestsTableQuery = `
+  CREATE TABLE IF NOT EXISTS wallet_deposit_requests (
+    id SERIAL PRIMARY KEY,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    requested_amount NUMERIC(15, 2) NOT NULL,
+    requested_currency VARCHAR(10) REFERENCES currencies(code) ON UPDATE CASCADE,
+    exchange_rate_used NUMERIC(15, 6) NOT NULL,
+    credited_amount NUMERIC(15, 2) NOT NULL,
+    credited_currency VARCHAR(10) NOT NULL,
+    deposit_method_id INTEGER NOT NULL REFERENCES deposit_methods(id),
+    receipt_url TEXT NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    rejection_reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    reviewed_by INTEGER
+  );
+`;
+
 // Run initial schema DDL in a transaction
 const initializeDatabase = async () => {
   const client = await db.pool.connect();
@@ -635,6 +690,11 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE,
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
     `);
+
+    // Create New Wallet Deposit System tables
+    await client.query(createCurrenciesTableQuery);
+    await client.query(createDepositMethodsTableQuery);
+    await client.query(createWalletDepositRequestsTableQuery);
 
     // Seed super admin user if not exists
     const adminEmail = 'admin@gmil.com';

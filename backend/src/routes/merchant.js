@@ -635,4 +635,99 @@ router.get('/reports', async (req, res) => {
   }
 });
 
+// ==========================================
+// Wallet Deposit System - Merchant APIs
+// ==========================================
+const multer = require('multer');
+const path = require('path');
+
+const receiptStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../../uploads'));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'receipt-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadReceipt = multer({
+  storage: receiptStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only images (jpg, png, webp) or PDFs are allowed!'));
+    }
+  }
+});
+
+router.get('/wallet/config', async (req, res) => {
+  try {
+    const methodsRes = await db.pool.query('SELECT * FROM deposit_methods WHERE is_active = true ORDER BY display_order ASC');
+    const currenciesRes = await db.pool.query('SELECT * FROM currencies WHERE is_active = true ORDER BY is_base_currency DESC, id ASC');
+    res.json({ depositMethods: methodsRes.rows, currencies: currenciesRes.rows });
+  } catch (err) {
+    console.error('Error fetching wallet config:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/wallet/upload-receipt', uploadReceipt.single('receipt'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded.' });
+  }
+  // Construct the URL to access the uploaded file
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const host = req.get('host');
+  const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+  res.json({ url: fileUrl });
+});
+
+router.post('/wallet/deposit', async (req, res) => {
+  try {
+    const store_id = req.merchantStoreId;
+    const { requested_amount, requested_currency, exchange_rate_used, credited_amount, credited_currency, deposit_method_id, receipt_url } = req.body;
+    
+    if (!requested_amount || !requested_currency || !exchange_rate_used || !credited_amount || !credited_currency || !deposit_method_id || !receipt_url) {
+       return res.status(400).json({ error: 'Missing required deposit fields' });
+    }
+
+    const query = `
+      INSERT INTO wallet_deposit_requests 
+      (store_id, requested_amount, requested_currency, exchange_rate_used, credited_amount, credited_currency, deposit_method_id, receipt_url, status) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending') RETURNING *
+    `;
+    const result = await db.pool.query(query, [
+      store_id, requested_amount, requested_currency, exchange_rate_used, credited_amount, credited_currency, deposit_method_id, receipt_url
+    ]);
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating wallet deposit:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.get('/wallet/history', async (req, res) => {
+  try {
+    const store_id = req.merchantStoreId;
+    const result = await db.pool.query(`
+      SELECT r.*, d.name as deposit_method_name 
+      FROM wallet_deposit_requests r
+      JOIN deposit_methods d ON r.deposit_method_id = d.id
+      WHERE r.store_id = $1 
+      ORDER BY r.created_at DESC
+    `, [store_id]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching wallet history:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

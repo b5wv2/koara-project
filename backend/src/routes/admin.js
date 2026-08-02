@@ -785,4 +785,133 @@ router.post('/subscriptions/grant', async (req, res) => {
   }
 });
 
+// ==========================================
+// Wallet Deposit System - Admin APIs
+// ==========================================
+const walletDepositService = require('../services/walletDepositService');
+
+// --- Deposit Methods ---
+router.get('/deposit-methods', async (req, res) => {
+  try {
+    const result = await db.pool.query('SELECT * FROM deposit_methods ORDER BY display_order ASC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching deposit methods:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/deposit-methods', async (req, res) => {
+  try {
+    const { name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order } = req.body;
+    const query = `
+      INSERT INTO deposit_methods 
+      (name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *
+    `;
+    const result = await db.pool.query(query, [name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit || 0, max_deposit || 999999999, is_active ?? true, display_order || 0]);
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating deposit method:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/deposit-methods/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order } = req.body;
+    const query = `
+      UPDATE deposit_methods 
+      SET name = $1, type = $2, account_holder = $3, account_number = $4, iban = $5, swift = $6, currency_code = $7, country = $8, notes = $9, logo_url = $10, instructions = $11, min_deposit = $12, max_deposit = $13, is_active = $14, display_order = $15
+      WHERE id = $16 RETURNING *
+    `;
+    const result = await db.pool.query(query, [name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order, id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating deposit method:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Currencies ---
+router.get('/currencies', async (req, res) => {
+  try {
+    const result = await db.pool.query('SELECT * FROM currencies ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching currencies:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/currencies', async (req, res) => {
+  try {
+    const { code, name, symbol, exchange_rate, is_base_currency, is_active } = req.body;
+    const result = await db.pool.query(
+      'INSERT INTO currencies (code, name, symbol, exchange_rate, is_base_currency, is_active) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [code, name, symbol, exchange_rate || 1.0, is_base_currency || false, is_active ?? true]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating currency:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/currencies/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code, name, symbol, exchange_rate, is_base_currency, is_active } = req.body;
+    const result = await db.pool.query(
+      'UPDATE currencies SET code = $1, name = $2, symbol = $3, exchange_rate = $4, is_base_currency = $5, is_active = $6 WHERE id = $7 RETURNING *',
+      [code, name, symbol, exchange_rate, is_base_currency, is_active, id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating currency:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Wallet Deposit Requests ---
+router.get('/wallet-deposits', async (req, res) => {
+  try {
+    const result = await db.pool.query(`
+      SELECT r.*, s.store_name, s.subdomain, d.name as deposit_method_name 
+      FROM wallet_deposit_requests r
+      JOIN stores s ON r.store_id = s.id
+      JOIN deposit_methods d ON r.deposit_method_id = d.id
+      ORDER BY r.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching wallet deposits:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/wallet-deposits/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await walletDepositService.approveRequest(id, req.user.id);
+    res.json(response);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.post('/wallet-deposits/:id/reject', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const response = await walletDepositService.rejectRequest(id, reason, req.user.id);
+    res.json(response);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 module.exports = router;

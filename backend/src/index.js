@@ -28,7 +28,6 @@ const merchantProductRoutes = require('./routes/merchantProducts');
 const merchantTopupsRoutes = require('./routes/merchantTopups');
 const storeTopupsRoutes = require('./routes/storeTopups');
 const paymentRoutes = require('./routes/payments');
-const localPaymentRoutes = require('./routes/localPayment');
 const subscriptionRoutes = require('./routes/subscription');
 const topupSyncService = require('./services/topupSyncService');
 const authMiddleware = require('./middleware/authMiddleware');
@@ -88,7 +87,6 @@ app.use('/api/merchant', authMiddleware, merchantRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/store/topups', storeTopupsRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/payments/local', localPaymentRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 
 // API Health check endpoint

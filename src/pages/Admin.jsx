@@ -441,12 +441,54 @@ const AdminDashboard = () => {
     }
   };
 
+  const [walletHistory, setWalletHistory] = useState([]);
+  const [walletHistoryLoading, setWalletHistoryLoading] = useState(false);
+
+  const fetchWalletHistory = async () => {
+    try {
+      setWalletHistoryLoading(true);
+      const res = await fetch(`${API_BASE_URL}/api/merchant/wallet/history`, { credentials: 'include' });
+      const data = await res.json();
+      if (res.ok) {
+        setWalletHistory(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch wallet history:', err);
+    } finally {
+      setWalletHistoryLoading(false);
+    }
+  };
+
+  const [adminDeposits, setAdminDeposits] = useState([]);
+  const [adminDepositsLoading, setAdminDepositsLoading] = useState(false);
+  const [adminDepositsSearch, setAdminDepositsSearch] = useState('');
+  const [depositProcessingId, setDepositProcessingId] = useState(null);
+
+  const fetchAdminDeposits = async () => {
+    try {
+      setAdminDepositsLoading(true);
+      const res = await fetch(`${API_BASE_URL}/api/admin/wallet-deposits`, { credentials: 'include' });
+      const data = await res.json();
+      if (res.ok) setAdminDeposits(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAdminDepositsLoading(false);
+    }
+  };
+
   React.useEffect(() => {
     if (role === 'admin' && activeTab === 'broadcasts') {
       fetchBroadcasts();
     }
     if (role === 'admin' && activeTab === 'subscriptions') {
       fetchAdminSubscriptions();
+    }
+    if (role === 'admin' && activeTab === 'wallet_deposits') {
+      fetchAdminDeposits();
+    }
+    if (role === 'merchant' && activeTab === 'deposits') {
+      fetchWalletHistory();
     }
   }, [role, activeTab]);
 
@@ -768,6 +810,7 @@ const AdminDashboard = () => {
     { key: 'merchants', icon: Users, label: 'Store Management' },
     { key: 'ledger', icon: Database, label: 'Global Ledger' },
     { key: 'withdrawals', icon: Banknote, label: 'Withdrawals' },
+    { key: 'wallet_deposits', icon: Database, label: 'Wallet Deposits' },
     { key: 'kyc', icon: ShieldCheck, label: 'KYC Requests' },
     { key: 'invitation_codes', icon: Tag, label: 'Invitation Codes' },
     { key: 'catalog', icon: Package, label: 'Product Catalog' },
@@ -779,6 +822,7 @@ const AdminDashboard = () => {
 
   const merchantNavItems = [
     { key: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { key: 'deposits', icon: Banknote, label: 'Deposit History' },
     { key: 'products', icon: Package, label: 'Gift Cards' },
     { key: 'topups', icon: Package, label: 'Direct Top-ups' },
     { key: 'promotions', icon: Tag, label: 'Promotions' },
@@ -804,6 +848,58 @@ const AdminDashboard = () => {
     const res = await rejectWithdrawal(id);
     if (!res.success) alert(res.message || 'Failed to reject withdrawal');
     setWithdrawalProcessingId(null);
+  };
+
+  const handleAdminDepositApprove = async (id, amount) => {
+    const creditedAmount = prompt(`Confirm the amount to credit (in USD):`, amount);
+    if (!creditedAmount || isNaN(parseFloat(creditedAmount)) || parseFloat(creditedAmount) <= 0) return;
+    
+    setDepositProcessingId(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/wallet-deposits/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ creditedAmount: parseFloat(creditedAmount) })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Deposit approved and wallet credited successfully');
+        fetchAdminDeposits();
+      } else {
+        alert(data.error || 'Failed to approve deposit');
+      }
+    } catch (err) {
+      alert('Error approving deposit');
+    } finally {
+      setDepositProcessingId(null);
+    }
+  };
+
+  const handleAdminDepositReject = async (id) => {
+    const reason = prompt(`Enter rejection reason:`);
+    if (reason === null) return;
+    
+    setDepositProcessingId(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/wallet-deposits/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reason })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Deposit rejected successfully');
+        fetchAdminDeposits();
+      } else {
+        alert(data.error || 'Failed to reject deposit');
+      }
+    } catch (err) {
+      alert('Error rejecting deposit');
+    } finally {
+      setDepositProcessingId(null);
+    }
   };
 
   const handleCreateCode = async (e) => {
@@ -1348,6 +1444,101 @@ const AdminDashboard = () => {
               </div>
             )}
 
+            {/* ══ ADMIN: Wallet Deposits ══ */}
+            {role === 'admin' && activeTab === 'wallet_deposits' && (
+              <div className="space-y-6">
+                <div className="dash-card p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <Database className="text-blue-400" />
+                      Wallet Deposit Requests
+                    </h2>
+                    <p className="text-sm text-slate-400 mt-1">Review and approve manual top-up requests from merchants.</p>
+                  </div>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-64">
+                      <input 
+                        type="text" 
+                        placeholder="Search store, method..." 
+                        value={adminDepositsSearch}
+                        onChange={(e) => setAdminDepositsSearch(e.target.value)}
+                        className="koara-input text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dash-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="koara-table">
+                      <thead>
+                        <tr>
+                          <th>Request ID</th>
+                          <th>Store</th>
+                          <th>Method</th>
+                          <th>Requested</th>
+                          <th>Credited</th>
+                          <th>Status</th>
+                          <th className="text-end">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {adminDepositsLoading ? (
+                          <tr><td colSpan="7"><div className="koara-empty-state"><Activity size={32} /><span>Loading deposits...</span></div></td></tr>
+                        ) : adminDeposits.length === 0 ? (
+                          <tr><td colSpan="7"><div className="koara-empty-state"><Database size={32} /><span>No deposit requests found.</span></div></td></tr>
+                        ) : adminDeposits.map(d => (
+                          <tr key={d.id}>
+                            <td className="cell-mono text-xs" style={{ color: '#64748B' }}>#{d.id.substring(0,8)}</td>
+                            <td>
+                              <div className="font-semibold text-white">{d.store_name}</div>
+                              <div className="text-xs text-slate-400">{formatDate(d.created_at)}</div>
+                            </td>
+                            <td className="capitalize">{d.method_name || 'Bank Transfer'}</td>
+                            <td className="font-mono text-white" dir="ltr">{d.amount} {d.currency}</td>
+                            <td className="font-mono text-blue-400" dir="ltr">
+                              {d.credited_amount ? `$${parseFloat(d.credited_amount).toFixed(2)}` : '-'}
+                            </td>
+                            <td>
+                              <StatusBadge status={d.status} />
+                            </td>
+                            <td className="text-end">
+                              {d.status === 'pending' ? (
+                                <div className="flex items-center justify-end gap-2">
+                                  {d.receipt_url && (
+                                    <button 
+                                      onClick={() => window.open(getImageUrl(d.receipt_url), '_blank')}
+                                      className="dash-btn dash-btn-secondary py-1.5 px-3 text-xs"
+                                    >
+                                      Receipt
+                                    </button>
+                                  )}
+                                  <button onClick={() => handleAdminDepositApprove(d.id, d.amount)} disabled={depositProcessingId !== null} className="dash-btn dash-btn-primary py-1.5 px-3 text-xs">Approve</button>
+                                  <button onClick={() => handleAdminDepositReject(d.id)} disabled={depositProcessingId !== null} className="dash-btn dash-btn-secondary py-1.5 px-3 text-xs" style={{ color: '#f87171', background: 'rgba(248,113,113,0.1)' }}>Reject</button>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-end gap-1">
+                                  {d.receipt_url && (
+                                    <button 
+                                      onClick={() => window.open(getImageUrl(d.receipt_url), '_blank')}
+                                      className="text-xs text-blue-400 hover:underline"
+                                    >
+                                      View Receipt
+                                    </button>
+                                  )}
+                                  <span className="text-xs text-slate-500">{formatDate(d.processed_at)}</span>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ══ ADMIN: Catalog ══ */}
             {role === 'admin' && activeTab === 'catalog' && (
               <>
@@ -1881,7 +2072,7 @@ const AdminDashboard = () => {
                         ${parseFloat(store?.balance || 0).toFixed(2)}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <button onClick={() => setMerchantActionModal({ isOpen: true, type: 'add' })} className="dash-btn dash-btn-secondary justify-center py-2.5 rounded-xl text-xs font-semibold">
+                        <button onClick={() => setLocalBankModal({ isOpen: true })} className="dash-btn dash-btn-secondary justify-center py-2.5 rounded-xl text-xs font-semibold">
                           Add Funds
                         </button>
                         <button onClick={() => setShowWithdrawalModal(true)} className="dash-btn dash-btn-primary justify-center py-2.5 rounded-xl text-xs font-semibold">
@@ -1985,6 +2176,50 @@ const AdminDashboard = () => {
                   )}
                 </div>
               </>
+            )}
+
+            {/* ══ MERCHANT: Deposits ══ */}
+            {role === 'merchant' && activeTab === 'deposits' && (
+              <div className="dash-card overflow-hidden">
+                <SectionHeader 
+                  title="Deposit History" 
+                  description="Track the status of your wallet deposit requests"
+                />
+                <div className="overflow-x-auto">
+                  <table className="koara-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Method</th>
+                        <th className="text-end">Requested</th>
+                        <th className="text-end">Credited</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {walletHistoryLoading ? (
+                        <tr><td colSpan="6"><div className="koara-empty-state"><div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /><span>Loading history...</span></div></td></tr>
+                      ) : walletHistory.length === 0 ? (
+                        <tr><td colSpan="6"><div className="koara-empty-state"><Banknote size={32} /><span>No deposit history found.</span></div></td></tr>
+                      ) : walletHistory.map(deposit => (
+                        <tr key={deposit.id}>
+                          <td className="cell-mono">#{deposit.id.substring(0,8)}</td>
+                          <td>{formatDate(deposit.created_at)}</td>
+                          <td className="capitalize">{deposit.method_name || 'Bank Transfer'}</td>
+                          <td className="text-end font-mono" dir="ltr">{deposit.amount} {deposit.currency}</td>
+                          <td className="text-end font-mono" dir="ltr">
+                            {deposit.credited_amount ? `$${parseFloat(deposit.credited_amount).toFixed(2)}` : '-'}
+                          </td>
+                          <td>
+                            <StatusBadge status={deposit.status} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             )}
 
             {/* ══ MERCHANT: Products ══ */}
@@ -2788,8 +3023,7 @@ const AdminDashboard = () => {
 
       <LocalBankTransferModal
         isOpen={localBankModal.isOpen}
-        onClose={() => setLocalBankModal({ isOpen: false, amount: 0 })}
-        amount={localBankModal.amount}
+        onClose={() => setLocalBankModal({ isOpen: false })}
         onSuccess={() => {
           setLocalBankModal({ isOpen: false, amount: 0 });
           alert('Local bank transfer successful!');
