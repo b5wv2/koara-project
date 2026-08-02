@@ -1,4 +1,7 @@
 const express = require('express');
+const fsModule = require('fs');
+const path = require('path');
+const multer = require('multer');
 const router = express.Router();
 const db = require('../config/db');
 const orderService = require('../services/orderService');
@@ -442,8 +445,7 @@ router.post('/device-token', async (req, res) => {
 });
 
 
-const fsModule = require('fs');
-const path = require('path');
+
 
 
 router.get('/reports', async (req, res) => {
@@ -638,8 +640,7 @@ router.get('/reports', async (req, res) => {
 // ==========================================
 // Wallet Deposit System - Merchant APIs
 // ==========================================
-const multer = require('multer');
-const path = require('path');
+
 
 const receiptStorage = multer.diskStorage({
   destination: function (req, file, cb) {
