@@ -3040,7 +3040,6 @@ const AdminDashboard = () => {
         onClose={() => setLocalBankModal({ isOpen: false })}
         onSuccess={() => {
           setLocalBankModal({ isOpen: false, amount: 0 });
-          alert('Local bank transfer successful!');
           syncWalletBalance(storeId);
           if (activeTab === 'dashboard') {
             fetchMerchantOrders(storeId).catch(console.error);

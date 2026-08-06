@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const OTPInput = ({ length = 6, onComplete, value, onChange }) => {
+const OTPInput = ({ length = 6, onComplete, value, onChange, disabled = false, hasError = false }) => {
   const [otp, setOtp] = useState(new Array(length).fill(""));
   const inputRefs = useRef([]);
 
@@ -14,6 +14,12 @@ const OTPInput = ({ length = 6, onComplete, value, onChange }) => {
       setOtp(newOtp);
     }
   }, [value, length]);
+
+  useEffect(() => {
+    if (hasError && inputRefs.current[0]) {
+      inputRefs.current[0].focus();
+    }
+  }, [hasError]);
 
   const handleChange = (e, index) => {
     const val = e.target.value;
@@ -75,7 +81,7 @@ const OTPInput = ({ length = 6, onComplete, value, onChange }) => {
   };
 
   return (
-    <div className="flex gap-2 justify-center" onPaste={handlePaste}>
+    <div className={`flex gap-2 justify-center ${hasError ? "animate-shake" : ""}`} onPaste={handlePaste}>
       {otp.map((data, index) => (
         <input
           key={index}
@@ -83,11 +89,12 @@ const OTPInput = ({ length = 6, onComplete, value, onChange }) => {
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={1}
+          disabled={disabled}
           ref={(ref) => (inputRefs.current[index] = ref)}
           value={data}
           onChange={(e) => handleChange(e, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
-          className="w-10 h-12 text-center text-xl font-semibold text-black bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-koara-blue focus:ring-2 focus:ring-koara-blue/20 transition-all"
+          className={`w-10 h-12 text-center text-xl font-semibold bg-slate-900 border text-white rounded-xl focus:outline-none focus:ring-2 transition-all ${hasError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-700 focus:border-koara-blue focus:ring-koara-blue/20'} ${data !== '' ? 'animate-otp-in' : ''}`}
         />
       ))}
     </div>

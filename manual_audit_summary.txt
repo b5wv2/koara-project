@@ -1,0 +1,16 @@
+MISSING CONTEXT:
+src\components\modals\TopupConfigModal.jsx
+src\pages\Admin\components\DashboardHeader.jsx
+src\pages\StoreNotFound.jsx
+
+MISSING KEYS:
+src\components\admin\CurrenciesManagement.jsx -> currencies_management
+src\components\CryptoPaymentModal.jsx -> crypto_checkout_nowpayments, connecting_nowpayments, try_again, wallet_credited_closing, amount_to_pay, waiting_for_payment, complete_in_window, open_payment_window, cancel
+src\components\LocalBankTransferModal.jsx -> err_missing_fields, success_deposit_submitted, wallet_deposit, currency, amount_to_receive, next, deposit_method, upload_receipt
+src\components\LoginModal.jsx -> sign_in
+src\components\modals\AdminApproveDepositModal.jsx -> review_deposit_request, receipt, no_receipt_uploaded, requested_wallet_credit, transferred_amount, exchange_rate_used, deposit_method, rejection_reason, e_g_invalid_receipt_or_amount_, cancel, confirm_reject, reject_request, approve_deposit, approving_this_request_will_im, usd
+src\components\OnboardingModal.jsx -> err_checking_subdomain, modal_title_complete, create store, 
+src\pages\Storefront.jsx -> upload_receipt_required
+
+HARDCODED FILES:
+Total hardcoded files: 50

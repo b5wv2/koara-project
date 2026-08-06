@@ -806,13 +806,13 @@ router.get('/deposit-methods', async (req, res) => {
 
 router.post('/deposit-methods', async (req, res) => {
   try {
-    const { name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order } = req.body;
+    const { name, type, account_holder, account_number, iban, bban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order } = req.body;
     const query = `
       INSERT INTO deposit_methods 
-      (name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *
+      (name, type, account_holder, account_number, iban, bban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *
     `;
-    const result = await db.pool.query(query, [name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit || 0, max_deposit || 999999999, is_active ?? true, display_order || 0]);
+    const result = await db.pool.query(query, [name, type, account_holder, account_number, iban, bban, swift, currency_code, country, notes, logo_url, instructions, min_deposit || 0, max_deposit || 999999999, is_active ?? true, display_order || 0]);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error creating deposit method:', err);
@@ -823,13 +823,13 @@ router.post('/deposit-methods', async (req, res) => {
 router.put('/deposit-methods/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order } = req.body;
+    const { name, type, account_holder, account_number, iban, bban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order } = req.body;
     const query = `
       UPDATE deposit_methods 
-      SET name = $1, type = $2, account_holder = $3, account_number = $4, iban = $5, swift = $6, currency_code = $7, country = $8, notes = $9, logo_url = $10, instructions = $11, min_deposit = $12, max_deposit = $13, is_active = $14, display_order = $15
-      WHERE id = $16 RETURNING *
+      SET name = $1, type = $2, account_holder = $3, account_number = $4, iban = $5, bban = $6, swift = $7, currency_code = $8, country = $9, notes = $10, logo_url = $11, instructions = $12, min_deposit = $13, max_deposit = $14, is_active = $15, display_order = $16
+      WHERE id = $17 RETURNING *
     `;
-    const result = await db.pool.query(query, [name, type, account_holder, account_number, iban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order, id]);
+    const result = await db.pool.query(query, [name, type, account_holder, account_number, iban, bban, swift, currency_code, country, notes, logo_url, instructions, min_deposit, max_deposit, is_active, display_order, id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
     res.json(result.rows[0]);
   } catch (err) {

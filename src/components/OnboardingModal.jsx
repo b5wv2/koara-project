@@ -9,21 +9,59 @@ import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// Step indicator component
-const StepIndicator = ({ current, total }) => (
-  <div className="flex items-center justify-center gap-2 mb-6">
-    {Array.from({ length: total }).map((_, i) => (
-      <div
-        key={i}
-        className="transition-all duration-300"
-        style={{
-          width: i + 1 === current ? 24 : 8,
-          height: 8,
-          borderRadius: 9999,
-          background: i + 1 <= current ? 'linear-gradient(135deg, #2563EB 11%, #7C3AED 79%)' : 'rgba(255,255,255,0.1)',
-        }}
-      />
-    ))}
+const stepsList = [
+  { id: 1, label: 'Account' },
+  { id: 2, label: 'Verify' },
+  { id: 3, label: 'Store Info' },
+  { id: 4, label: 'Bank Info' },
+  { id: 5, label: 'KYC & Review' },
+];
+
+const StepIndicator = ({ current }) => (
+  <div className="flex items-center justify-between mb-8 px-2 mt-2">
+    {stepsList.map((step, index) => {
+      const isCompleted = step.id < current;
+      const isActive = step.id === current;
+      
+      return (
+        <React.Fragment key={step.id}>
+          <div className="flex flex-col items-center relative z-10 w-16">
+            <div 
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 mb-2
+                ${isActive ? 'bg-koara-primary text-white shadow-[0_0_15px_rgba(37,99,235,0.5)] scale-110' : 
+                  isCompleted ? 'bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)] scale-100' : 
+                  'bg-slate-800 text-slate-500'}`}
+            >
+              {isCompleted ? (
+                <div className="relative flex items-center justify-center">
+                  <svg className="w-5 h-5" viewBox="0 0 52 52">
+                    <circle className="stroke-white stroke-[4] fill-none animate-[koara-stroke_0.4s_ease-out_forwards] [stroke-dasharray:166] [stroke-dashoffset:166]" cx="26" cy="26" r="25" />
+                    <path className="stroke-white stroke-[4] fill-none animate-[koara-stroke_0.3s_ease-out_0.2s_forwards] [stroke-dasharray:48] [stroke-dashoffset:48]" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                  </svg>
+                </div>
+              ) : (
+                step.id
+              )}
+            </div>
+            <span className={`text-[10px] sm:text-xs font-medium text-center transition-colors duration-300 ${isActive ? 'text-white' : isCompleted ? 'text-green-400' : 'text-slate-500'}`}>
+              {step.label}
+            </span>
+          </div>
+          
+          {index < stepsList.length - 1 && (
+            <div className="flex-1 h-px mx-1 sm:mx-2 -mt-6">
+              <div 
+                className="h-full transition-all duration-500"
+                style={{ 
+                  background: step.id < current ? '#22c55e' : '#1e293b',
+                  width: '100%'
+                }}
+              />
+            </div>
+          )}
+        </React.Fragment>
+      );
+    })}
   </div>
 );
 
@@ -49,12 +87,15 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
   const [bankName, setBankName] = useState('');
   const [accountHolderName, setAccountHolderName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
+  const [bban, setBban] = useState('');
+  const [iban, setIban] = useState('');
 
   // KYC Document
   const [kycDocument, setKycDocument] = useState(null);
   const [invitationCode, setInvitationCode] = useState('');
 
   const [errorMsg, setErrorMsg] = useState('');
+  const [otpError, setOtpError] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const [globalLockUntil, setGlobalLockUntil] = useState(null);
@@ -80,6 +121,10 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       setBankName('');
       setAccountHolderName('');
       setAccountNumber('');
+      setBban('');
+      setIban('');
+      setBban('');
+      setIban('');
       setKycDocument(null);
       setInvitationCode('');
       setErrorMsg('');
@@ -146,26 +191,33 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
   const handleVerifyRegistrationCode = (codeFromParam) => execute(async () => {
     const codeToVerify = typeof codeFromParam === 'string' ? codeFromParam : verificationCode;
     if (!codeToVerify || codeToVerify.length < 6) {
-      setErrorMsg(t('err_enter_6_digit'));
+      setOtpError(true);
       return { success: false };
     }
     setErrorMsg('');
-    const response = await fetch(`${API_BASE_URL}/api/auth/verify-registration-code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim(), code: codeToVerify.trim() }),
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      if (data.blocked_until) {
-        setGlobalLockUntil(data.blocked_until);
+    setOtpError(false);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-registration-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), code: codeToVerify.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.blocked_until) {
+          setGlobalLockUntil(data.blocked_until);
+        }
+        throw new Error(data.error || t('err_invalid_code'));
       }
-      throw new Error(data.error || t('err_invalid_code'));
+      setSuccessMsg('');
+      setStep(3);
+      return { success: true };
+    } catch (err) {
+      setOtpError(true);
+      setVerificationCode('');
+      throw err;
     }
-
-    setSuccessMsg('');
-    setStep(3);
-    return { success: true };
   });
 
   const handleResendCode = () => execute(async () => {
@@ -197,11 +249,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
         setErrorMsg(t('err_req_store_fields'));
         return;
       }
-      if (subdomainStatus === 'checking') {
-        setErrorMsg(t('err_checking_subdomain'));
-        return;
-      }
-      if (subdomainStatus === 'unavailable') {
+      if (subdomainStatus === 'checking' || subdomainStatus === 'invalid' || subdomainStatus === 'unavailable') {
         setErrorMsg(subdomainError || t('err_subdomain_unavailable'));
         return;
       }
@@ -221,24 +269,55 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/-+/g, '-')
         .replace(/(^-|-$)/g, '');
-      handleSubdomainChange(slug);
+      if (slug.length >= 3) {
+        handleSubdomainChange(slug);
+      }
     }
   };
 
-  const handleSubdomainChange = (val) => execute(async () => {
-    const cleanVal = val.toLowerCase().replace(/[^a-z0-9-]+/g, '');
-    setSubdomain(cleanVal);
+  const handleSubdomainChange = (val) => {
+    const rawVal = val.toLowerCase();
+    setSubdomain(rawVal);
 
-    if (cleanVal.length < 3) {
-      setSubdomainStatus('');
-      setSubdomainError(t('err_subdomain_length'));
+    if (/[^a-z0-9-]/.test(rawVal)) {
+      setSubdomainStatus('invalid');
+      setSubdomainError('Only English letters, numbers, and hyphens are allowed.');
+      return;
+    }
+    if (rawVal.includes('--')) {
+      setSubdomainStatus('invalid');
+      setSubdomainError('Consecutive hyphens are not allowed.');
+      return;
+    }
+    if (rawVal.startsWith('-')) {
+      setSubdomainStatus('invalid');
+      setSubdomainError('Cannot start with a hyphen.');
+      return;
+    }
+    if (rawVal.endsWith('-')) {
+      setSubdomainStatus('invalid');
+      setSubdomainError('Cannot end with a hyphen.');
+      return;
+    }
+    if (rawVal.length > 50) {
+      setSubdomainStatus('invalid');
+      setSubdomainError('Maximum length is 50 characters.');
+      return;
+    }
+    if (rawVal.length < 3) {
+      setSubdomainStatus('invalid');
+      setSubdomainError('Minimum length is 3 characters.');
       return;
     }
 
     setSubdomainStatus('checking');
     setSubdomainError('');
+    checkSubdomainDebounced(rawVal);
+  };
 
+  const checkSubdomainDebounced = (cleanVal) => execute(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/store/check-subdomain/${cleanVal}`);
       const data = await response.json();
@@ -272,6 +351,8 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
     formData.append('bank_name', bankName.trim());
     formData.append('account_holder_name', accountHolderName.trim());
     formData.append('account_number', accountNumber.trim());
+    if (bban.trim()) formData.append('bban', bban.trim());
+    if (iban.trim()) formData.append('iban', iban.trim());
     if (kycDocument) {
       formData.append('kyc_document', kycDocument);
     }
@@ -304,7 +385,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
       onClose={resetStateAndClose}
       title={step === 6 ? t('modal_title_complete') : t('create store')}
     >
-      {step < 6 && <StepIndicator current={step} total={5} />}
+      {step < 6 && <StepIndicator current={step} />}
 
       {errorMsg && (
         <div className="koara-error-msg mb-4">
@@ -320,8 +401,11 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
       {/* ── Step 1: Account Creation ── */}
       {step === 1 && (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">{t('')}</p>
+        <div className="space-y-4 animate-fade-in">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">Create Account</h3>
+            <p className="text-sm text-slate-400">{t('desc_enter_email_pass') || 'Enter your details to get started'}</p>
+          </div>
           <div className="space-y-3">
             <div>
               <label className="koara-label">{t('email_address')}</label>
@@ -365,10 +449,13 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
       {/* ── Step 2: Verify Email ── */}
       {step === 2 && (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">
-            {t('desc_enter_6_digit_code')} <span className="text-white font-medium">{email}</span>.
-          </p>
+        <div className="space-y-4 animate-fade-in">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">Verify Email</h3>
+            <p className="text-sm text-slate-400">
+              {t('desc_enter_6_digit_code')} <span className="text-white font-medium">{email}</span>.
+            </p>
+          </div>
           <div>
             <label className="koara-label text-center block mb-4">{t('verification_code')}</label>
             <OTPInput
@@ -406,8 +493,11 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
       {/* ── Step 3: Store Info ── */}
       {step === 3 && (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">{t('desc_tell_us_store')}</p>
+        <div className="space-y-4 animate-fade-in">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">Store Information</h3>
+            <p className="text-sm text-slate-400">{t('desc_tell_us_store')}</p>
+          </div>
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
@@ -453,8 +543,11 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
       {/* ── Step 4: Bank Info ── */}
       {step === 4 && (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">{t('desc_enter_bank')}</p>
+        <div className="space-y-4 animate-fade-in">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">Bank Information</h3>
+            <p className="text-sm text-slate-400">{t('desc_enter_bank')}</p>
+          </div>
           <div className="space-y-3">
             <div>
               <label className="koara-label">{t('bank_name')}</label>
@@ -467,6 +560,26 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             <div>
               <label className="koara-label">{t('account_number')}</label>
               <input required type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="1234567890" className="koara-input" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="koara-label">BBAN <span className="text-slate-500 font-normal">(Optional)</span></label>
+                <input type="text" value={bban} onChange={(e) => setBban(e.target.value)} placeholder="000123" className="koara-input" dir="ltr" />
+              </div>
+              <div>
+                <label className="koara-label">IBAN <span className="text-slate-500 font-normal">(Optional)</span></label>
+                <input type="text" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="US123..." className="koara-input" dir="ltr" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="koara-label">BBAN <span className="text-slate-500 font-normal">(Optional)</span></label>
+                <input type="text" value={bban} onChange={(e) => setBban(e.target.value)} placeholder="000123" className="koara-input" dir="ltr" />
+              </div>
+              <div>
+                <label className="koara-label">IBAN <span className="text-slate-500 font-normal">(Optional)</span></label>
+                <input type="text" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="US123..." className="koara-input" dir="ltr" />
+              </div>
             </div>
 
           </div>
@@ -486,9 +599,11 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
       {/* ── Step 5: KYC Document ── */}
       {step === 5 && (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-400 mb-2">{t('desc_upload_kyc')}</p>
-
+        <div className="space-y-4 animate-fade-in">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">KYC & Review</h3>
+            <p className="text-sm text-slate-400">{t('desc_upload_kyc')}</p>
+          </div>
           <label className="koara-upload-zone block">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 mx-auto" style={{ background: 'rgba(37,99,235,0.15)' }}>
               <UploadCloud size={22} className="text-koara-accent" />
@@ -540,20 +655,24 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
 
       {/* ── Step 6: Success ── */}
       {step === 6 && (
-        <div className="text-center py-6">
-          <div className="relative w-20 h-20 mx-auto mb-6">
-            <div className="absolute inset-0 bg-green-400/20 rounded-full animate-ping" />
-            <div className="relative w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)' }}>
-              <CheckCircle2 size={36} className="text-green-400" />
+        <div className="text-center py-10 animate-fade-in space-y-6">
+          <div className="mx-auto mb-6 flex justify-center">
+            <div className="koara-success-animation">
+              <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+              </svg>
             </div>
           </div>
-          <h4 className="text-xl font-bold text-white mb-2">{t('application_submitted')}</h4>
-          <p className="text-sm text-slate-400 mb-8 leading-relaxed max-w-xs mx-auto">
-            {t('desc_under_review')}
+          <h2 className="text-2xl font-bold text-white">Store Created Successfully</h2>
+          <p className="text-slate-400 max-w-sm mx-auto leading-relaxed">
+            Your store has been created successfully and is now ready to use.
           </p>
-          <button onClick={resetStateAndClose} className="dash-btn dash-btn-primary w-full justify-center py-3 font-semibold rounded-xl cursor-pointer">
-            {t('close')}
-          </button>
+          <div className="pt-4 max-w-xs mx-auto">
+            <button onClick={resetStateAndClose} className="dash-btn dash-btn-primary w-full justify-center py-3 font-semibold rounded-xl cursor-pointer">
+              {t('close') || 'Done'}
+            </button>
+          </div>
         </div>
       )}
     </Modal>

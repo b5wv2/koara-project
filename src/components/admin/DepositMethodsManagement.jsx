@@ -104,7 +104,7 @@ const DepositMethodsManagement = () => {
     setEditingId(null);
     setEditForm({
       name: '', type: 'bank_transfer', account_holder: '', account_number: '', 
-      iban: '', swift: '', currency_code: 'USD', country: '', notes: '', 
+      iban: '', bban: '', swift: '', currency_code: 'USD', country: '', notes: '', 
       logo_url: '', instructions: '', min_deposit: 10, max_deposit: 100000, 
       is_active: true, display_order: 0
     });
@@ -195,6 +195,10 @@ const DepositMethodsManagement = () => {
                 <label className="block text-xs font-medium text-slate-400 mb-1">IBAN (Optional)</label>
                 <input type="text" className="dash-input w-full font-mono text-sm" value={editForm.iban} onChange={e => setEditForm({...editForm, iban: e.target.value})} placeholder="SA..." />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">BBAN (Optional)</label>
+                <input type="text" className="dash-input w-full font-mono text-sm" value={editForm.bban || ''} onChange={e => setEditForm({...editForm, bban: e.target.value})} placeholder="001..." />
+              </div>
             </div>
             
             <div className="md:col-span-2 space-y-4 pt-4 border-t border-white/10">
@@ -265,6 +269,18 @@ const DepositMethodsManagement = () => {
                       <span className="text-slate-500 w-16">Account:</span>
                       <span className="text-slate-300 font-mono truncate">{method.account_number}</span>
                     </div>
+                    {method.iban && (
+                      <div className="text-xs flex gap-2">
+                        <span className="text-slate-500 w-16">IBAN:</span>
+                        <span className="text-slate-300 font-mono truncate">{method.iban}</span>
+                      </div>
+                    )}
+                    {method.bban && (
+                      <div className="text-xs flex gap-2">
+                        <span className="text-slate-500 w-16">BBAN:</span>
+                        <span className="text-slate-300 font-mono truncate">{method.bban}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

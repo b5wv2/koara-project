@@ -477,6 +477,7 @@ const createDepositMethodsTableQuery = `
     account_holder VARCHAR(255),
     account_number VARCHAR(255),
     iban VARCHAR(100),
+    bban VARCHAR(100),
     swift VARCHAR(50),
     currency_code VARCHAR(10) REFERENCES currencies(code) ON UPDATE CASCADE,
     country VARCHAR(100),
@@ -694,6 +695,7 @@ const initializeDatabase = async () => {
     // Create New Wallet Deposit System tables
     await client.query(createCurrenciesTableQuery);
     await client.query(createDepositMethodsTableQuery);
+    await client.query(`ALTER TABLE deposit_methods ADD COLUMN IF NOT EXISTS bban VARCHAR(100);`);
     await client.query(createWalletDepositRequestsTableQuery);
 
     // Seed required currencies
