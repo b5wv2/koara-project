@@ -802,7 +802,7 @@ router.post('/forgot-password', async (req, res) => {
     const reqCheck = await db.query('SELECT id FROM store_requests WHERE email = $1', [email]);
 
     if (userCheck.rows.length === 0 && reqCheck.rows.length === 0) {
-      return res.status(200).json({ success: true, message: 'If the email exists, a reset code was sent.' });
+      return res.status(404).json({ error: 'This email address was not found.' });
     }
 
     const code = generateOTP();

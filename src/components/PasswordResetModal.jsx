@@ -15,6 +15,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   
   const [errorMsg, setErrorMsg] = useState('');
+  const [otpError, setOtpError] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const [globalLockUntil, setGlobalLockUntil] = useState(null);
@@ -66,24 +67,29 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
       return { success: false };
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim() }),
-    });
-    const data = await response.json();
-    
-    if (!response.ok) {
-      if (data.blocked_until) {
-        setGlobalLockUntil(data.blocked_until);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await response.json();
+      
+      if (!response.ok || data.success === false) {
+        if (data.blocked_until) {
+          setGlobalLockUntil(data.blocked_until);
+        }
+        throw new Error(data.error || data.message || t('err_failed_request_code'));
       }
-      throw new Error(data.error || t('err_failed_request_code'));
+      
+      setStep(2);
+      setCooldown(60);
+      setSuccessMsg(data.message || t('success_code_sent'));
+      return { success: true };
+    } catch (err) {
+      setErrorMsg(err.message);
+      return { success: false, error: err.message };
     }
-    
-    setStep(2);
-    setCooldown(60);
-    setSuccessMsg(data.message || t('success_code_sent'));
-    return { success: true };
   });
 
   const handleResendCode = () => execute(async () => {
@@ -91,51 +97,63 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim() }),
-    });
-    const data = await response.json();
-    
-    if (!response.ok) {
-      if (data.blocked_until) {
-        setGlobalLockUntil(data.blocked_until);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await response.json();
+      
+      if (!response.ok || data.success === false) {
+        if (data.blocked_until) {
+          setGlobalLockUntil(data.blocked_until);
+        }
+        throw new Error(data.error || data.message || t('err_failed_resend'));
       }
-      throw new Error(data.error || t('err_failed_resend'));
+      
+      setCooldown(60);
+      setSuccessMsg(t('success_new_code') || 'A new code has been sent.');
+      return { success: true };
+    } catch (err) {
+      setErrorMsg(err.message);
+      return { success: false, error: err.message };
     }
-    
-    setCooldown(60);
-    setSuccessMsg(t('success_new_code'));
-    return { success: true };
   });
 
-  const handleVerifyCode = (codeFromParam) => execute(async () => {
-    const codeToVerify = typeof codeFromParam === 'string' ? codeFromParam : code;
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    if (!codeToVerify || codeToVerify.trim().length < 6) {
-      setErrorMsg(t('err_enter_6_digit') || 'Please enter the 6-digit verification code.');
+  const handleVerifyCode = (completedCode) => execute(async () => {
+    const codeToVerify = typeof completedCode === 'string' ? completedCode : code;
+    
+    if (!codeToVerify || codeToVerify.length < 6) {
+      setOtpError(true);
       return { success: false };
     }
-
-    const response = await fetch(`${API_BASE_URL}/api/auth/verify-reset-code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim(), code: codeToVerify.trim() }),
-    });
-    const data = await response.json();
     
-    if (!response.ok) {
-      if (data.blocked_until) {
-        setGlobalLockUntil(data.blocked_until);
+    setErrorMsg('');
+    setOtpError(false);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-reset-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), code: codeToVerify.trim() }),
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (data.blocked_until) {
+          setGlobalLockUntil(data.blocked_until);
+        }
+        throw new Error(data.error || t('err_invalid_expired'));
       }
-      throw new Error(data.error || t('err_invalid_expired'));
+      
+      setStep(3);
+      return { success: true };
+    } catch (err) {
+      setOtpError(true);
+      setCode('');
+      return { success: false, error: err.message };
     }
-    
-    setStep(3);
-    return { success: true };
   });
 
   const handleResetPassword = (e) => execute(async () => {
@@ -191,20 +209,23 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
 
       {step === 1 && (
         <form onSubmit={handleRequestCode} className="space-y-4">
-          <p className="text-sm text-slate-500 mb-2">{t('enter_email_desc')}</p>
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">{t('reset_password_title')}</h3>
+            <p className="text-sm text-slate-400">{t('enter_email_desc')}</p>
+          </div>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">{t('email_address')}</label>
+            <label className="koara-label">{t('email_address')}</label>
             <input 
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="user@example.com" 
-              className="w-full px-3 py-2 bg-white text-black border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-koara-blue focus:ring-1 focus:ring-koara-blue" 
+              className="koara-input" 
               required
             />
           </div>
           {globalLockUntil && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-lg mt-4 text-center">
+            <div className="koara-error-msg text-center mt-4">
               {t('verification_locked')} {lockCountdown}
             </div>
           )}
@@ -213,7 +234,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
             onClick={handleRequestCode}
             disabled={loading || !!globalLockUntil}
             type="submit"
-            className="dash-btn dash-btn-primary w-full mt-4 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-4"
           >
             {t('send_verification_code')}
           </DashButton>
@@ -222,18 +243,30 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
 
       {step === 2 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-500 mb-2">{t('enter_code_sent_to')} <strong>{email}</strong>.</p>
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">{t('verification_code')}</h3>
+            <p className="text-sm text-slate-400">
+              {t('enter_code_sent_to')} <span className="text-white font-medium">{email}</span>.
+            </p>
+          </div>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-4 text-center">{t('verification_code')}</label>
+            <label className="koara-label text-center block mb-4">{t('verification_code')}</label>
             <OTPInput 
               length={6}
               value={code}
-              onChange={setCode}
+              onChange={(val) => { setCode(val); setOtpError(false); }}
               onComplete={(completedCode) => handleVerifyCode(completedCode)}
+              disabled={loading}
+              hasError={otpError}
             />
+            {otpError && (
+              <p className="text-red-500 text-sm mt-3 text-center font-medium animate-fade-in">
+                The verification code is invalid or has expired.
+              </p>
+            )}
           </div>
           {globalLockUntil && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-lg mt-4 text-center">
+            <div className="koara-error-msg text-center mt-4">
               {t('verification_locked')} {lockCountdown}
             </div>
           )}
@@ -242,7 +275,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
             onClick={() => handleVerifyCode()}
             disabled={loading || code.length < 6 || !!globalLockUntil} 
             type="button" 
-            className="dash-btn dash-btn-primary w-full mt-6 bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-6"
           >
             {t('verify_code')}
           </DashButton>
@@ -263,27 +296,30 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
 
       {step === 3 && (
         <form onSubmit={handleResetPassword} className="space-y-4">
-          <p className="text-sm text-slate-500 mb-2">{t('enter_new_password')}</p>
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">{t('new_password')}</h3>
+            <p className="text-sm text-slate-400">{t('enter_new_password')}</p>
+          </div>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">{t('new_password')}</label>
+            <label className="koara-label">{t('new_password')}</label>
             <input 
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••" 
-              className="w-full px-3 py-2 bg-white text-black border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-koara-blue focus:ring-1 focus:ring-koara-blue" 
+              className="koara-input" 
               required
               minLength={8}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">{t('confirm_password')}</label>
+            <label className="koara-label">{t('confirm_password')}</label>
             <input 
               type="password" 
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••" 
-              className="w-full px-3 py-2 bg-white text-black border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-koara-blue focus:ring-1 focus:ring-koara-blue" 
+              className="koara-input" 
               required
               minLength={8}
             />
@@ -293,7 +329,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
             onClick={handleResetPassword}
             disabled={loading}
             type="submit"
-            className="dash-btn dash-btn-primary w-full mt-4 bg-koara-blue text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="dash-btn dash-btn-primary w-full justify-center py-2.5 text-sm font-semibold rounded-xl mt-4"
           >
             {t('reset_password_btn')}
           </DashButton>
@@ -301,17 +337,24 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
       )}
 
       {step === 4 && (
-        <div className="text-center py-6">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+        <div className="text-center py-10 animate-fade-in space-y-6">
+          <div className="mx-auto mb-6 flex justify-center">
+            <div className="koara-success-animation">
+              <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+              </svg>
+            </div>
           </div>
-          <h4 className="text-xl font-semibold mb-2 text-black">{t('password_reset_success')}</h4>
-          <p className="text-sm text-slate-500 mb-8">
+          <h2 className="text-2xl font-bold text-white">{t('password_reset_success')}</h2>
+          <p className="text-slate-400 max-w-sm mx-auto leading-relaxed">
             {t('login_with_new')}
           </p>
-          <button onClick={() => { resetState(); onClose(); }} className="w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors cursor-pointer">
-            {t('close')}
-          </button>
+          <div className="pt-4 max-w-xs mx-auto">
+            <DashButton onClick={() => { resetState(); onClose(); }} className="dash-btn dash-btn-primary w-full justify-center py-3 font-semibold rounded-xl cursor-pointer">
+              {t('close')}
+            </DashButton>
+          </div>
         </div>
       )}
     </Modal>

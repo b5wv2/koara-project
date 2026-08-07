@@ -43,18 +43,18 @@ const StatCard = ({ label, value, sub }) => (
 
 const StatusBadge = ({ status }) => {
   const map = {
-    active:    'koara-badge-active',
-    approved:  'koara-badge-approved',
+    active: 'koara-badge-active',
+    approved: 'koara-badge-approved',
     delivered: 'koara-badge-delivered',
     completed: 'koara-badge-completed',
-    pending:   'koara-badge-pending',
+    pending: 'koara-badge-pending',
     pending_kyc: 'koara-badge-pending',
     pending_approval: 'koara-badge-pending',
-    rejected:  'koara-badge-rejected',
-    failed:    'koara-badge-failed',
+    rejected: 'koara-badge-rejected',
+    failed: 'koara-badge-failed',
     suspended: 'koara-badge-suspended',
-    processing:'koara-badge-processing',
-    inactive:  'koara-badge-inactive',
+    processing: 'koara-badge-processing',
+    inactive: 'koara-badge-inactive',
   };
   const cls = map[status?.toLowerCase()] || 'koara-badge-inactive';
   const labels = {
@@ -142,7 +142,7 @@ const AdminDashboard = () => {
   const [newProviderCategory, setNewProviderCategory] = useState({ provider_id: '', category_id: '', name: '' });
 
   // Merchant price editing
- const [editingMerchantPrice, setEditingMerchantPrice] = useState({});
+  const [editingMerchantPrice, setEditingMerchantPrice] = useState({});
 
   // Merchant Top-ups
   const [merchantTopups, setMerchantTopups] = useState([]);
@@ -249,7 +249,7 @@ const AdminDashboard = () => {
         setTopupsLoading(true);
         fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' })
           .then(r => r.json())
-          .then(data => { if(data.success) { setMerchantTopups(data.topups); setTopupCategories(data.categories || []); } })
+          .then(data => { if (data.success) { setMerchantTopups(data.topups); setTopupCategories(data.categories || []); } })
           .catch(console.error)
           .finally(() => setTopupsLoading(false));
       }
@@ -300,32 +300,32 @@ const AdminDashboard = () => {
       const res = await fetch(`${API_BASE_URL}/api/merchant/reports?lang=${lang}`, {
         credentials: 'include'
       });
-      
+
       if (res.status === 403) {
         setUpgradeModalOpen(true);
         return;
       }
-      
+
       if (res.status === 429) {
         const errorData = await res.json();
         alert(errorData.error || 'You have reached your report generation limit for this subscription cycle.');
         return;
       }
-      
+
       if (!res.ok) {
         throw new Error('Failed to generate report');
       }
-      
+
       const data = await res.json();
-      
+
       console.log('--- DEBUG REPORT GENERATION ---');
       console.log('1. Report Data Object:', data);
-      
+
       const logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(KoaraLogoRaw);
       const htmlString = generateReportHtml(data, lang, logoUrl);
-      
+
       console.log('2. HTML String Length:', htmlString.length);
-      
+
       // 3 & 5. Temporarily render the generated HTML directly inside the browser
       const debugContainer = document.createElement('div');
       debugContainer.id = 'debug-report-container';
@@ -338,7 +338,7 @@ const AdminDashboard = () => {
       debugContainer.style.zIndex = '999999';
       debugContainer.style.overflow = 'auto';
       debugContainer.innerHTML = htmlString;
-      
+
       const closeBtn = document.createElement('button');
       closeBtn.innerText = 'Close Debug View & Continue PDF Export';
       closeBtn.style.position = 'fixed';
@@ -348,12 +348,12 @@ const AdminDashboard = () => {
       closeBtn.style.zIndex = '1000000';
       closeBtn.style.background = 'black';
       closeBtn.style.color = 'white';
-      
+
       document.body.appendChild(debugContainer);
       debugContainer.appendChild(closeBtn);
-      
+
       console.log('3. Rendered debug container to DOM. Inspect #debug-report-container in DevTools to verify sections.');
-      
+
       // Wait for user to inspect and close the debug view before proceeding
       await new Promise(resolve => {
         closeBtn.onclick = () => {
@@ -361,13 +361,13 @@ const AdminDashboard = () => {
           resolve();
         };
       });
-      
+
       const opt = {
-        margin:       0,
-        filename:     'Koara_Report.pdf',
-        image:        { type: 'jpeg', quality: 1 },
-        html2canvas:  { scale: 2, useCORS: true, allowTaint: false },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        margin: 0,
+        filename: 'Koara_Report.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true, allowTaint: false },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
       };
 
       // 4. Verify that html2pdf() is exporting the correct container element by passing the raw string again
@@ -383,15 +383,15 @@ const AdminDashboard = () => {
   const handleSubSubmit = async (e) => {
     e.preventDefault();
     if (!selectedSubMerchant || !subFormData.reason.trim()) return;
-    
+
     // Check if cancel was clicked or normal submit
     const isCancel = e.nativeEvent.submitter.name === 'cancelAction';
     const isRemoveExp = e.nativeEvent.submitter.name === 'removeExpirationAction';
-    
+
     let action = subFormData.action;
     let durationValue = subFormData.durationValue;
     let durationUnit = subFormData.durationUnit;
-    
+
     if (isCancel) {
       action = 'Cancel';
     } else if (isRemoveExp) {
@@ -413,10 +413,10 @@ const AdminDashboard = () => {
           reason: subFormData.reason
         })
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update subscription');
-      
+
       setShowSubscriptionModal(false);
       fetchAdminSubscriptions(); // Refresh
       alert('Subscription successfully updated!');
@@ -591,10 +591,10 @@ const AdminDashboard = () => {
   const handleTogglePromo = async (id) => {
     const promo = promotions.find(p => p.id === id);
     if (!promo) return;
-    
+
     const newStatus = promo.status === 'active' ? 'inactive' : 'active';
     setPromotions(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p));
-    
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/merchant/promotions/${id}`, {
         method: 'PUT',
@@ -616,12 +616,12 @@ const AdminDashboard = () => {
   const handleSavePromo = async (e) => {
     e.preventDefault();
     try {
-      const url = promoModal.promoId 
+      const url = promoModal.promoId
         ? `${API_BASE_URL}/api/merchant/promotions/${promoModal.promoId}`
         : `${API_BASE_URL}/api/merchant/promotions`;
-      
+
       const method = promoModal.promoId ? 'PUT' : 'POST';
-      
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -634,7 +634,7 @@ const AdminDashboard = () => {
           status: promoModal.status
         })
       });
-      
+
       const data = await res.json();
       if (data.success) {
         setPromoModal({ isOpen: false, promoId: null, code: '', discount_type: 'percentage', value: '', usage_limit: '', status: 'active' });
@@ -857,7 +857,7 @@ const AdminDashboard = () => {
   const handleAdminDepositApprove = async (id, amount) => {
     const creditedAmount = prompt(`Confirm the amount to credit (in USD):`, amount);
     if (!creditedAmount || isNaN(parseFloat(creditedAmount)) || parseFloat(creditedAmount) <= 0) return;
-    
+
     setDepositProcessingId(id);
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/wallet-deposits/${id}/approve`, {
@@ -883,7 +883,7 @@ const AdminDashboard = () => {
   const handleAdminDepositReject = async (id) => {
     const reason = prompt(`Enter rejection reason:`);
     if (reason === null) return;
-    
+
     setDepositProcessingId(id);
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/wallet-deposits/${id}/reject`, {
@@ -1225,9 +1225,9 @@ const AdminDashboard = () => {
             {/* ══ ADMIN: Invitation Codes ══ */}
             {role === 'admin' && activeTab === 'invitation_codes' && (
               <div className="dash-card overflow-hidden">
-                <SectionHeader 
-                  title="Invitation Codes" 
-                  action={<button className="dash-btn dash-btn-primary py-2 px-4 rounded-xl text-sm font-semibold" onClick={() => setCreateCodeModal(true)}>Create Code</button>} 
+                <SectionHeader
+                  title="Invitation Codes"
+                  action={<button className="dash-btn dash-btn-primary py-2 px-4 rounded-xl text-sm font-semibold" onClick={() => setCreateCodeModal(true)}>Create Code</button>}
                 />
                 <div className="overflow-x-auto">
                   <table className="koara-table">
@@ -1302,9 +1302,9 @@ const AdminDashboard = () => {
                           <td>
                             <StatusBadge status={
                               merchant.status === 'active' || (merchant.active && !merchant.status) ? 'active'
-                              : merchant.status === 'pending_kyc' || merchant.status === 'pending_approval' || merchant.status === 'pending' ? 'pending'
-                              : merchant.status === 'rejected' ? 'rejected'
-                              : 'suspended'
+                                : merchant.status === 'pending_kyc' || merchant.status === 'pending_approval' || merchant.status === 'pending' ? 'pending'
+                                  : merchant.status === 'rejected' ? 'rejected'
+                                    : 'suspended'
                             } />
                           </td>
                           <td className="text-end">
@@ -1380,9 +1380,9 @@ const AdminDashboard = () => {
                   </div>
                   <div className="flex items-center gap-3 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64">
-                      <input 
-                        type="text" 
-                        placeholder="Search store, bank..." 
+                      <input
+                        type="text"
+                        placeholder="Search store, bank..."
                         value={withdrawalsSearch}
                         onChange={(e) => setWithdrawalsSearch(e.target.value)}
                         className="koara-input text-sm"
@@ -1461,9 +1461,9 @@ const AdminDashboard = () => {
                   </div>
                   <div className="flex items-center gap-3 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64">
-                      <input 
-                        type="text" 
-                        placeholder="Search store, method..." 
+                      <input
+                        type="text"
+                        placeholder="Search store, method..."
                         value={adminDepositsSearch}
                         onChange={(e) => setAdminDepositsSearch(e.target.value)}
                         className="koara-input text-sm"
@@ -1510,7 +1510,7 @@ const AdminDashboard = () => {
                               {d.status === 'pending' ? (
                                 <div className="flex items-center justify-end gap-2">
                                   {d.receipt_url && (
-                                    <button 
+                                    <button
                                       onClick={() => window.open(getImageUrl(d.receipt_url), '_blank')}
                                       className="dash-btn dash-btn-secondary py-1.5 px-3 text-xs"
                                     >
@@ -1523,7 +1523,7 @@ const AdminDashboard = () => {
                               ) : (
                                 <div className="flex flex-col items-end gap-1">
                                   {d.receipt_url && (
-                                    <button 
+                                    <button
                                       onClick={() => window.open(getImageUrl(d.receipt_url), '_blank')}
                                       className="text-xs text-blue-400 hover:underline"
                                     >
@@ -1723,7 +1723,7 @@ const AdminDashboard = () => {
                   {/* Compose Section */}
                   <div className="lg:col-span-1 bg-slate-800 rounded-xl p-6 border border-slate-700/50">
                     <h3 className="text-lg font-semibold text-white mb-4">New Broadcast</h3>
-                    
+
                     {errorBroadcast && (
                       <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start">
                         <AlertCircle className="w-5 h-5 text-red-400 mr-2 shrink-0 mt-0.5" />
@@ -1815,7 +1815,7 @@ const AdminDashboard = () => {
                   {/* History Section */}
                   <div className="lg:col-span-2 bg-slate-800 rounded-xl p-6 border border-slate-700/50">
                     <h3 className="text-lg font-semibold text-white mb-4">Broadcast History</h3>
-                    
+
                     {broadcastsLoading ? (
                       <div className="text-slate-400 text-center py-8">Loading history...</div>
                     ) : broadcasts.length === 0 ? (
@@ -1871,7 +1871,7 @@ const AdminDashboard = () => {
                     Subscription Management
                   </h2>
                 </div>
-                
+
                 {/* Search Bar */}
                 <div className="bg-slate-800 rounded-xl p-4 border border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="relative flex-1 max-w-md">
@@ -1901,7 +1901,7 @@ const AdminDashboard = () => {
                       <tbody className="divide-y divide-slate-700/50">
                         {adminSubscriptionsLoading ? (
                           <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">Loading subscriptions...</td></tr>
-                        ) : adminSubscriptions.filter(s => 
+                        ) : adminSubscriptions.filter(s =>
                           (s.owner_name?.toLowerCase().includes(subscriptionSearchQuery.toLowerCase())) ||
                           (s.owner_email?.toLowerCase().includes(subscriptionSearchQuery.toLowerCase())) ||
                           (s.store_name?.toLowerCase().includes(subscriptionSearchQuery.toLowerCase())) ||
@@ -1976,7 +1976,7 @@ const AdminDashboard = () => {
                           <label className="block text-sm font-medium text-slate-300 mb-1">Action</label>
                           <select
                             value={subFormData.action}
-                            onChange={(e) => setSubFormData({...subFormData, action: e.target.value})}
+                            onChange={(e) => setSubFormData({ ...subFormData, action: e.target.value })}
                             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                           >
                             <option value="Extend">Extend Existing</option>
@@ -1988,7 +1988,7 @@ const AdminDashboard = () => {
                           <label className="block text-sm font-medium text-slate-300 mb-1">Target Plan</label>
                           <select
                             value={subFormData.plan}
-                            onChange={(e) => setSubFormData({...subFormData, plan: e.target.value})}
+                            onChange={(e) => setSubFormData({ ...subFormData, plan: e.target.value })}
                             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                           >
                             <option value="basic">Free (Basic)</option>
@@ -2005,7 +2005,7 @@ const AdminDashboard = () => {
                             type="number"
                             min="1"
                             value={subFormData.durationValue}
-                            onChange={(e) => setSubFormData({...subFormData, durationValue: parseInt(e.target.value, 10) || ''})}
+                            onChange={(e) => setSubFormData({ ...subFormData, durationValue: parseInt(e.target.value, 10) || '' })}
                             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                           />
                         </div>
@@ -2013,7 +2013,7 @@ const AdminDashboard = () => {
                           <label className="block text-sm font-medium text-slate-300 mb-1">Duration Unit</label>
                           <select
                             value={subFormData.durationUnit}
-                            onChange={(e) => setSubFormData({...subFormData, durationUnit: e.target.value})}
+                            onChange={(e) => setSubFormData({ ...subFormData, durationUnit: e.target.value })}
                             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                           >
                             <option value="Minutes">Minutes</option>
@@ -2031,7 +2031,7 @@ const AdminDashboard = () => {
                         <textarea
                           required
                           value={subFormData.reason}
-                          onChange={(e) => setSubFormData({...subFormData, reason: e.target.value})}
+                          onChange={(e) => setSubFormData({ ...subFormData, reason: e.target.value })}
                           placeholder="e.g. Compensation for downtime..."
                           rows={2}
                           className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"
@@ -2046,7 +2046,7 @@ const AdminDashboard = () => {
                         >
                           {submittingSub ? 'Processing...' : 'Apply Subscription Update'}
                         </button>
-                        
+
                         <div className="flex gap-3">
                           <button
                             type="submit"
@@ -2124,11 +2124,11 @@ const AdminDashboard = () => {
                           <p className="text-sm" style={{ color: '#94A3B8' }}>AI-generated insights on your top products, sales trends, and profit margins.</p>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={downloadMonthlyReport}
                         disabled={isReportDownloading}
                         className="dash-btn shrink-0 relative overflow-hidden group font-medium px-4 py-2 rounded-lg flex items-center justify-center"
-                        style={{ 
+                        style={{
                           background: isPlusActive ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#1e293b',
                           color: isPlusActive ? '#ffffff' : '#94a3b8',
                           border: isPlusActive ? 'none' : '1px solid #334155',
@@ -2195,8 +2195,8 @@ const AdminDashboard = () => {
             {/* ══ MERCHANT: Deposits ══ */}
             {role === 'merchant' && activeTab === 'deposits' && (
               <div className="dash-card overflow-hidden">
-                <SectionHeader 
-                  title="Deposit History" 
+                <SectionHeader
+                  title="Deposit History"
                   description="Track the status of your wallet deposit requests"
                 />
                 <div className="overflow-x-auto">
@@ -2314,8 +2314,8 @@ const AdminDashboard = () => {
                                 onClick={async () => {
                                   const price = parseFloat(editingMerchantPrice[product.id] ?? product.selling_price);
                                   if (!price || price <= 0) return alert('Please enter a valid price');
-                                  await updateMerchantProduct(product.id, storeId, { 
-                                    selling_price: price, 
+                                  await updateMerchantProduct(product.id, storeId, {
+                                    selling_price: price,
                                     is_enabled: isEnabled,
                                     custom_title: product.custom_title,
                                     custom_description: product.custom_description,
@@ -2364,34 +2364,34 @@ const AdminDashboard = () => {
                           <label className={`dash-btn dash-btn-secondary text-xs flex-1 cursor-pointer justify-center px-0 ${uploadingTopupImage ? 'opacity-50 pointer-events-none' : ''}`}>
                             {cat.custom_image_url ? 'Replace' : 'Upload'}
                             <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingTopupImage} onChange={async (e) => {
-                              const file = e.target.files[0]; if(!file) return;
+                              const file = e.target.files[0]; if (!file) return;
                               setUploadingTopupImage(true);
                               try {
                                 const formData = new FormData(); formData.append('image', file);
                                 const uploadRes = await fetch(`${API_BASE_URL}/api/merchant/topups/upload-image`, { method: 'POST', body: formData, credentials: 'include' });
                                 const uploadData = await uploadRes.json();
-                                if(uploadData.success) {
-                                  await fetch(`${API_BASE_URL}/api/merchant/topups/category/${cat.category_id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ store_id: storeId, custom_image_url: uploadData.url }), credentials: 'include' });
+                                if (uploadData.success) {
+                                  await fetch(`${API_BASE_URL}/api/merchant/topups/category/${cat.category_id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ store_id: storeId, custom_image_url: uploadData.url }), credentials: 'include' });
                                   const r = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
                                   const d = await r.json(); if (d.success) { setMerchantTopups(d.topups); setTopupCategories(d.categories || []); }
                                 } else {
                                   alert(uploadData.error || 'Upload failed');
                                 }
-                              } catch (err) {}
+                              } catch (err) { }
                               setUploadingTopupImage(false);
                             }} />
                           </label>
                           {cat.custom_image_url && (
                             <button disabled={uploadingTopupImage} onClick={async () => {
-                              if(!confirm('Remove category image?')) return;
+                              if (!confirm('Remove category image?')) return;
                               setUploadingTopupImage(true);
                               try {
-                                await fetch(`${API_BASE_URL}/api/merchant/topups/category/${cat.category_id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ store_id: storeId, custom_image_url: null }), credentials: 'include' });
+                                await fetch(`${API_BASE_URL}/api/merchant/topups/category/${cat.category_id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ store_id: storeId, custom_image_url: null }), credentials: 'include' });
                                 const r = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
                                 const d = await r.json(); if (d.success) { setMerchantTopups(d.topups); setTopupCategories(d.categories || []); }
-                              } catch(e) {}
+                              } catch (e) { }
                               setUploadingTopupImage(false);
-                            }} className="dash-btn bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2 flex items-center justify-center disabled:opacity-50"><Trash2 size={14}/></button>
+                            }} className="dash-btn bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2 flex items-center justify-center disabled:opacity-50"><Trash2 size={14} /></button>
                           )}
                         </div>
                       </div>
@@ -2440,7 +2440,7 @@ const AdminDashboard = () => {
                                     const data = await res.json();
                                     if (data.success) { setMerchantTopups(data.topups); setTopupCategories(data.categories || []); }
                                     setTopupsLoading(false);
-                                  } catch(e) {}
+                                  } catch (e) { }
                                 }}
                               />
                             </td>
@@ -2457,32 +2457,32 @@ const AdminDashboard = () => {
                                   <label className={`text-[10px] text-blue-400 hover:text-blue-300 cursor-pointer flex items-center gap-1 font-medium bg-blue-500/10 px-1.5 py-0.5 rounded transition-colors w-fit ${uploadingTopupImage ? 'opacity-50 pointer-events-none' : ''}`}>
                                     <UploadCloud size={10} /> {topup.custom_image_url ? 'Replace' : 'Upload'}
                                     <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingTopupImage} onChange={async (e) => {
-                                      const file = e.target.files[0]; if(!file) return;
+                                      const file = e.target.files[0]; if (!file) return;
                                       setUploadingTopupImage(true);
                                       try {
                                         const formData = new FormData(); formData.append('image', file);
                                         const uploadRes = await fetch(`${API_BASE_URL}/api/merchant/topups/upload-image`, { method: 'POST', body: formData, credentials: 'include' });
                                         const uploadData = await uploadRes.json();
-                                        if(uploadData.success) {
-                                          await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ store_id: storeId, selling_price: parseFloat(currentPrice) || 0, is_enabled: topup.is_enabled, custom_image_url: uploadData.url }), credentials: 'include' });
+                                        if (uploadData.success) {
+                                          await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ store_id: storeId, selling_price: parseFloat(currentPrice) || 0, is_enabled: topup.is_enabled, custom_image_url: uploadData.url }), credentials: 'include' });
                                           const r = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
                                           const d = await r.json(); if (d.success) { setMerchantTopups(d.topups); setTopupCategories(d.categories || []); }
                                         } else {
                                           alert(uploadData.error || 'Upload failed');
                                         }
-                                      } catch(err) {}
+                                      } catch (err) { }
                                       setUploadingTopupImage(false);
                                     }} />
                                   </label>
                                   {topup.custom_image_url && (
                                     <button disabled={uploadingTopupImage} onClick={async () => {
-                                      if(!confirm('Remove product image?')) return;
+                                      if (!confirm('Remove product image?')) return;
                                       setUploadingTopupImage(true);
                                       try {
-                                        await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ store_id: storeId, selling_price: parseFloat(currentPrice) || 0, is_enabled: topup.is_enabled, custom_image_url: null }), credentials: 'include' });
+                                        await fetch(`${API_BASE_URL}/api/merchant/topups/${topup.offer_id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ store_id: storeId, selling_price: parseFloat(currentPrice) || 0, is_enabled: topup.is_enabled, custom_image_url: null }), credentials: 'include' });
                                         const r = await fetch(`${API_BASE_URL}/api/merchant/topups?store_id=${storeId}`, { credentials: 'include' });
                                         const d = await r.json(); if (d.success) { setMerchantTopups(d.topups); setTopupCategories(d.categories || []); }
-                                      } catch(e) {}
+                                      } catch (e) { }
                                       setUploadingTopupImage(false);
                                     }} className="text-[10px] text-red-400 hover:text-red-300 font-medium bg-red-500/10 px-1.5 py-0.5 rounded transition-colors text-start w-fit flex items-center gap-1 disabled:opacity-50">
                                       <Trash2 size={10} /> Delete
@@ -2575,7 +2575,7 @@ const AdminDashboard = () => {
                       </thead>
                       <tbody>
                         {promotionsLoading ? (
-                           <tr><td colSpan="6"><div className="koara-empty-state"><div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /><span>Loading promos...</span></div></td></tr>
+                          <tr><td colSpan="6"><div className="koara-empty-state"><div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /><span>Loading promos...</span></div></td></tr>
                         ) : promotions.length === 0 ? (
                           <tr><td colSpan="6"><div className="koara-empty-state"><Tag size={32} /><span>No promo codes yet.</span></div></td></tr>
                         ) : promotions.map(promo => (
@@ -2681,7 +2681,7 @@ const AdminDashboard = () => {
                     <div>
                       <label className="koara-label text-sm mb-3 block">Remove Koara Branding</label>
                       <p className="text-xs mb-4" style={{ color: '#475569' }}>Remove all "Powered by Koara" watermarks from your storefront.</p>
-                      <Toggle on={true} onChange={() => {}} />
+                      <Toggle on={true} onChange={() => { }} />
                     </div>
                   </PremiumLockOverlay>
 
@@ -2770,7 +2770,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="text-xs text-slate-400 mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
-                    Your banking information is locked for security after verification. 
+                    Your banking information is locked for security after verification.
                     If you need to update these details, please contact administrator support.
                   </div>
                 </div>
@@ -2785,7 +2785,7 @@ const AdminDashboard = () => {
                   {isPlusActive && (
                     <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at top right, rgba(59,130,246,0.1), transparent 50%)' }}></div>
                   )}
-                  
+
                   <div className="relative z-10 flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-2xl font-extrabold text-white">
@@ -2798,11 +2798,11 @@ const AdminDashboard = () => {
                       )}
                     </div>
                     <p className="text-sm" style={{ color: '#94A3B8' }}>
-                      {isPlusActive 
-                        ? 'You are enjoying all premium features and customizations.' 
+                      {isPlusActive
+                        ? 'You are enjoying all premium features and customizations.'
                         : 'You are currently on the free basic plan with limited features.'}
                     </p>
-                    
+
                     {isPlusActive && subscription.expires_at && (
                       <div className="mt-6 flex flex-wrap gap-6">
                         <div>
@@ -2816,7 +2816,7 @@ const AdminDashboard = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="relative z-10 shrink-0 w-full md:w-auto">
                     {isPlusActive ? (
                       <div className="flex flex-col gap-3">
@@ -2885,7 +2885,7 @@ const AdminDashboard = () => {
             <h3 className="text-2xl font-bold text-white mb-2">Unlock Premium Features</h3>
             <p className="text-sm text-slate-400">Take your store to the next level with Koara Plus.</p>
           </div>
-          
+
           <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 space-y-4">
             {[
               'Remove ALL Koara branding',
@@ -2903,7 +2903,7 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
             <div>
               <div className="text-sm font-bold text-white">Koara Plus</div>
@@ -2916,7 +2916,7 @@ const AdminDashboard = () => {
           </div>
 
           <div className="space-y-3">
-            <div 
+            <div
               onClick={() => setUpgradeMethod('wallet')}
               className={`p-4 rounded-xl border cursor-pointer transition-all ${upgradeMethod === 'wallet' ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'}`}
             >
@@ -2931,7 +2931,7 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div 
+            <div
               onClick={() => setUpgradeMethod('crypto')}
               className={`p-4 rounded-xl border cursor-pointer transition-all ${upgradeMethod === 'crypto' ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'}`}
             >
@@ -2954,10 +2954,10 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          <button 
-            onClick={handleUpgrade} 
+          <button
+            onClick={handleUpgrade}
             disabled={isUpgrading}
-            className="w-full py-4 rounded-xl font-bold text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex justify-center items-center gap-2" 
+            className="w-full py-4 rounded-xl font-bold text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex justify-center items-center gap-2"
             style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', boxShadow: '0 4px 15px rgba(37,99,235,0.3)' }}
           >
             {isUpgrading ? (
@@ -3055,28 +3055,28 @@ const AdminDashboard = () => {
         {customizingProduct && (
           <div className="space-y-4">
             <p className="text-sm text-slate-400">Override how this product looks on your storefront. Leave blank to use defaults.</p>
-            
+
             <div>
               <label className="koara-label">Custom Title</label>
-              <input 
-                type="text" 
-                className="koara-input" 
+              <input
+                type="text"
+                className="koara-input"
                 placeholder={customizingProduct.name}
                 value={customizingProduct.custom_title}
                 onChange={e => setCustomizingProduct(p => ({ ...p, custom_title: e.target.value }))}
               />
             </div>
-            
+
             <div>
               <label className="koara-label">Custom Description</label>
-              <textarea 
-                className="koara-input min-h-[80px]" 
+              <textarea
+                className="koara-input min-h-[80px]"
                 placeholder={customizingProduct.description || 'Default description...'}
                 value={customizingProduct.custom_description}
                 onChange={e => setCustomizingProduct(p => ({ ...p, custom_description: e.target.value }))}
               />
             </div>
-            
+
             <div>
               <label className="koara-label">Custom Image</label>
               <div className="flex items-center gap-4 mt-2">
@@ -3089,18 +3089,18 @@ const AdminDashboard = () => {
                 </div>
                 <div className="flex-1 space-y-2">
                   <label className="koara-upload-zone block relative cursor-pointer py-3 text-center transition-colors" style={{ background: 'rgba(59,130,246,0.05)', border: '1px dashed rgba(59,130,246,0.3)', borderRadius: '12px' }}>
-                    <input 
-                      type="file" 
+                    <input
+                      type="file"
                       accept="image/jpeg,image/png,image/webp"
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       onChange={async (e) => {
                         const file = e.target.files[0];
                         if (!file) return;
-                        
+
                         setCustomizingProduct(p => ({ ...p, uploading: true }));
                         const formData = new FormData();
                         formData.append('image', file);
-                        
+
                         try {
                           const res = await fetch(`${API_BASE_URL}/api/merchant/products/upload-image`, {
                             method: 'POST',
@@ -3108,11 +3108,11 @@ const AdminDashboard = () => {
                           });
                           const data = await res.json();
                           if (data.success) {
-                            setCustomizingProduct(p => ({ 
-                              ...p, 
-                              custom_image_url: data.url, 
+                            setCustomizingProduct(p => ({
+                              ...p,
+                              custom_image_url: data.url,
                               previewImage: data.url,
-                              uploading: false 
+                              uploading: false
                             }));
                           } else {
                             alert(data.error || 'Upload failed');
@@ -3133,7 +3133,7 @@ const AdminDashboard = () => {
                     )}
                   </label>
                   {customizingProduct.custom_image_url && (
-                    <button 
+                    <button
                       onClick={() => setCustomizingProduct(p => ({ ...p, custom_image_url: '', previewImage: p.image_url || '' }))}
                       className="text-xs font-medium w-full text-start transition-colors"
                       style={{ color: '#F87171' }}
@@ -3144,10 +3144,10 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="pt-4 flex justify-end gap-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               <button onClick={() => setCustomizingProduct(null)} className="dash-btn dash-btn-secondary">Cancel</button>
-              <button 
+              <button
                 onClick={async () => {
                   try {
                     await updateMerchantProduct(customizingProduct.id, storeId, {
@@ -3162,7 +3162,7 @@ const AdminDashboard = () => {
                   } catch (err) {
                     alert('Failed to save custom changes');
                   }
-                }} 
+                }}
                 className="dash-btn dash-btn-primary"
                 disabled={customizingProduct.uploading}
               >
@@ -3612,7 +3612,7 @@ const AdminDashboard = () => {
         </form>
       </Modal>
 
-      <SubscriptionPaymentModal 
+      <SubscriptionPaymentModal
         isOpen={subscriptionPaymentOpen}
         onClose={() => setSubscriptionPaymentOpen(false)}
         onSuccess={() => {
@@ -3622,10 +3622,10 @@ const AdminDashboard = () => {
           setUpgradeSuccess(true);
         }}
       />
-      
-      <MerchantWithdrawalModal 
-        isOpen={showWithdrawalModal} 
-        onClose={() => setShowWithdrawalModal(false)} 
+
+      <MerchantWithdrawalModal
+        isOpen={showWithdrawalModal}
+        onClose={() => setShowWithdrawalModal(false)}
       />
 
       {/* Code Creation Modal */}
@@ -3659,7 +3659,7 @@ const AdminDashboard = () => {
       {isLanguageModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-slate-800 rounded-xl p-6 max-w-sm w-full border border-slate-700 shadow-2xl relative">
-            <button 
+            <button
               onClick={() => setIsLanguageModalOpen(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white"
             >
@@ -3672,15 +3672,15 @@ const AdminDashboard = () => {
               <h3 className="text-xl font-bold text-white mb-2">Select Language</h3>
               <p className="text-sm text-slate-400">Choose the language for your generated report.</p>
             </div>
-            
+
             <div className="flex flex-col gap-3">
-              <button 
+              <button
                 onClick={() => executeDownloadMonthlyReport('en')}
                 className="w-full py-3 px-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium flex items-center justify-center gap-2 transition-colors border border-slate-600"
               >
                 English
               </button>
-              <button 
+              <button
                 onClick={() => executeDownloadMonthlyReport('ar')}
                 className="w-full py-3 px-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium flex items-center justify-center gap-2 transition-colors border border-slate-600"
                 style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}

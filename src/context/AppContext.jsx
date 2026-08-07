@@ -269,7 +269,7 @@ export const AppProvider = ({ children }) => {
         if (data.status === 'requires_otp') {
           return { success: true, requiresOtp: true, message: data.message };
         }
-        
+
         // Construct user state profile
         const sessionUser = {
           id: data.user.id,
@@ -505,11 +505,11 @@ export const AppProvider = ({ children }) => {
       let url = `${API_BASE_URL}/api/merchant/orders/${orderId}/status`;
       let body = { store_id: storeId, status };
       let method = 'PUT';
-      
+
       if (isTopup) {
-         url = `${API_BASE_URL}/api/merchant/topups/orders/${orderId}/${status === 'approved' ? 'approve' : 'reject'}`;
-         body = { store_id: storeId };
-         method = 'POST';
+        url = `${API_BASE_URL}/api/merchant/topups/orders/${orderId}/${status === 'approved' ? 'approve' : 'reject'}`;
+        body = { store_id: storeId };
+        method = 'POST';
       }
 
       const response = await fetch(url, {
@@ -874,7 +874,7 @@ export const AppProvider = ({ children }) => {
       });
       const data = await response.json();
       if (response.ok) {
-        setMerchantPlatformProducts(prev => prev.map(p => 
+        setMerchantPlatformProducts(prev => prev.map(p =>
           p.id === productId ? { ...p, ...data.merchant_product, selling_price: data.merchant_product.selling_price, is_enabled: data.merchant_product.is_enabled, merchant_product_id: data.merchant_product.id } : p
         ));
         return { success: true };
@@ -937,7 +937,7 @@ export const AppProvider = ({ children }) => {
 
   const isPlusActive = subscription.plan === 'plus' && subscription.status === 'active';
 
-  const upgradeSubscription = async () => {};
+  const upgradeSubscription = async () => { };
 
   const fetchInvitationCodes = async () => {
     if (user?.role !== 'admin') return [];

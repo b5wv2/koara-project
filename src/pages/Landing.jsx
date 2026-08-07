@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import OnboardingModal from '../components/OnboardingModal';
 import LoginModal from '../components/LoginModal';
 import StoreStatusModal from '../components/StoreStatusModal';
 import PasswordResetModal from '../components/PasswordResetModal';
-import { Store, Wallet, ShieldCheck, FileText, BarChart2, TrendingUp, ArrowRight, Zap, Globe, Lock } from 'lucide-react';
+import { Store, Wallet, ShieldCheck, FileText, BarChart2, TrendingUp, ArrowRight, Zap, Globe, Lock, ChevronDown, MessageCircle } from 'lucide-react';
+import { FaWhatsapp, FaFacebook, FaXTwitter } from 'react-icons/fa6';
 import { useAppContext } from '../context/AppContext';
 import AmbientWaveBackground from '../components/AmbientWaveBackground';
 import InteractiveGrid from '../components/InteractiveGrid';
 import LightPillar from '../components/LightPillar';
 
 const FeatureCard = ({ icon: Icon, title, description }) => (
-  <div className="glass-card p-7 relative z-10 group">
-    <div className="feature-icon mb-5">
+  <div className="glass-card p-7 relative z-10 group transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]">
+    <div className="feature-icon mb-5 group-hover:scale-110 transition-transform duration-300">
       <Icon size={22} />
     </div>
     <h3 className="font-bold text-lg mb-2.5 text-white">{title}</h3>
@@ -21,14 +22,50 @@ const FeatureCard = ({ icon: Icon, title, description }) => (
   </div>
 );
 
+const FAQItem = ({ question, answer, isOpen, onClick }) => (
+  <div className={`glass-card mb-4 overflow-hidden transition-all duration-300 border ${isOpen ? 'border-white/20 shadow-lg shadow-white/5' : 'border-white/5 hover:border-white/10'}`}>
+    <button
+      className="w-full px-6 py-6 sm:px-8 text-left flex items-center justify-between focus:outline-none cursor-pointer"
+      onClick={onClick}
+    >
+      <span className="font-semibold text-white text-base sm:text-lg pr-4">{question}</span>
+      <ChevronDown className={`text-slate-400 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} size={24} />
+    </button>
+    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+      <div className="overflow-hidden">
+        <div className="px-6 pb-6 sm:px-8 sm:pb-8 pt-2 text-slate-400 text-sm sm:text-base leading-relaxed">
+          {answer}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const LandingPage = () => {
-  const pricingRef = React.useRef(null);
+  const pricingRef = useRef(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingInitialData, setOnboardingInitialData] = useState(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
   const [storeRequestStatus, setStoreRequestStatus] = useState(null);
   const { t } = useAppContext();
+  const [openFaq, setOpenFaq] = useState(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+    document.querySelectorAll('.fade-in-section').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
 
   return (
@@ -51,13 +88,13 @@ const LandingPage = () => {
             {/* Hero Content */}
             <div className="w-full relative flex flex-col items-center justify-center z-10">
 
-              <div className="text-xs font-bold uppercase tracking-[0.2em] mb-6 inline-flex items-center justify-center gap-3" style={{ color: '#60A5FA' }}>
+              <div className="text-xs font-bold uppercase tracking-[0.2em] mb-6 inline-flex items-center justify-center gap-3 fade-in-section stagger-1" style={{ color: '#60A5FA' }}>
                 <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#3B82F6' }}></span>
                 PLATFORM OVERVIEW
               </div>
 
               {/* Headline with LightPillar effect behind the text */}
-              <div className="relative mb-8 w-full max-w-4xl">
+              <div className="relative mb-8 w-full max-w-4xl fade-in-section stagger-2">
                 {/* Dark radial backdrop — provides contrast for the LightPillar */}
                 <div className="hero-light-backdrop" aria-hidden="true" />
                 {/* LightPillar layer — sits below the text via z-index */}
@@ -78,8 +115,8 @@ const LandingPage = () => {
                   />
                 </div>
                 <h1
-                  className="relative z-10 text-4xl sm:text-6xl md:text-[5.5rem] font-extrabold tracking-tight leading-[1.05]"
-                  style={{ color: '#ffffff', textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}
+                  className="relative z-10 text-4xl sm:text-6xl md:text-[5.5rem] font-extrabold tracking-tight leading-[1.05] text-gradient-premium"
+                  style={{ textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}
                 >
                   A single platform,<br />
                   a year's worth<br />
@@ -87,20 +124,33 @@ const LandingPage = () => {
                 </h1>
               </div>
 
-              <p className="text-lg sm:text-xl mb-10 max-w-2xl leading-relaxed font-medium mx-auto" style={{ color: '#94A3B8' }}>
+              <p className="text-lg sm:text-xl mb-10 max-w-2xl leading-relaxed font-medium mx-auto fade-in-section stagger-3" style={{ color: '#94A3B8' }}>
                 Start selling digital products in MENA seamlessly. No coding required. Handle KYC, accept payments, and automatically deliver digital codes in seconds.
               </p>
 
-              <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 fade-in-section stagger-4 w-full sm:w-auto px-4">
                 <button
                   onClick={() => pricingRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                  className="btn-primary px-8 py-4 text-base flex items-center justify-center gap-2"
+                  className="btn-primary px-8 py-4 text-base flex items-center justify-center gap-2 w-full sm:w-auto"
                 >
                   {t('start_store_free')} <ArrowRight size={18} className="rtl:rotate-180" />
                 </button>
-                <button className="btn-secondary px-6 py-4 text-sm">
+                <button className="btn-secondary px-6 py-4 text-sm w-full sm:w-auto">
                   Watch demo
                 </button>
+              </div>
+
+              {/* Social Media Row */}
+              <div className="mt-14 flex items-center justify-center gap-6 fade-in-section stagger-4">
+                <a href="https://www.whatsapp.com/" target="_blank" rel="noopener noreferrer" className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,255,255,0.15)] group">
+                  <FaWhatsapp size={26} className="text-slate-400 group-hover:text-white transition-colors" />
+                </a>
+                <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,255,255,0.15)] group">
+                  <FaFacebook size={26} className="text-slate-400 group-hover:text-white transition-colors" />
+                </a>
+                <a href="https://www.x.com/" target="_blank" rel="noopener noreferrer" className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,255,255,0.15)] group">
+                  <FaXTwitter size={26} className="text-slate-400 group-hover:text-white transition-colors" />
+                </a>
               </div>
             </div>
 
@@ -110,7 +160,7 @@ const LandingPage = () => {
         {/* ═══════════════════════════════════════════════════════════════
             STATS / SOCIAL PROOF SECTION
         ═══════════════════════════════════════════════════════════════ */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-8 pb-20 sm:pb-28 relative z-10">
+        <section className="max-w-7xl mx-auto px-4 sm:px-8 pb-20 sm:pb-28 relative z-10 fade-in-section">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               ['800+', 'Active Merchants'],
@@ -129,7 +179,7 @@ const LandingPage = () => {
         {/* ═══════════════════════════════════════════════════════════════
             FEATURES SECTION
         ═══════════════════════════════════════════════════════════════ */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow">
+        <section className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow fade-in-section">
           <div className="mb-16 text-center">
             <div className="text-xs font-bold uppercase tracking-[0.2em] mb-4 inline-flex items-center gap-2" style={{ color: '#60A5FA' }}>
               <Zap size={14} />
@@ -178,7 +228,7 @@ const LandingPage = () => {
         {/* ═══════════════════════════════════════════════════════════════
             HOW IT WORKS SECTION
         ═══════════════════════════════════════════════════════════════ */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow">
+        <section className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow fade-in-section">
           <div className="mb-16 text-center">
             <div className="text-xs font-bold uppercase tracking-[0.2em] mb-4 inline-flex items-center gap-2" style={{ color: '#60A5FA' }}>
               <Globe size={14} />
@@ -208,7 +258,7 @@ const LandingPage = () => {
         {/* ═══════════════════════════════════════════════════════════════
             SECURITY / TRUST SECTION
         ═══════════════════════════════════════════════════════════════ */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow">
+        <section className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow fade-in-section">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.2em] mb-4 inline-flex items-center gap-2" style={{ color: '#60A5FA' }}>
@@ -248,7 +298,7 @@ const LandingPage = () => {
         {/* ═══════════════════════════════════════════════════════════════
             PRICING / SUBSCRIPTION SECTION
         ═══════════════════════════════════════════════════════════════ */}
-        <section ref={pricingRef} className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow">
+        <section ref={pricingRef} className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow fade-in-section">
           <div className="mb-16 text-center">
             <div className="text-xs font-bold uppercase tracking-[0.2em] mb-4 inline-flex items-center gap-2" style={{ color: '#60A5FA' }}>
               <Zap size={14} />
@@ -340,9 +390,38 @@ const LandingPage = () => {
         </section>
 
         {/* ═══════════════════════════════════════════════════════════════
+            FAQ SECTION
+        ═══════════════════════════════════════════════════════════════ */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 section-glow fade-in-section">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-4">Frequently Asked Questions</h2>
+            <p className="text-slate-400">Everything you need to know about the product and billing.</p>
+          </div>
+          
+          <div className="flex flex-col">
+            {[
+              { q: "What is Koara?", a: "Koara is a unified digital commerce platform designed for the MENA region, enabling merchants to sell digital products, manage KYC, and process payments instantly." },
+              { q: "How do merchants receive payments?", a: "Merchants can link their local bank accounts or supported digital wallets. We handle the settlement processing automatically." },
+              { q: "Which countries are supported?", a: "We currently support merchants across major MENA countries with rapid expansion plans for additional regions." },
+              { q: "How long does KYC take?", a: "Most verifications are processed within 24 hours. Our automated systems handle basic checks instantly." },
+              { q: "What payment methods are supported?", a: "We support local bank transfers, major credit cards, and popular regional digital wallets." },
+              { q: "Is there a monthly subscription?", a: "You can start for free on our Basic plan. Our Plus plan offers advanced customization and zero platform branding for a small monthly fee." }
+            ].map((faq, index) => (
+              <FAQItem 
+                key={index} 
+                question={faq.q} 
+                answer={faq.a} 
+                isOpen={openFaq === index}
+                onClick={() => setOpenFaq(openFaq === index ? null : index)}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════════
             CTA SECTION
         ═══════════════════════════════════════════════════════════════ */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10">
+        <section className="max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-28 relative z-10 fade-in-section">
           <div className="rounded-[2rem] p-12 sm:p-16 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0B1220 0%, #080D18 50%, #0B1220 100%)', border: '1px solid rgba(255,255,255,0.04)' }}>
             {/* Background glow */}
             <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -356,15 +435,15 @@ const LandingPage = () => {
               <p className="text-lg max-w-xl mx-auto mb-10" style={{ color: '#94A3B8' }}>
                 Join thousands of merchants already selling on Koara. Set up your store in minutes.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full px-4 sm:px-0">
                 <button
                   onClick={() => setIsOnboardingOpen(true)}
-                  className="btn-primary px-10 py-4 text-base flex items-center gap-2"
+                  className="btn-primary px-10 py-4 text-base flex items-center justify-center gap-2 w-full sm:w-auto"
                 >
                   Get started free <ArrowRight size={18} className="rtl:rotate-180" />
                 </button>
                 <button
-                  className="btn-secondary px-8 py-4 text-sm"
+                  className="btn-secondary px-8 py-4 text-sm w-full sm:w-auto text-center"
                   onClick={() => {
                     window.location.href = "mailto:support@getkoara.com";
                   }}

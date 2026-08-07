@@ -216,7 +216,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
     } catch (err) {
       setOtpError(true);
       setVerificationCode('');
-      throw err;
+      return { success: false, error: err.message };
     }
   });
 
@@ -461,9 +461,16 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             <OTPInput
               length={6}
               value={verificationCode}
-              onChange={setVerificationCode}
+              onChange={(val) => { setVerificationCode(val); setOtpError(false); }}
               onComplete={(code) => handleVerifyRegistrationCode(code)}
+              disabled={loading}
+              hasError={otpError}
             />
+            {otpError && (
+              <p className="text-red-500 text-sm mt-3 text-center font-medium animate-fade-in">
+                Incorrect verification code. Please try again.
+              </p>
+            )}
           </div>
           {globalLockUntil && (
             <div className="koara-error-msg text-center">

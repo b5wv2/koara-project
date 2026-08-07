@@ -194,10 +194,10 @@ const StorefrontInner = ({ store }) => {
 
   const activeCategoryProducts = selectedCategoryId
     ? (topupsCatalogs.some(c => c.category.id === selectedCategoryId)
-        ? topupsCatalogs.find(c => c.category.id === selectedCategoryId).offers.map(o => ({ ...o, id: o.offer_id, category: selectedCategoryId, isTopup: true }))
-        : typeof selectedCategoryId === 'string'
-          ? platformProducts.filter(p => p.category === selectedCategoryId)
-          : storeProducts.filter(p => p.category_id === selectedCategoryId || p.categoryId === selectedCategoryId))
+      ? topupsCatalogs.find(c => c.category.id === selectedCategoryId).offers.map(o => ({ ...o, id: o.offer_id, category: selectedCategoryId, isTopup: true }))
+      : typeof selectedCategoryId === 'string'
+        ? platformProducts.filter(p => p.category === selectedCategoryId)
+        : storeProducts.filter(p => p.category_id === selectedCategoryId || p.categoryId === selectedCategoryId))
     : [];
 
   // Direct 1-Click Buy Now
@@ -485,7 +485,7 @@ const StorefrontInner = ({ store }) => {
           <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 mb-3 group-hover:text-blue-300 transition-colors" style={{ color: custom.textColor || '#FFFFFF' }}>
             {product.name}
           </h3>
-          
+
           <div className="mt-auto flex items-center justify-between gap-2 mb-3">
             {product.selling_price ? (
               <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.selling_price).toFixed(2)}</span>
@@ -771,7 +771,7 @@ const StorefrontInner = ({ store }) => {
       <Modal
         isOpen={checkoutStep > 0 && checkoutStep < 3}
         onClose={closeCheckout}
-        title={checkoutStep === 1 
+        title={checkoutStep === 1
           ? (isCartCheckout ? (t('cart_checkout')) : (t('checkout')))
           : (t('order_status'))}
       >
@@ -855,28 +855,28 @@ const StorefrontInner = ({ store }) => {
 
               {/* Dynamic Top-up Fields for Single Product */}
               {!isCartCheckout && selectedProduct && selectedProduct.isTopup && (() => {
-                 const currentCatalog = topupsCatalogs.find(c => c.category.id === selectedProduct.category);
-                 return currentCatalog && currentCatalog.fields && currentCatalog.fields.length > 0 && (
-                    <div className="space-y-3 mt-4">
-                      <h4 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>
-                        {t('top_up_details')}
-                      </h4>
-                      {currentCatalog.fields.map(field => (
-                        <div key={field.key}>
-                          <label className="koara-label">{field.label}</label>
-                          <input
-                            required
-                            type={field.type === 'text' ? 'text' : field.type}
-                            placeholder={field.label}
-                            className="koara-input"
-                            value={topupFormFields[field.key] || ''}
-                            onChange={e => setTopupFormFields(prev => ({...prev, [field.key]: e.target.value}))}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  );
-               })()}
+                const currentCatalog = topupsCatalogs.find(c => c.category.id === selectedProduct.category);
+                return currentCatalog && currentCatalog.fields && currentCatalog.fields.length > 0 && (
+                  <div className="space-y-3 mt-4">
+                    <h4 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>
+                      {t('top_up_details')}
+                    </h4>
+                    {currentCatalog.fields.map(field => (
+                      <div key={field.key}>
+                        <label className="koara-label">{field.label}</label>
+                        <input
+                          required
+                          type={field.type === 'text' ? 'text' : field.type}
+                          placeholder={field.label}
+                          className="koara-input"
+                          value={topupFormFields[field.key] || ''}
+                          onChange={e => setTopupFormFields(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Payment Details */}
               <div>
@@ -979,7 +979,7 @@ const StorefrontInner = ({ store }) => {
             )}
 
             <p className="text-sm mb-8 max-w-xs mx-auto leading-relaxed" style={{ color: '#64748B' }}>
-              {isCartCheckout 
+              {isCartCheckout
                 ? (t('each_item_has_been_converted_i'))
                 : t('awaiting_verification')}
             </p>
