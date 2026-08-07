@@ -15,6 +15,7 @@ import CurrenciesManagement from '../components/admin/CurrenciesManagement';
 import DepositMethodsManagement from '../components/admin/DepositMethodsManagement';
 import PremiumLockOverlay from '../components/ui/PremiumLockOverlay';
 import Toggle from '../components/ui/Toggle';
+import CurrencySelect from '../components/ui/CurrencySelect';
 import { getImageUrl } from '../utils/imageUrl';
 import html2pdf from 'html2pdf.js';
 import { generateReportHtml } from '../utils/reportGenerator';
@@ -180,8 +181,11 @@ const AdminDashboard = () => {
   const [bankName, setBankName] = useState('');
   const [bankAccountName, setBankAccountName] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [storeCurrency, setStoreCurrency] = useState('USD');
+  const [isSavingCurrency, setIsSavingCurrency] = useState(false);
   const [isSavingBank, setIsSavingBank] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [currencyConfirmModal, setCurrencyConfirmModal] = useState({ isOpen: false, pendingCurrency: 'USD' });
 
   React.useEffect(() => {
     const activeStore = store || merchantObj;
@@ -189,8 +193,9 @@ const AdminDashboard = () => {
       setBankName(activeStore.bank_name || activeStore.bankName || '');
       setBankAccountName(activeStore.account_name || activeStore.bankAccountName || '');
       setBankAccountNumber(activeStore.account_no || activeStore.bankAccountNumber || '');
+      setStoreCurrency(activeStore.store_currency || activeStore.storeCurrency || 'USD');
     }
-  }, [store, merchantObj.bankName, merchantObj.bankAccountName, merchantObj.bankAccountNumber]);
+  }, [store, merchantObj.bankName, merchantObj.bankAccountName, merchantObj.bankAccountNumber, merchantObj.storeCurrency]);
 
   React.useEffect(() => {
     if (role === 'admin') {
@@ -574,6 +579,35 @@ const AdminDashboard = () => {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     }, 800);
+  };
+
+  const handleUpdateCurrency = async () => {
+    const targetCurrency = currencyConfirmModal.pendingCurrency;
+    setIsSavingCurrency(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/merchant/store`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ store_currency: targetCurrency })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStoreCurrency(targetCurrency);
+        // Also update local merchant array so it persists on re-render
+        if (updateMerchantBanking) {
+            updateMerchantBanking(storeId, { storeCurrency: targetCurrency });
+        }
+        setCurrencyConfirmModal({ isOpen: false, pendingCurrency: 'USD' });
+      } else {
+        alert(data.error || 'Failed to update store currency');
+      }
+    } catch (err) {
+      console.error('Failed to update currency', err);
+      alert('Network error while saving currency');
+    } finally {
+      setIsSavingCurrency(false);
+    }
   };
 
   const handleToggleCategory = (id) => {
@@ -2252,7 +2286,7 @@ const AdminDashboard = () => {
                         <th>Enabled</th>
                         <th>Product Name</th>
                         <th>Category</th>
-                        <th>Selling Price ($)</th>
+                        <th>Selling Price ({storeCurrency || 'USD'})</th>
                         <th className="text-end">Customize</th>
                         <th className="text-end">Save</th>
                       </tr>
@@ -2408,7 +2442,7 @@ const AdminDashboard = () => {
                         <th>Image</th>
                         <th>Product Name</th>
                         <th>Provider Cost ($)</th>
-                        <th>Selling Price ($)</th>
+                        <th>Selling Price ({storeCurrency || 'USD'})</th>
                         <th className="text-end">Save</th>
                       </tr>
                     </thead>
@@ -2703,6 +2737,21 @@ const AdminDashboard = () => {
 
                   <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
+                  {/* Store Currency */}
+                  <div>
+                    <label className="koara-label text-sm mb-3 block">Store Currency</label>
+                    <p className="text-xs mb-4" style={{ color: '#475569' }}>The currency that your customers will see on your storefront.</p>
+                    <div className="flex gap-3 max-w-sm">
+                      <CurrencySelect
+                        value={storeCurrency}
+                        onChange={(val) => setCurrencyConfirmModal({ isOpen: true, pendingCurrency: val })}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
                   {/* Email Branding */}
                   <PremiumLockOverlay isPlusActive={isPlusActive} onUpgrade={() => setUpgradeModalOpen(true)}>
                     <div>
@@ -2992,7 +3041,42 @@ const AdminDashboard = () => {
         </form>
       </Modal>
 
-      {/* Merchant Action Modal */}
+      {/* Currency Confirmation Modal */}
+      <Modal 
+        isOpen={currencyConfirmModal.isOpen} 
+        onClose={() => setCurrencyConfirmModal({ isOpen: false, pendingCurrency: 'USD' })} 
+        title="Change Store Currency"
+      >
+        <div className="space-y-4">
+          <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+            <h4 className="text-orange-400 font-bold mb-2 flex items-center gap-2">
+              <AlertTriangle size={16} /> Warning: Price Update Required
+            </h4>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Changing your store currency does <strong>NOT</strong> automatically convert your existing product selling prices. 
+              After changing the currency to <strong>{currencyConfirmModal.pendingCurrency}</strong>, you must manually review and update all your product selling prices to reflect their correct value in the new currency.
+            </p>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button 
+              onClick={() => setCurrencyConfirmModal({ isOpen: false, pendingCurrency: 'USD' })} 
+              className="dash-btn dash-btn-secondary flex-1 justify-center py-2.5 rounded-xl text-sm font-semibold"
+              disabled={isSavingCurrency}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleUpdateCurrency} 
+              className="dash-btn dash-btn-primary flex-1 justify-center py-2.5 rounded-xl text-sm font-semibold"
+              disabled={isSavingCurrency}
+            >
+              {isSavingCurrency ? 'Saving...' : 'Confirm Change'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Admin KYC Approval Modal */}
       <Modal
         isOpen={merchantActionModal.isOpen}
         onClose={() => setMerchantActionModal({ isOpen: false, type: '', amount: 0 })}

@@ -488,14 +488,14 @@ const StorefrontInner = ({ store }) => {
 
           <div className="mt-auto flex items-center justify-between gap-2 mb-3">
             {product.selling_price ? (
-              <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.selling_price).toFixed(2)}</span>
+              <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>{formatCurrency(parseFloat(product.selling_price))}</span>
             ) : product.sale_price !== null && product.sale_price !== undefined ? (
               <div className="flex flex-col">
-                <span className="text-xs line-through mb-0.5" style={{ color: '#475569' }}>${parseFloat(product.price).toFixed(2)}</span>
-                <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.sale_price).toFixed(2)}</span>
+                <span className="text-xs line-through mb-0.5" style={{ color: '#475569' }}>{formatCurrency(parseFloat(product.price))}</span>
+                <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>{formatCurrency(parseFloat(product.sale_price))}</span>
               </div>
             ) : (
-              <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>${parseFloat(product.price).toFixed(2)}</span>
+              <span className="sf-display font-black text-lg" style={{ color: custom.primaryColor || '#FFFFFF' }}>{formatCurrency(parseFloat(product.price))}</span>
             )}
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/5 uppercase">
               {isTopup ? (t('top_up')) : (t('gift_card'))}
@@ -804,7 +804,7 @@ const StorefrontInner = ({ store }) => {
                           )}
                         </div>
                         <div className="font-mono text-blue-400 font-bold shrink-0" dir="ltr">
-                          {item.quantity}x ${item.selling_price.toFixed(2)}
+                          {item.quantity}x {formatCurrency(item.selling_price)}
                         </div>
                       </div>
                     ))}
@@ -823,7 +823,7 @@ const StorefrontInner = ({ store }) => {
                     </div>
                     <div className="min-w-0">
                       <h4 className="font-bold text-sm text-white leading-tight truncate">{selectedProduct.name}</h4>
-                      <span className="text-xs font-mono text-blue-400" dir="ltr">${calculateTotal()}</span>
+                      <span className="text-xs font-mono text-blue-400" dir="ltr">{formatCurrency(calculateTotal())}</span>
                     </div>
                   </div>
                 )
@@ -833,7 +833,7 @@ const StorefrontInner = ({ store }) => {
               <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-white text-sm">{t('total')}:</span>
-                  <span className="sf-display text-xl font-black" style={{ color: '#3B82F6' }} dir="ltr">${calculateTotal()}</span>
+                  <span className="sf-display text-xl font-black" style={{ color: '#3B82F6' }} dir="ltr">{formatCurrency(calculateTotal())}</span>
                 </div>
               </div>
 

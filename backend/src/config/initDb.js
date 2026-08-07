@@ -24,6 +24,7 @@ const createStoresTableQuery = `
     account_name VARCHAR(255),
     account_no VARCHAR(255),
     balance NUMERIC(10, 2) DEFAULT 0.00,
+    store_currency VARCHAR(10) DEFAULT 'USD',
     logo_url TEXT,
     customization JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -57,6 +58,7 @@ const createStoreRequestsTableQuery = `
     rejection_reason TEXT,
     reviewed_by INTEGER,
     reviewed_at TIMESTAMP,
+    store_currency VARCHAR(10) DEFAULT 'USD',
     owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
@@ -170,6 +172,8 @@ const createOrdersTableQuery = `
     promo_code VARCHAR(50) DEFAULT NULL,
     discount_amount NUMERIC(10,2) DEFAULT 0,
     status VARCHAR(50) DEFAULT 'pending',
+    provider_cost NUMERIC(10,2),
+    store_currency VARCHAR(10) DEFAULT 'USD',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 `;
@@ -291,6 +295,7 @@ const createTopupOrdersTableQuery = `
     last_sync_time TIMESTAMP WITH TIME ZONE,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP WITH TIME ZONE,
+    store_currency VARCHAR(10) DEFAULT 'USD',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 `;

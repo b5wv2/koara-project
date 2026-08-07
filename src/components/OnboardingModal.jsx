@@ -5,6 +5,7 @@ import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, Building2, User, Shie
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import DashButton from './ui/DashButton';
+import CurrencySelect from './ui/CurrencySelect';
 import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -89,6 +90,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
   const [accountNumber, setAccountNumber] = useState('');
   const [bban, setBban] = useState('');
   const [iban, setIban] = useState('');
+  const [storeCurrency, setStoreCurrency] = useState('USD');
 
   // KYC Document
   const [kycDocument, setKycDocument] = useState(null);
@@ -351,6 +353,7 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
     formData.append('bank_name', bankName.trim());
     formData.append('account_holder_name', accountHolderName.trim());
     formData.append('account_number', accountNumber.trim());
+    formData.append('store_currency', storeCurrency);
     if (bban.trim()) formData.append('bban', bban.trim());
     if (iban.trim()) formData.append('iban', iban.trim());
     if (kycDocument) {
@@ -519,6 +522,13 @@ const OnboardingModal = ({ isOpen, onClose, initialData }) => {
             <div>
               <label className="koara-label">{t('store_name')}</label>
               <input required type="text" value={storeName} onChange={(e) => handleStoreNameChange(e.target.value)} placeholder="Acme Digital" className="koara-input" />
+            </div>
+            <div>
+              <label className="koara-label">Store Currency</label>
+              <CurrencySelect
+                value={storeCurrency}
+                onChange={setStoreCurrency}
+              />
             </div>
             <div>
               <label className="koara-label">{t('store_subdomain')}</label>

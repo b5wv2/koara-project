@@ -136,7 +136,10 @@ export const AppProvider = ({ children }) => {
 
   const formatCurrency = (amount) => {
     const locale = language === 'ar' ? 'ar-EG' : 'en-US';
+    const currency = store?.store_currency || 'USD';
     return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

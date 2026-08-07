@@ -15,7 +15,7 @@ router.use(resolveMerchantStore);
 
 // PUT /api/merchant/store
 router.put('/store', async (req, res) => {
-  const { logo_url, store_name, bank_name, account_name, account_no } = req.body;
+  const { logo_url, store_name, bank_name, account_name, account_no, store_currency } = req.body;
   const storeId = req.merchantStoreId;
 
   try {
@@ -30,12 +30,13 @@ router.put('/store', async (req, res) => {
     const newBankName = bank_name !== undefined ? bank_name : current.bank_name;
     const newAccountName = account_name !== undefined ? account_name : current.account_name;
     const newAccountNo = account_no !== undefined ? account_no : current.account_no;
+    const newStoreCurrency = store_currency !== undefined ? store_currency : current.store_currency;
 
     const result = await db.query(
       `UPDATE stores 
-       SET logo_url = $1, store_name = $2, bank_name = $3, account_name = $4, account_no = $5
-       WHERE id = $6 RETURNING *`,
-      [newLogoUrl, newStoreName, newBankName, newAccountName, newAccountNo, storeId]
+       SET logo_url = $1, store_name = $2, bank_name = $3, account_name = $4, account_no = $5, store_currency = $6
+       WHERE id = $7 RETURNING *`,
+      [newLogoUrl, newStoreName, newBankName, newAccountName, newAccountNo, newStoreCurrency, storeId]
     );
     res.json({ success: true, store: result.rows[0] });
   } catch (err) {

@@ -28,7 +28,7 @@ class OrderService {
       await client.query('BEGIN');
 
       // 1. Validate merchant and store
-      const storeRes = await client.query('SELECT id, status, store_name, owner_id FROM stores WHERE id = $1', [storeId]);
+      const storeRes = await client.query('SELECT id, status, store_name, owner_id, store_currency FROM stores WHERE id = $1', [storeId]);
       if (storeRes.rows.length === 0) {
         throw new Error('Store not found.');
       }
@@ -41,7 +41,8 @@ class OrderService {
         SELECT 
           mp.id AS merchant_product_id,
           mp.selling_price,
-          pp.name AS product_name
+          pp.name AS product_name,
+          (SELECT cost_price FROM provider_products WHERE product_id = pp.id AND is_active = true LIMIT 1) as cost_price
         FROM merchant_products mp
         JOIN platform_products pp ON mp.catalog_product_id = pp.id
         WHERE mp.store_id = $1 AND mp.catalog_product_id = $2 AND mp.is_enabled = true
@@ -99,8 +100,9 @@ class OrderService {
         `, [promo.id]);
       }
 
-      // We assume USD for now based on legacy logic, but we could fetch from store settings
-      const currencyCode = 'USD';
+      // We use the store's currency for display, but wallet deduction is USD
+      const currencyCode = storeRes.rows[0].store_currency || 'USD';
+      const providerCost = parseFloat(product.cost_price || 0) * quantity;
 
       // 4. Generate sequential order number
       const seqRes = await client.query("SELECT nextval('order_number_seq')");
@@ -127,9 +129,11 @@ class OrderService {
           status,
           promo_code,
           discount_amount,
-          checkout_group_id
+          checkout_group_id,
+          provider_cost,
+          store_currency
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16, $17
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16, $17, $18, $19
         ) RETURNING *
       `, [
         storeId,
@@ -148,7 +152,9 @@ class OrderService {
         receiptUrl,
         appliedPromoCode,
         discountAmount,
-        checkoutGroupId
+        checkoutGroupId,
+        providerCost,
+        currencyCode
       ]);
 
       await client.query('COMMIT');

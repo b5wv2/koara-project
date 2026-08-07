@@ -23,7 +23,7 @@ class TopupOrderService {
       }
 
       // 2. Fetch merchant and product info
-      const storeRes = await client.query('SELECT s.id, s.status, s.store_name, u.email FROM stores s JOIN users u ON s.owner_id = u.id WHERE s.id = $1', [storeId]);
+      const storeRes = await client.query('SELECT s.id, s.status, s.store_name, s.store_currency, u.email FROM stores s JOIN users u ON s.owner_id = u.id WHERE s.id = $1', [storeId]);
       if (storeRes.rows.length === 0) throw new Error('Store not found.');
       const store = storeRes.rows[0];
       if (store.status !== 'active') throw new Error('Store is not active.');
@@ -86,17 +86,19 @@ class TopupOrderService {
       // 5. Create order in pending status
       const totalSellingPrice = sellingPrice - discountAmount;
       const merchantProfit = totalSellingPrice - adminCostPrice;
+      const currencyCode = store.store_currency || 'USD';
+
       await client.query(`
         INSERT INTO topup_orders (
           local_order_id, store_id, category_id, offer_id, dynamic_fields, 
-          customer_name, customer_email, whatsapp, cost_price, admin_cost_price, selling_price, merchant_profit, status, receipt_url, promo_code, discount_amount, checkout_group_id
+          customer_name, customer_email, whatsapp, cost_price, admin_cost_price, selling_price, merchant_profit, status, receipt_url, promo_code, discount_amount, checkout_group_id, store_currency
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending', $13, $14, $15, $16
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending', $13, $14, $15, $16, $17
         )
       `, [
         localOrderId, storeId, offer.category_id, offerId, JSON.stringify(dynamicFields),
         customerInfo.name, customerInfo.email, customerInfo.whatsapp, 
-        costPrice, adminCostPrice, sellingPrice, merchantProfit, receiptUrl, appliedPromoCode, discountAmount, checkoutGroupId
+        costPrice, adminCostPrice, sellingPrice, merchantProfit, receiptUrl, appliedPromoCode, discountAmount, checkoutGroupId, currencyCode
       ]);
 
       await client.query('COMMIT');

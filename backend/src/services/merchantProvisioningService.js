@@ -27,8 +27,8 @@ async function provisionMerchant(storeRequestId, client) {
 
   // 3. Create the store
   const insertStoreQuery = `
-    INSERT INTO stores (owner_id, store_name, subdomain, status, bank_name, account_name, account_no)
-    VALUES ($1, $2, $3, 'active', $4, $5, $6)
+    INSERT INTO stores (owner_id, store_name, subdomain, status, bank_name, account_name, account_no, store_currency)
+    VALUES ($1, $2, $3, 'active', $4, $5, $6, $7)
     RETURNING *;
   `;
   const storeResult = await client.query(insertStoreQuery, [
@@ -37,7 +37,8 @@ async function provisionMerchant(storeRequestId, client) {
     request.subdomain,
     request.bank_name,
     request.account_holder_name,
-    request.account_number
+    request.account_number,
+    request.store_currency || 'USD'
   ]);
   const newStore = storeResult.rows[0];
 

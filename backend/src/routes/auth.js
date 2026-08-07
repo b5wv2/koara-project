@@ -179,7 +179,7 @@ router.post('/validate-invitation-code', async (req, res) => {
 
 // POST /signup route
 router.post('/signup', upload.single('kyc_document'), async (req, res) => {
-  const { name, email, password, store_name, bank_name, account_holder_name, account_number, subdomain, invitation_code } = req.body;
+  const { name, email, password, store_name, bank_name, account_holder_name, account_number, subdomain, invitation_code, store_currency } = req.body;
 
   // Validate request inputs
   if (!name || !email || !password || !store_name || !bank_name || !account_holder_name || !account_number || !subdomain) {
@@ -265,9 +265,9 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const insertRequestQuery = `
-      INSERT INTO store_requests (applicant_name, email, password_hash, store_name, bank_name, account_holder_name, account_number, kyc_document_url, status, subdomain)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING id, applicant_name as name, email, store_name, status, created_at, subdomain;
+      INSERT INTO store_requests (applicant_name, email, password_hash, store_name, bank_name, account_holder_name, account_number, kyc_document_url, status, subdomain, store_currency)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id, applicant_name as name, email, store_name, status, created_at, subdomain, store_currency;
     `;
     const requestResult = await client.query(insertRequestQuery, [
       name.trim(),
@@ -279,7 +279,8 @@ router.post('/signup', upload.single('kyc_document'), async (req, res) => {
       account_number.trim(),
       kyc_document_url,
       bypassKyc ? 'approved' : 'pending',
-      cleanSubdomain
+      cleanSubdomain,
+      store_currency || 'USD'
     ]);
     const newRequest = requestResult.rows[0];
 
