@@ -321,7 +321,7 @@ const LandingPage = () => {
                 </div>
                 <p className="text-xs mt-2" style={{ color: '#64748B' }}>This plan will become paid in the future.</p>
               </div>
-              
+
               <div className="flex-1 space-y-4 mb-8">
                 {[
                   'Default storefront theme',
@@ -336,7 +336,7 @@ const LandingPage = () => {
                   </div>
                 ))}
               </div>
-              
+
               <button onClick={() => setIsOnboardingOpen(true)} className="dash-btn w-full justify-center py-4 rounded-xl font-semibold" style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}>
                 Get Started Free
               </button>
@@ -350,7 +350,7 @@ const LandingPage = () => {
                   Most Popular
                 </div>
               </div>
-              
+
               <div className="absolute inset-0 pointer-events-none rounded-2xl" style={{ background: 'radial-gradient(circle at top right, rgba(59,130,246,0.15), transparent 70%)' }}></div>
 
               <div className="mb-8 relative z-10">
@@ -360,7 +360,7 @@ const LandingPage = () => {
                   <div className="text-sm font-medium pb-1" style={{ color: '#94A3B8' }}>/ month</div>
                 </div>
               </div>
-              
+
               <div className="flex-1 space-y-4 mb-8 relative z-10">
                 {[
                   'Remove ALL Koara branding',
@@ -381,7 +381,7 @@ const LandingPage = () => {
                   </div>
                 ))}
               </div>
-              
+
               <button onClick={() => setIsOnboardingOpen(true)} className="dash-btn w-full justify-center py-4 rounded-xl font-bold text-white relative z-10 transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', boxShadow: '0 4px 15px rgba(37,99,235,0.3)' }}>
                 Upgrade to Plus
               </button>
@@ -397,7 +397,7 @@ const LandingPage = () => {
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-4">Frequently Asked Questions</h2>
             <p className="text-slate-400">Everything you need to know about the product and billing.</p>
           </div>
-          
+
           <div className="flex flex-col">
             {[
               { q: "What is Koara?", a: "Koara is a unified digital commerce platform designed for the MENA region, enabling merchants to sell digital products, manage KYC, and process payments instantly." },
@@ -407,10 +407,10 @@ const LandingPage = () => {
               { q: "What payment methods are supported?", a: "We support local bank transfers, major credit cards, and popular regional digital wallets." },
               { q: "Is there a monthly subscription?", a: "You can start for free on our Basic plan. Our Plus plan offers advanced customization and zero platform branding for a small monthly fee." }
             ].map((faq, index) => (
-              <FAQItem 
-                key={index} 
-                question={faq.q} 
-                answer={faq.a} 
+              <FAQItem
+                key={index}
+                question={faq.q}
+                answer={faq.a}
                 isOpen={openFaq === index}
                 onClick={() => setOpenFaq(openFaq === index ? null : index)}
               />
@@ -450,7 +450,7 @@ const LandingPage = () => {
                 >
                   Talk to sales
                 </button>
-                
+
               </div>
             </div>
           </div>
@@ -458,15 +458,15 @@ const LandingPage = () => {
       </main>
 
       <Footer />
-      <OnboardingModal 
-        isOpen={isOnboardingOpen} 
-        onClose={() => { setIsOnboardingOpen(false); setOnboardingInitialData(null); }} 
-        initialData={onboardingInitialData} 
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => { setIsOnboardingOpen(false); setOnboardingInitialData(null); }}
+        initialData={onboardingInitialData}
       />
-      <LoginModal 
-        isOpen={isLoginOpen} 
-        onClose={() => setIsLoginOpen(false)} 
-        onStoreStatus={setStoreRequestStatus} 
+      <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onStoreStatus={setStoreRequestStatus}
         onForgot={() => setIsPasswordResetOpen(true)}
         onGoogleOnboarding={(email) => {
           setOnboardingInitialData({ isGoogleAuth: true, email });

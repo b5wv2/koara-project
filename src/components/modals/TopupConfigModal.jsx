@@ -3,8 +3,10 @@ import Modal from '../Modal';
 import { ShoppingBag, ArrowRight } from 'lucide-react';
 import DashButton from '../ui/DashButton';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
+import { useAppContext } from '../../context/AppContext';
 
 const TopupConfigModal = ({ isOpen, onClose, product, fields = [], onConfirmAddToCart, language = 'en' }) => {
+  const { t } = useAppContext();
   const [formFields, setFormFields] = useState({});
   const [errorMsg, setErrorMsg] = useState('');
   const { execute, loading } = useAsyncAction();
