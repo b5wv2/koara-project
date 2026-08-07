@@ -1,191 +1,155 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="x-apple-disable-message-reformatting">
     <title>تأكيد الحساب - Koara</title>
+    
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:AllowPNG/>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+    </xml>
+    <![endif]-->
+
     <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-        body {
+        /* إعدادات أساسية لتطبيقات البريد */
+        html, body {
+            margin: 0 auto !important;
+            padding: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+            background-color: #f4f6f8;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f8;
-            color: #2d3748;
-            margin: 0;
-            padding: 0;
-            line-height: 1.8;
-            -webkit-font-smoothing: antialiased;
         }
-        .email-wrapper {
-            width: 100%;
-            background-color: #f4f6f8;
-            padding: 40px 20px;
+        * {
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
         }
-        .email-container {
-            max-width: 580px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
-            border: 1px solid #e2e8f0;
+        table, td {
+            mso-table-lspace: 0pt !important;
+            mso-table-rspace: 0pt !important;
         }
-        .email-header {
-            background-color: #0f172a; /* فخم داكن */
-            padding: 40px 30px;
-            text-align: center;
-        }
-        .logo {
-            font-size: 28px;
-            font-weight: 800;
-            color: #ffffff;
-            letter-spacing: 1px;
-            margin: 0;
-            font-family: 'Trebuchet MS', sans-serif;
-        }
-        .logo span {
-            color: #38bdf8; /* لمسة سماوية ذكية */
-        }
-        .email-body {
-            padding: 40px 40px 35px 40px;
-        }
-        .greeting {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 20px;
-        }
-        .intro-text {
-            font-size: 15px;
-            color: #4a5568;
-            margin-bottom: 35px;
-        }
-        .code-container {
-            text-align: center;
-            margin: 35px 0;
-            padding: 10px 0;
-        }
-        .code-title {
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #718096;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-        .code-box {
-            display: inline-block;
-            direction: ltr; /* لعرض الأرقام بشكل صحيح من اليسار لليمين */
-        }
-        .code-digit {
-            display: inline-block;
-            width: 50px;
-            height: 55px;
-            line-height: 55px;
-            font-size: 24px;
-            font-weight: 700;
-            color: #0f172a;
-            background-color: #f8fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            margin: 0 5px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
-        }
-        .notice {
-            font-size: 13px;
-            color: #94a3b8;
-            text-align: center;
-            margin-top: 15px;
-            font-style: italic;
-        }
-        .security-text {
-            font-size: 13px;
-            color: #718096;
-            border-top: 1px solid #edf2f7;
-            padding-top: 25px;
-            margin-top: 35px;
-        }
-        .email-footer {
-            background-color: #f8fafc;
-            padding: 25px 40px;
-            text-align: center;
-            border-top: 1px solid #edf2f7;
-        }
-        .footer-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: #4a5568;
-            margin-bottom: 5px;
-        }
-        .footer-sub {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-        .footer-sub a {
-            color: #38bdf8;
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            line-height: 100%;
+            outline: none;
             text-decoration: none;
+        }
+        a {
+            text-decoration: none;
+        }
+        
+        /* إعدادات التجاوب مع الجوال */
+        @media screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                margin: auto !important;
+                border-radius: 0 !important;
+            }
+            .code-td {
+                width: 40px !important;
+                height: 50px !important;
+                font-size: 20px !important;
+            }
+            .code-gap {
+                width: 4px !important;
+            }
+            .content-padding {
+                padding: 30px 20px !important;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="email-wrapper">
-        <div class="email-container">
-            <!-- الهيدر الفخم -->
-            <div class="email-header">
-                <div style="text-align: center; margin: 0 auto;">
-                    <!-- Inline SVG Logo -->
-                    <svg width="120" viewBox="0 0 693 486" fill="none" xmlns="http://www.w3.org/2000/svg" style="max-width: 120px; height: auto; display: inline-block; margin: 0 auto;">
-                        <path d="M641.009 383.272C655.024 383.273 667.05 388.291 677.088 398.329C687.126 408.367 692.145 420.394 692.145 434.409C692.145 443.689 689.778 452.212 685.043 459.978C680.498 467.743 674.342 473.993 666.577 478.728C659.001 483.273 650.478 485.546 641.009 485.546C626.994 485.546 614.967 480.526 604.929 470.488C594.891 460.45 589.872 448.424 589.872 434.409C589.872 420.394 594.891 408.367 604.929 398.329C614.967 388.291 626.994 383.272 641.009 383.272ZM53.9062 0C67.9688 0.520833 79.9479 5.72917 89.8438 15.625C99.7396 25 104.948 36.7188 105.469 50.7812V433.594C103.012 458.156 91.8672 473.867 72.0352 480.732L0 375.936V50.7812C0.520833 36.1979 5.98958 24.2188 16.4062 14.8438C26.8229 4.94792 39.3229 0 53.9062 0ZM475.781 7.03125C490.365 5.98958 502.865 10.4167 513.281 20.3125C523.698 29.6875 528.906 41.9271 528.906 57.0312C528.906 74.2187 525.26 86.9792 517.969 95.3125C511.198 103.125 502.344 109.635 491.406 114.844L382.031 156.25C360.677 164.583 340.365 172.917 321.094 181.25C302.344 189.062 285.156 198.177 269.531 208.594C253.906 217.969 245.573 228.646 244.531 240.625C245.573 252.083 253.906 262.76 269.531 272.656C285.156 283.073 302.344 292.448 321.094 300.781C340.365 308.594 360.677 316.667 382.031 325L503.906 369.531C514.844 374.74 523.698 381.51 530.469 389.844C537.76 397.656 541.406 410.156 541.406 427.344C541.406 442.448 536.198 454.948 525.781 464.844C515.365 474.219 502.865 478.385 488.281 477.344C481.51 476.823 475.26 475.26 469.531 472.656L328.906 414.844C269.531 390.885 222.135 367.188 186.719 343.75C151.823 319.792 134.115 285.417 133.594 240.625C134.115 195.833 152.083 161.458 187.5 137.5C222.396 114.062 269.531 90.3646 328.906 66.4062L457.031 11.7188C462.76 9.11458 469.01 7.55208 475.781 7.03125Z" fill="#D9D9D9"/>
-                        <g clip-path="url(#paint0_angular_19_42_clip_path)" data-figma-skip-parse="true"><g transform="matrix(0.5 -0.213 0.22809 0.535422 227.281 286)"><foreignObject x="-993.163" y="-993.163" width="1986.33" height="1986.33"><div xmlns="http://www.w3.org/1999/xhtml" style="background:conic-gradient(from 90deg,rgba(84, 76, 236, 1) 0deg,rgba(37, 99, 235, 1) 55.2267deg,rgba(124, 58, 237, 1) 313.25deg,rgba(84, 76, 236, 1) 360deg);height:100%;width:100%;opacity:1"></div></foreignObject></g></g><path d="M641.009 383.272C655.024 383.273 667.05 388.291 677.088 398.329C687.126 408.367 692.145 420.394 692.145 434.409C692.145 443.689 689.778 452.212 685.043 459.978C680.498 467.743 674.342 473.993 666.577 478.728C659.001 483.273 650.478 485.546 641.009 485.546C626.994 485.546 614.967 480.526 604.929 470.488C594.891 460.45 589.872 448.424 589.872 434.409C589.872 420.394 594.891 408.367 604.929 398.329C614.967 388.291 626.994 383.272 641.009 383.272ZM53.9062 0C67.9688 0.520833 79.9479 5.72917 89.8438 15.625C99.7396 25 104.948 36.7188 105.469 50.7812V433.594C103.012 458.156 91.8672 473.867 72.0352 480.732L0 375.936V50.7812C0.520833 36.1979 5.98958 24.2188 16.4062 14.8438C26.8229 4.94792 39.3229 0 53.9062 0ZM475.781 7.03125C490.365 5.98958 502.865 10.4167 513.281 20.3125C523.698 29.6875 528.906 41.9271 528.906 57.0312C528.906 74.2187 525.26 86.9792 517.969 95.3125C511.198 103.125 502.344 109.635 491.406 114.844L382.031 156.25C360.677 164.583 340.365 172.917 321.094 181.25C302.344 189.062 285.156 198.177 269.531 208.594C253.906 217.969 245.573 228.646 244.531 240.625C245.573 252.083 253.906 262.76 269.531 272.656C285.156 283.073 302.344 292.448 321.094 300.781C340.365 308.594 360.677 316.667 382.031 325L503.906 369.531C514.844 374.74 523.698 381.51 530.469 389.844C537.76 397.656 541.406 410.156 541.406 427.344C541.406 442.448 536.198 454.948 525.781 464.844C515.365 474.219 502.865 478.385 488.281 477.344C481.51 476.823 475.26 475.26 469.531 472.656L328.906 414.844C269.531 390.885 222.135 367.188 186.719 343.75C151.823 319.792 134.115 285.417 133.594 240.625C134.115 195.833 152.083 161.458 187.5 137.5C222.396 114.062 269.531 90.3646 328.906 66.4062L457.031 11.7188C462.76 9.11458 469.01 7.55208 475.781 7.03125Z" fill="#D9D9D9"/>
-                        <defs>
-                            <clipPath id="paint0_angular_19_42_clip_path">
-                                <path d="M641.009 383.272C655.024 383.273 667.05 388.291 677.088 398.329C687.126 408.367 692.145 420.394 692.145 434.409C692.145 443.689 689.778 452.212 685.043 459.978C680.498 467.743 674.342 473.993 666.577 478.728C659.001 483.273 650.478 485.546 641.009 485.546C626.994 485.546 614.967 480.526 604.929 470.488C594.891 460.45 589.872 448.424 589.872 434.409C589.872 420.394 594.891 408.367 604.929 398.329C614.967 388.291 626.994 383.272 641.009 383.272ZM53.9062 0C67.9688 0.520833 79.9479 5.72917 89.8438 15.625C99.7396 25 104.948 36.7188 105.469 50.7812V433.594C103.012 458.156 91.8672 473.867 72.0352 480.732L0 375.936V50.7812C0.520833 36.1979 5.98958 24.2188 16.4062 14.8438C26.8229 4.94792 39.3229 0 53.9062 0ZM475.781 7.03125C490.365 5.98958 502.865 10.4167 513.281 20.3125C523.698 29.6875 528.906 41.9271 528.906 57.0312C528.906 74.2187 525.26 86.9792 517.969 95.3125C511.198 103.125 502.344 109.635 491.406 114.844L382.031 156.25C360.677 164.583 340.365 172.917 321.094 181.25C302.344 189.062 285.156 198.177 269.531 208.594C253.906 217.969 245.573 228.646 244.531 240.625C245.573 252.083 253.906 262.76 269.531 272.656C285.156 283.073 302.344 292.448 321.094 300.781C340.365 308.594 360.677 316.667 382.031 325L503.906 369.531C514.844 374.74 523.698 381.51 530.469 389.844C537.76 397.656 541.406 410.156 541.406 427.344C541.406 442.448 536.198 454.948 525.781 464.844C515.365 474.219 502.865 478.385 488.281 477.344C481.51 476.823 475.26 475.26 469.531 472.656L328.906 414.844C269.531 390.885 222.135 367.188 186.719 343.75C151.823 319.792 134.115 285.417 133.594 240.625C134.115 195.833 152.083 161.458 187.5 137.5C222.396 114.062 269.531 90.3646 328.906 66.4062L457.031 11.7188C462.76 9.11458 469.01 7.55208 475.781 7.03125Z" fill="white"/>
-                            </clipPath>
-                        </defs>
-                    </svg>
-                    <!-- Fallback for clients without inline SVG support (e.g. Outlook) -->
-                    <!--[if mso]>
-                    <br />
-                    <img src="https://koaraplatform.com/assets/koara-logo.png" alt="Koara Logo" width="120" style="display: block; margin: 0 auto; border: none; max-width: 120px;" />
-                    <![endif]-->
-                </div>
-            </div>
-            
-            <!-- محتوى الإيميل -->
-            <div class="email-body">
-                <div class="greeting">مرحباً ،</div>
-                
-                <div class="intro-text">
-                    شكرًا لانضمامك إلى <strong>Koara</strong>! خطوة واحدة تفصلك عن إطلاق وإدارة أعمالك الرقمية. لتأكيد هويتك وتفعيل حسابك بشكل آمن، يرجى استخدام رمز التحقق أدناه:
-                </div>
-                
-                <!-- منطقة الكود المصممة بفخامة -->
-                <div class="code-container">
-                    <div class="code-title">رمز التحقق الآمن</div>
-                    <div class="code-box">
-                        <div class="code-digit">{{digit1}}</div>
-                        <div class="code-digit">{{digit2}}</div>
-                        <div class="code-digit">{{digit3}}</div>
-                        <div class="code-digit">{{digit4}}</div>
-                        <div class="code-digit">{{digit5}}</div>
-                        <div class="code-digit">{{digit6}}</div>
-                    </div>
-                    <div class="notice">هذا الرمز سري وصالح للاستخدام لمرة واحدة فقط خلال 15 دقيقة</div>
-                </div>
-                
-                <div class="security-text">
-                    إذا لم تكن أنت من قام بإنشاء هذا الحساب، يرجى تجاهل هذه الرسالة أو التواصل مع الدعم الفني مباشرة لحماية بياناتك.
-                </div>
-            </div>
-            
-            <!-- الفوتر -->
-            <div class="email-footer">
-                <div class="footer-title">مع كامل تحياتنا، فريق Koara</div>
-                <div class="footer-sub">لديك أي استفسار؟ تواصل معنا عبر <a href="mailto:support@getkoara.com">support@getkoara.com</a></div>
-            </div>
-        </div>
+<body width="100%" style="margin: 0; padding: 0 !important; mso-line-height-rule: exactly; background-color: #f4f6f8; color: #2d3748;">
+    
+    <!-- نص المعاينة المخفي (Preheader) -->
+    <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;">
+        رمز التحقق الخاص بك لتفعيل حسابك في منصة Koara هو...
     </div>
+
+    <center style="width: 100%; background-color: #f4f6f8; text-align: center;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 40px 15px;" class="email-container-wrapper">
+            
+            <!-- الحاوية الرئيسية -->
+            <table align="center" role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: auto; max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0;" class="email-container">
+                
+                <!-- الهيدر -->
+                <tr>
+                    <td style="background-color: #0f172a; padding: 35px 20px; text-align: center;">
+                        <!-- يفضل استخدام صورة للشعار بدلاً من SVG لتجنب مشاكل Outlook -->
+                        <img src="https://koaraplatform.com/assets/koara-logo.png" width="120" alt="Koara Logo" style="display: block; margin: 0 auto; max-width: 120px; height: auto; font-family: sans-serif; color: #ffffff; font-size: 24px; font-weight: bold; text-align: center;">
+                    </td>
+                </tr>
+
+                <!-- المحتوى -->
+                <tr>
+                    <td class="content-padding" style="padding: 40px; text-align: right; direction: rtl;">
+                        <h1 style="margin: 0 0 20px 0; font-size: 22px; font-weight: 700; color: #0f172a; line-height: 1.4;">مرحباً بك،</h1>
+                        
+                        <p style="margin: 0 0 30px 0; font-size: 16px; color: #4a5568; line-height: 1.8;">
+                            شكرًا لانضمامك إلى <strong>Koara</strong>! خطوة واحدة تفصلك عن إطلاق وإدارة أعمالك الرقمية. لتأكيد هويتك وتفعيل حسابك بشكل آمن، يرجى استخدام رمز التحقق أدناه:
+                        </p>
+
+                        <!-- منطقة الكود -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                            <tr>
+                                <td style="text-align: center; padding: 25px 0 35px 0;">
+                                    <p style="margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #718096; font-weight: 600;">رمز التحقق الآمن</p>
+                                    
+                                    <!-- أرقام الكود (مبنية بجدول لضمان المحاذاة في كل التطبيقات) -->
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" dir="ltr" style="margin: auto;">
+                                        <tr>
+                                            <td class="code-td" style="width: 48px; height: 55px; background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">{{digit1}}</td>
+                                            <td class="code-gap" style="width: 8px;"></td>
+                                            <td class="code-td" style="width: 48px; height: 55px; background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">{{digit2}}</td>
+                                            <td class="code-gap" style="width: 8px;"></td>
+                                            <td class="code-td" style="width: 48px; height: 55px; background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">{{digit3}}</td>
+                                            <td class="code-gap" style="width: 8px;"></td>
+                                            <td class="code-td" style="width: 48px; height: 55px; background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">{{digit4}}</td>
+                                            <td class="code-gap" style="width: 8px;"></td>
+                                            <td class="code-td" style="width: 48px; height: 55px; background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">{{digit5}}</td>
+                                            <td class="code-gap" style="width: 8px;"></td>
+                                            <td class="code-td" style="width: 48px; height: 55px; background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">{{digit6}}</td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <p style="margin: 15px 0 0 0; font-size: 13px; color: #94a3b8; font-style: italic;">هذا الرمز سري وصالح للاستخدام لمرة واحدة فقط خلال 15 دقيقة</p>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        <!-- رسالة الأمان -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                            <tr>
+                                <td style="padding-top: 25px; border-top: 1px solid #edf2f7;">
+                                    <p style="margin: 0; font-size: 13px; color: #718096; line-height: 1.6;">
+                                        إذا لم تكن أنت من قام بإنشاء هذا الحساب، يرجى تجاهل هذه الرسالة أو التواصل مع الدعم الفني مباشرة لحماية بياناتك.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+
+                <!-- الفوتر -->
+                <tr>
+                    <td style="background-color: #f8fafc; padding: 25px 40px; text-align: center; border-top: 1px solid #edf2f7; direction: rtl;">
+                        <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 700; color: #4a5568;">مع كامل تحياتنا، فريق Koara</p>
+                        <p style="margin: 0; font-size: 13px; color: #94a3b8;">
+                            لديك أي استفسار؟ تواصل معنا عبر <a href="mailto:support@getkoara.com" style="color: #38bdf8; text-decoration: none; font-weight: 600;">support@getkoara.com</a>
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+        </div>
+    </center>
 </body>
 </html>
