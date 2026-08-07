@@ -582,6 +582,7 @@ const StorefrontInner = ({ store }) => {
             )}
           </button>
 
+          {/* Language switch temporarily hidden
           <button
             onClick={() => setLanguage(t('ar'))}
             className="sf-focusable text-xs font-bold tracking-wide transition-colors px-3 py-2"
@@ -589,6 +590,7 @@ const StorefrontInner = ({ store }) => {
           >
             {t('ar_1')}
           </button>
+          */}
         </div>
       </header>
 

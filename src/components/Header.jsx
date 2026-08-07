@@ -55,9 +55,11 @@ const Header = ({ onStartSelling, onSignIn }) => {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center justify-end flex-1 gap-5">
+            {/* Language switch temporarily hidden
             <button onClick={toggleLanguage} className="text-sm font-semibold text-slate-400 hover:text-white transition-colors">
               {t('ar_1')}
             </button>
+            */}
             <button className="text-sm font-semibold text-slate-400 hover:text-white transition-colors" onClick={onSignIn}>
               {t('signin')}
             </button>
@@ -94,9 +96,11 @@ const Header = ({ onStartSelling, onSignIn }) => {
         </nav>
 
         <div className="mt-auto flex flex-col gap-4">
+          {/* Language switch temporarily hidden
           <button onClick={toggleLanguage} className="w-full py-3 text-base font-semibold text-slate-300 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
             {t('ar_1')}
           </button>
+          */}
           <button onClick={handleSignInClick} className="w-full py-3 text-base font-semibold text-slate-300 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
             {t('signin')}
           </button>

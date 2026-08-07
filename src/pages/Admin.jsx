@@ -827,7 +827,7 @@ const AdminDashboard = () => {
   const merchantNavItems = [
     { key: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { key: 'deposits', icon: Banknote, label: 'Deposit History' },
-    { key: 'products', icon: Package, label: 'Gift Cards' },
+    ...(false ? [{ key: 'products', icon: Package, label: 'Gift Cards' }] : []), // Temporarily hidden
     { key: 'topups', icon: Package, label: 'Direct Top-ups' },
     { key: 'promotions', icon: Tag, label: 'Promotions' },
     { key: 'customization', icon: Palette, label: 'Store Customization' },
@@ -1094,6 +1094,7 @@ const AdminDashboard = () => {
             </h2>
           </div>
           <div className="flex items-center gap-3">
+            {/* Language switch temporarily hidden
             <button
               onClick={() => setLanguage(t('ar'))}
               className="text-xs font-bold transition-colors px-2.5 py-1.5 rounded-lg"
@@ -1101,6 +1102,7 @@ const AdminDashboard = () => {
             >
               {t('ar_1')}
             </button>
+            */}
           </div>
         </header>
 
