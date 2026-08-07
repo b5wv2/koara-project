@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote, Palette, Loader2, Megaphone, Send, AlertCircle, AlertTriangle, Clock, CheckCircle, Landmark, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote, Palette, Loader2, Megaphone, Send, AlertCircle, TriangleAlert, Clock, CheckCircle, Landmark, DollarSign } from 'lucide-react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
@@ -1149,7 +1149,7 @@ const AdminDashboard = () => {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <StatCard label="Total Stores" value={merchants.length} sub="All registered merchants" />
-                  <StatCard label="Platform Ledger" value={formatCurrency(merchants.reduce((acc, m) => acc + m.balance, 0))} sub="Combined wallet balance" />
+                  <StatCard label="Platform Ledger" value={formatCurrency(merchants.reduce((acc, m) => acc + m.balance, 0), 'USD')} sub="Combined wallet balance" />
                   <StatCard label="Total Transactions" value={ledger.length} sub="All time" />
                 </div>
 
@@ -1334,7 +1334,7 @@ const AdminDashboard = () => {
                           </td>
                           <td className="cell-primary">{merchant.name}</td>
                           <td style={{ color: '#94A3B8' }}>{merchant.email}</td>
-                          <td className="font-mono font-semibold text-white" dir="ltr">{formatCurrency(merchant.balance)}</td>
+                          <td className="font-mono font-semibold text-white" dir="ltr">{formatCurrency(merchant.balance, 'USD')}</td>
                           <td>
                             <StatusBadge status={
                               merchant.status === 'active' || (merchant.active && !merchant.status) ? 'active'
@@ -1458,7 +1458,7 @@ const AdminDashboard = () => {
                               <div className="text-xs text-slate-500 font-mono mt-0.5">{w.account_number}</div>
                             </td>
                             <td className="text-end font-mono font-semibold text-white" dir="ltr">
-                              {formatCurrency(parseFloat(w.amount))}
+                              {formatCurrency(parseFloat(w.amount), 'USD')}
                             </td>
                             <td className="text-center">
                               {w.status === 'pending' && <span className="koara-badge koara-badge-pending">Pending</span>}
@@ -1537,7 +1537,7 @@ const AdminDashboard = () => {
                             <td className="capitalize">{d.method_name || 'Bank Transfer'}</td>
                             <td className="font-mono text-white" dir="ltr">{d.amount} {d.currency}</td>
                             <td className="font-mono text-blue-400" dir="ltr">
-                              {d.credited_amount ? formatCurrency(parseFloat(d.credited_amount)) : '-'}
+                              {d.credited_amount ? formatCurrency(parseFloat(d.credited_amount), 'USD') : '-'}
                             </td>
                             <td>
                               <StatusBadge status={d.status} />
@@ -2119,7 +2119,7 @@ const AdminDashboard = () => {
                       <div className="absolute top-0 start-0 end-0 h-0.5" style={{ background: 'linear-gradient(90deg,#2563EB,#60A5FA)' }} />
                       <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#475569' }}>Live Wallet Balance</div>
                       <div className="text-4xl font-extrabold text-white tracking-tight mb-6" dir="ltr">
-                        {formatCurrency(parseFloat(store?.balance || 0))}
+                        {formatCurrency(parseFloat(store?.balance || 0), 'USD')}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <button onClick={() => setLocalBankModal({ isOpen: true })} className="dash-btn dash-btn-secondary justify-center py-2.5 rounded-xl text-xs font-semibold">
@@ -2259,7 +2259,7 @@ const AdminDashboard = () => {
                           <td className="capitalize">{deposit.method_name || 'Bank Transfer'}</td>
                           <td className="text-end font-mono" dir="ltr">{deposit.amount} {deposit.currency}</td>
                           <td className="text-end font-mono" dir="ltr">
-                            {deposit.credited_amount ? formatCurrency(parseFloat(deposit.credited_amount)) : '-'}
+                            {deposit.credited_amount ? formatCurrency(parseFloat(deposit.credited_amount), 'USD') : '-'}
                           </td>
                           <td>
                             <StatusBadge status={deposit.status} />
@@ -2905,7 +2905,7 @@ const AdminDashboard = () => {
                             <tr key={item.id}>
                               <td>{formatDate(item.created_at || item.date || new Date().toISOString())}</td>
                               <td>{item.transaction_id || '-'}</td>
-                              <td className="font-semibold text-white">{formatCurrency(parseFloat(item.amount))}</td>
+                              <td className="font-semibold text-white">{formatCurrency(parseFloat(item.amount), 'USD')}</td>
                               <td>
                                 <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${item.event === 'activated' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                                   {item.event}
@@ -3050,7 +3050,7 @@ const AdminDashboard = () => {
         <div className="space-y-4">
           <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
             <h4 className="text-orange-400 font-bold mb-2 flex items-center gap-2">
-              <AlertTriangle size={16} /> Warning: Price Update Required
+              <TriangleAlert size={16} /> Warning: Price Update Required
             </h4>
             <p className="text-sm text-slate-300 leading-relaxed">
               Changing your store currency does <strong>NOT</strong> automatically convert your existing product selling prices. 

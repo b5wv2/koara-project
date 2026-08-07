@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle, TriangleAlert } from 'lucide-react';
 import KoaraLogo from '../assets/koara-logo.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -91,7 +91,7 @@ const PaymentSuccess = () => {
 
           {status === 'error' && (
             <>
-              <AlertTriangle className="mx-auto mb-6" size={48} style={{ color: '#f87171' }} />
+              <TriangleAlert className="mx-auto mb-6" size={48} style={{ color: '#f87171' }} />
               <h2 className="text-xl font-bold text-white mb-2">Payment Issue</h2>
               <p className="text-sm" style={{ color: '#94A3B8' }}>
                 {errorMsg}
