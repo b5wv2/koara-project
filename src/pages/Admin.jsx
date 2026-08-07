@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote, Palette, Loader2, Megaphone, Send, AlertCircle, Clock, CheckCircle, Landmark, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, Database, LogOut, Package, Store, Image as ImageIcon, Trash2, ArrowUpRight, ArrowDownRight, Activity, Tag, Percent, UploadCloud, Settings, CreditCard, ShieldCheck, FileText, Menu, X, ChevronRight, Edit2, Crown, Check, Banknote, Palette, Loader2, Megaphone, Send, AlertCircle, AlertTriangle, Clock, CheckCircle, Landmark, DollarSign } from 'lucide-react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
@@ -70,7 +70,7 @@ const StatusBadge = ({ status }) => {
 // ── AdminDashboard ──────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
-  const { user, isAuthLoading, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, fetchProviderCategories, createProviderCategory, deleteProviderCategory, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance, invitationCodes, fetchInvitationCodes, formatDate } = useAppContext();
+  const { user, isAuthLoading, store, logout, t, language, setLanguage, merchants, deleteStore, adminAddCredit, adminDeduct, fetchTransactions, fetchGlobalTransactions, kycApplications, setKycApplications, fetchAllStoresAdmin, fetchPendingKyc, approveKyc, rejectKyc, products, setProducts, promos, setPromos, orders, setOrders, fetchMerchantOrders, updateOrderStatus, ledger, categories, setCategories, updateCategoryLogo, updateStoreLogo, toggleStoreActive, updateMerchantBanking, platformProducts, fetchPlatformProducts, createPlatformProduct, updatePlatformProduct, deactivatePlatformProduct, providers, fetchProviders, fetchProviderMappings, addProviderMapping, fetchProviderCategories, createProviderCategory, deleteProviderCategory, merchantPlatformProducts, fetchMerchantPlatformProducts, updateMerchantProduct, subscription, isPlusActive, upgradeSubscription, fetchSubscription, adminWithdrawals, fetchAdminWithdrawals, approveWithdrawal, rejectWithdrawal, syncWalletBalance, invitationCodes, fetchInvitationCodes, formatDate, formatCurrency } = useAppContext();
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -195,7 +195,7 @@ const AdminDashboard = () => {
       setBankAccountNumber(activeStore.account_no || activeStore.bankAccountNumber || '');
       setStoreCurrency(activeStore.store_currency || activeStore.storeCurrency || 'USD');
     }
-  }, [store, merchantObj.bankName, merchantObj.bankAccountName, merchantObj.bankAccountNumber, merchantObj.storeCurrency]);
+  }, [store, merchantObj.bankName, merchantObj.bankAccountName, merchantObj.bankAccountNumber, merchantObj.storeCurrency, merchantObj.store_currency]);
 
   React.useEffect(() => {
     if (role === 'admin') {
@@ -1149,7 +1149,7 @@ const AdminDashboard = () => {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <StatCard label="Total Stores" value={merchants.length} sub="All registered merchants" />
-                  <StatCard label="Platform Ledger" value={`$${merchants.reduce((acc, m) => acc + m.balance, 0).toFixed(2)}`} sub="Combined wallet balance" />
+                  <StatCard label="Platform Ledger" value={formatCurrency(merchants.reduce((acc, m) => acc + m.balance, 0))} sub="Combined wallet balance" />
                   <StatCard label="Total Transactions" value={ledger.length} sub="All time" />
                 </div>
 
@@ -1334,7 +1334,7 @@ const AdminDashboard = () => {
                           </td>
                           <td className="cell-primary">{merchant.name}</td>
                           <td style={{ color: '#94A3B8' }}>{merchant.email}</td>
-                          <td className="font-mono font-semibold text-white" dir="ltr">${merchant.balance.toFixed(2)}</td>
+                          <td className="font-mono font-semibold text-white" dir="ltr">{formatCurrency(merchant.balance)}</td>
                           <td>
                             <StatusBadge status={
                               merchant.status === 'active' || (merchant.active && !merchant.status) ? 'active'
@@ -1458,7 +1458,7 @@ const AdminDashboard = () => {
                               <div className="text-xs text-slate-500 font-mono mt-0.5">{w.account_number}</div>
                             </td>
                             <td className="text-end font-mono font-semibold text-white" dir="ltr">
-                              ${parseFloat(w.amount).toFixed(2)}
+                              {formatCurrency(parseFloat(w.amount))}
                             </td>
                             <td className="text-center">
                               {w.status === 'pending' && <span className="koara-badge koara-badge-pending">Pending</span>}
@@ -1537,7 +1537,7 @@ const AdminDashboard = () => {
                             <td className="capitalize">{d.method_name || 'Bank Transfer'}</td>
                             <td className="font-mono text-white" dir="ltr">{d.amount} {d.currency}</td>
                             <td className="font-mono text-blue-400" dir="ltr">
-                              {d.credited_amount ? `$${parseFloat(d.credited_amount).toFixed(2)}` : '-'}
+                              {d.credited_amount ? formatCurrency(parseFloat(d.credited_amount)) : '-'}
                             </td>
                             <td>
                               <StatusBadge status={d.status} />
@@ -2119,7 +2119,7 @@ const AdminDashboard = () => {
                       <div className="absolute top-0 start-0 end-0 h-0.5" style={{ background: 'linear-gradient(90deg,#2563EB,#60A5FA)' }} />
                       <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#475569' }}>Live Wallet Balance</div>
                       <div className="text-4xl font-extrabold text-white tracking-tight mb-6" dir="ltr">
-                        ${parseFloat(store?.balance || 0).toFixed(2)}
+                        {formatCurrency(parseFloat(store?.balance || 0))}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <button onClick={() => setLocalBankModal({ isOpen: true })} className="dash-btn dash-btn-secondary justify-center py-2.5 rounded-xl text-xs font-semibold">
@@ -2209,7 +2209,7 @@ const AdminDashboard = () => {
                             <div className="text-xs mt-1" style={{ color: '#475569' }}>{order.customer_name} · {order.whatsapp}</div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="font-semibold text-sm text-white" dir="ltr">${parseFloat(order.total_amount || 0).toFixed(2)}</span>
+                            <span className="font-semibold text-sm text-white" dir="ltr">{formatCurrency(parseFloat(order.total_amount || 0))}</span>
                             <StatusBadge status={order.status} />
                           </div>
                         </div>
@@ -2259,7 +2259,7 @@ const AdminDashboard = () => {
                           <td className="capitalize">{deposit.method_name || 'Bank Transfer'}</td>
                           <td className="text-end font-mono" dir="ltr">{deposit.amount} {deposit.currency}</td>
                           <td className="text-end font-mono" dir="ltr">
-                            {deposit.credited_amount ? `$${parseFloat(deposit.credited_amount).toFixed(2)}` : '-'}
+                            {deposit.credited_amount ? formatCurrency(parseFloat(deposit.credited_amount)) : '-'}
                           </td>
                           <td>
                             <StatusBadge status={deposit.status} />
@@ -2622,7 +2622,7 @@ const AdminDashboard = () => {
                             <td className="font-mono font-bold text-white">{promo.code}</td>
                             <td className="capitalize" style={{ color: '#94A3B8' }}>{promo.discount_type}</td>
                             <td className="font-bold" style={{ color: '#60A5FA' }} dir="ltr">
-                              {promo.discount_type === 'percentage' ? `${parseFloat(promo.value)}%` : `$${parseFloat(promo.value).toFixed(2)}`}
+                              {promo.discount_type === 'percentage' ? `${parseFloat(promo.value)}%` : formatCurrency(parseFloat(promo.value))}
                             </td>
                             <td className="text-sm" style={{ color: '#94A3B8' }}>
                               {promo.used_count} {promo.usage_limit ? `/ ${promo.usage_limit}` : 'uses'}
@@ -2905,7 +2905,7 @@ const AdminDashboard = () => {
                             <tr key={item.id}>
                               <td>{formatDate(item.created_at || item.date || new Date().toISOString())}</td>
                               <td>{item.transaction_id || '-'}</td>
-                              <td className="font-semibold text-white">${parseFloat(item.amount).toFixed(2)}</td>
+                              <td className="font-semibold text-white">{formatCurrency(parseFloat(item.amount))}</td>
                               <td>
                                 <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${item.event === 'activated' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                                   {item.event}
@@ -3277,7 +3277,7 @@ const AdminDashboard = () => {
               </div>
               <div className="text-end" dir="ltr">
                 <div className="text-xs mb-1" style={{ color: '#475569' }}>Amount</div>
-                <div className="font-semibold" style={{ color: '#4ade80' }}>${parseFloat(selectedReceipt.total_amount || 0).toFixed(2)}</div>
+                <div className="font-semibold" style={{ color: '#4ade80' }}>{formatCurrency(parseFloat(selectedReceipt.total_amount || 0))}</div>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -3564,7 +3564,7 @@ const AdminDashboard = () => {
                       <td className="cell-primary">{m.provider_name}</td>
                       <td className="cell-mono">{m.provider_product_id}</td>
                       <td className="cell-mono text-sky-400">{m.provider_category_id || '—'}</td>
-                      <td className="font-mono text-sm text-white">{m.cost_price ? `$${parseFloat(m.cost_price).toFixed(2)}` : '—'}</td>
+                      <td className="font-mono text-sm text-white">{m.cost_price ? formatCurrency(parseFloat(m.cost_price), 'USD') : '—'}</td>
                       <td><StatusBadge status={m.is_active ? 'active' : 'inactive'} /></td>
                     </tr>
                   ))}

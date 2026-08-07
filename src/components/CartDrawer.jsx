@@ -7,8 +7,8 @@ import { useAppContext } from '../context/AppContext';
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], appliedPromo, setAppliedPromo, language = 'en' }) => {
-  const { cartItems, removeFromCart, updateQuantity, getCartSubtotal, clearCart, cartCount } = useCart();
-  const { t } = useAppContext();
+  const { cartItems, removeFromCart, updateQuantity, getCartSubtotal, clearCart, cartCount, storeCurrency } = useCart();
+  const { t, formatCurrency } = useAppContext();
 
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState('');
@@ -164,9 +164,9 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
                         </div>
 
                         <div className="text-end">
-                          <span className="text-xs font-bold text-blue-400 font-mono" dir="ltr">
-                            ${(item.selling_price * item.quantity).toFixed(2)}
-                          </span>
+                          <div className="font-mono text-sm font-bold text-blue-400" dir="ltr">
+                            {formatCurrency(item.selling_price * item.quantity, storeCurrency)}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -209,17 +209,17 @@ const CartDrawer = ({ isOpen, onClose, onProceedToCheckout, catalogPromos = [], 
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-400">
                   <span>{t('subtotal')}</span>
-                  <span className="font-mono text-white" dir="ltr">${subtotal.toFixed(2)}</span>
+                  <span className="font-mono text-white" dir="ltr">{formatCurrency(subtotal, storeCurrency)}</span>
                 </div>
                 {appliedPromo && (
                   <div className="flex justify-between text-green-400 font-medium">
                     <span>{t('discount')}</span>
-                    <span className="font-mono" dir="ltr">-${discountAmount.toFixed(2)}</span>
+                    <span className="font-mono" dir="ltr">-{formatCurrency(discountAmount, storeCurrency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-white/10">
                   <span>{t('total')}</span>
-                  <span className="font-mono text-blue-400" dir="ltr">${grandTotal.toFixed(2)}</span>
+                  <span className="font-mono text-blue-400" dir="ltr">{formatCurrency(grandTotal, storeCurrency)}</span>
                 </div>
               </div>
 

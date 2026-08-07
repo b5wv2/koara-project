@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 const CartContext = createContext(null);
 
-export const CartProvider = ({ children, storeId }) => {
+export const CartProvider = ({ children, storeId, storeCurrency }) => {
   const [cartItems, setCartItems] = useState([]);
 
   const storageKey = storeId ? `koara_cart_${storeId}` : 'koara_cart_default';
@@ -123,7 +123,8 @@ export const CartProvider = ({ children, storeId }) => {
       updateQuantity,
       clearCart,
       getCartSubtotal,
-      cartCount
+      cartCount,
+      storeCurrency
     }}>
       {children}
     </CartContext.Provider>

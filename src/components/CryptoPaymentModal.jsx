@@ -11,7 +11,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
   const [error, setError] = useState('');
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const popupRef = useRef(null);
-  const { t, syncWalletBalance } = useAppContext();
+  const { t, syncWalletBalance, formatCurrency } = useAppContext();
   const { execute: executeInvoice, loading } = useAsyncAction();
 
   const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -149,7 +149,7 @@ const CryptoPaymentModal = ({ isOpen, onClose, amount, storeId }) => {
           <div className="flex flex-col items-center w-full">
             <div className="mb-6 text-center">
               <span className="text-xs text-slate-400 block mb-1">{t('amount_to_pay')}</span>
-              <span className="text-2xl font-black text-white font-mono" dir="ltr">${amount}</span>
+              <span className="text-2xl font-black text-white font-mono" dir="ltr">{formatCurrency(amount)}</span>
             </div>
 
             <div className="p-4 rounded-xl mb-6 w-full text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>

@@ -134,9 +134,9 @@ export const AppProvider = ({ children }) => {
     return translations[language][key] || key;
   };
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = (amount, currencyCode = null) => {
     const locale = language === 'ar' ? 'ar-EG' : 'en-US';
-    const currency = store?.store_currency || 'USD';
+    const currency = currencyCode || store?.store_currency || 'USD';
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency,
@@ -588,7 +588,8 @@ export const AppProvider = ({ children }) => {
       ...prev,
       bank_name: bankDetails.bankName !== undefined ? bankDetails.bankName : prev.bank_name,
       account_name: bankDetails.bankAccountName !== undefined ? bankDetails.bankAccountName : prev.account_name,
-      account_no: bankDetails.bankAccountNumber !== undefined ? bankDetails.bankAccountNumber : prev.account_no
+      account_no: bankDetails.bankAccountNumber !== undefined ? bankDetails.bankAccountNumber : prev.account_no,
+      store_currency: bankDetails.storeCurrency !== undefined ? bankDetails.storeCurrency : prev.store_currency
     } : prev);
   };
 
