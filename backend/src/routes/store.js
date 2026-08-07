@@ -71,7 +71,7 @@ router.get('/by-subdomain/:subdomain', async (req, res) => {
 
   try {
     const query = `
-      SELECT id, store_name, subdomain, status, bank_name, account_name, account_no, logo_url, customization
+      SELECT id, store_name, subdomain, status, bank_name, account_name, account_no, logo_url, customization, store_currency
       FROM stores
       WHERE subdomain = $1
       LIMIT 1

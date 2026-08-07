@@ -97,7 +97,7 @@ router.post('/kyc/reject', async (req, res) => {
 router.get('/stores', async (req, res) => {
   try {
     const query = `
-      SELECT s.id, s.store_name, s.subdomain, s.status, s.bank_name, s.account_name, s.account_no, s.balance, s.logo_url, u.email
+      SELECT s.id, s.store_name, s.subdomain, s.status, s.bank_name, s.account_name, s.account_no, s.balance, s.logo_url, s.store_currency, u.email
       FROM stores s
       JOIN users u ON s.owner_id = u.id
       ORDER BY s.created_at DESC
