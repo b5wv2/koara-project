@@ -1,0 +1,86 @@
+{
+    "ok": true,
+    "kind": "topup",
+    "category_id": "free_fire_mena",
+    "name": "Free Fire (MENA)",
+    "offers": [
+        {
+            "offer_id": "110_diamonds",
+            "name": "110 Diamonds",
+            "price_usd": "0.9384"
+        },
+        {
+            "offer_id": "231_diamonds",
+            "name": "231 Diamonds",
+            "price_usd": "1.8768"
+        },
+        {
+            "offer_id": "583_diamonds",
+            "name": "583 Diamonds",
+            "price_usd": "4.6920"
+        },
+        {
+            "offer_id": "1188_diamonds",
+            "name": "1188 Diamonds",
+            "price_usd": "9.3840"
+        },
+        {
+            "offer_id": "2420_diamonds",
+            "name": "2420 Diamonds",
+            "price_usd": "18.7680"
+        },
+        {
+            "offer_id": "level_up_package_level_6",
+            "name": "Level Up Package - Level 6",
+            "price_usd": "0.3053"
+        },
+        {
+            "offer_id": "level_up_package_level_10",
+            "name": "Level Up Package - Level 10",
+            "price_usd": "0.5141"
+        },
+        {
+            "offer_id": "level_up_package_level_15",
+            "name": "Level Up Package - Level 15",
+            "price_usd": "0.5141"
+        },
+        {
+            "offer_id": "level_up_package_level_20",
+            "name": "Level Up Package - Level 20",
+            "price_usd": "0.5141"
+        },
+        {
+            "offer_id": "level_up_package_level_25",
+            "name": "Level Up Package - Level 25",
+            "price_usd": "0.5141"
+        },
+        {
+            "offer_id": "level_up_package_level_30",
+            "name": "Level Up Package - Level 30",
+            "price_usd": "0.8275"
+        },
+        {
+            "offer_id": "weekly_membership",
+            "name": "Weekly Membership",
+            "price_usd": "2.0967"
+        },
+        {
+            "offer_id": "booyah_pass",
+            "name": "Booyah Pass",
+            "price_usd": "3.1410"
+        },
+        {
+            "offer_id": "monthly_membership",
+            "name": "Monthly Membership",
+            "price_usd": "10.4754"
+        }
+    ],
+    "fields": [
+        {
+            "key": "player_id",
+            "label": "Player ID",
+            "type": "text"
+        }
+    ],
+    "note": "Region: MENA\nAutomatic Free Fire top-up.\nDiamonds are delivered automatically after the order is placed."
+}

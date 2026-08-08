@@ -53,10 +53,16 @@ class FazerCardsProvider {
         throw new Error(responseData?.message || JSON.stringify(responseData) || `Provider API Error: ${response.status}`);
       }
 
+      const providerOrderId = responseData?.order?.id || responseData?.order_id || responseData?.id;
+
+      if (!providerOrderId) {
+        throw new Error(`Provider API did not return a valid order ID. Response: ${JSON.stringify(responseData)}`);
+      }
+
       return {
         success: true,
-        provider_order_id: responseData.order_id || responseData.id || `MOCK-${Date.now()}`,
-        status: normalizeProviderStatus(responseData.status || 'processing'),
+        provider_order_id: providerOrderId,
+        status: normalizeProviderStatus(responseData?.order?.status || responseData?.status || 'processing'),
         raw_response: responseData
       };
     } catch (error) {
@@ -157,9 +163,15 @@ class FazerCardsProvider {
         throw new Error(responseData?.message || JSON.stringify(responseData) || `Provider API Error: ${response.status}`);
       }
 
+      const providerOrderId = responseData?.order?.id || responseData?.order_id || responseData?.id;
+
+      if (!providerOrderId) {
+        throw new Error(`Provider API did not return a valid order ID. Response: ${JSON.stringify(responseData)}`);
+      }
+
       return {
         success: true,
-        provider_order_id: responseData?.order?.id || responseData?.order_id || responseData?.id || `MOCK-GC-${Date.now()}`,
+        provider_order_id: providerOrderId,
         status: normalizeProviderStatus(responseData?.order?.status || responseData?.status || 'processing'),
         raw_response: responseData || {}
       };
